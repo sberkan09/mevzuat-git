@@ -1,0 +1,28 @@
+[project]
+name = "mevzuat-git"
+version = "0.0.1"
+description = "Rebuild Turkish legislation history as git commits"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "selectolax>=0.3",
+    "pydantic>=2.7",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+llm = ["anthropic>=0.40"]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.scripts]
+mevzuat-git = "mevzuat_git.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mevzuat_git"]
+
+[tool.ruff]
+line-length = 100
