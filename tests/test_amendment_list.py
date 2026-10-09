@@ -104,3 +104,11 @@ def test_schema_roundtrip():
                            target_rg_date=date(1961, 1, 6), target_rg_number="10700",
                            source_url="u", source_sha256="0", acts=al.build(193, c))
     assert al.AmendmentList.model_validate_json(lst.model_dump_json()) == lst
+    # The CLI writes with exclude_none; the file must still load.
+    assert al.AmendmentList.model_validate_json(lst.model_dump_json(exclude_none=True)) == lst
+
+
+def test_committed_list_loads():
+    p = Path(__file__).parent.parent / "data" / "processed" / "193_amendments.json"
+    lst = al.AmendmentList.model_validate_json(p.read_text())
+    assert lst.target_law == 193 and len(lst.acts) > 100

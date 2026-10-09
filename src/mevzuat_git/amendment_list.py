@@ -32,17 +32,17 @@ SCHEMA_VERSION = 1
 class MarkerRef(BaseModel):
     """One event of an inline marker, e.g. ``Ek fıkra: 22/7/1998-4369/26 md.``."""
 
-    article: str | None  # canonical article id of the target law, e.g. "23", "gecici-67"
+    article: str | None = None  # canonical article id of the target law, e.g. "23", "gecici-67"
     kind: str  # degisik | ek | mulga | yeniden_duzenleme | iptal | other
     label: str  # as written: "Ek fıkra", "Mülga ikinci cümle", ...
-    law_article: str | None  # article of the amending act, e.g. "26", "81/C"
+    law_article: str | None = None  # article of the amending act, e.g. "26", "81/C"
     raw: str
 
 
 class FootnoteRef(BaseModel):
     footnote: int
-    article: str | None
-    law_article: str | None
+    article: str | None = None
+    law_article: str | None = None
     text: str  # footnote text, whitespace collapsed
 
 
@@ -56,7 +56,7 @@ class EffectiveEntry(BaseModel):
 
 class RGRef(BaseModel):
     date: date
-    number: str | None  # issue, e.g. "32620" or "31706 (6. Mükerrer)"
+    number: str | None = None  # issue, e.g. "32620" or "31706 (6. Mükerrer)"
     index_url: str | None = None
     text_url: str | None = None  # the act's own page, or the day page for inline items
     anchor: str | None = None  # "#n" item on inline (pre-~2005) day pages
@@ -91,8 +91,8 @@ class AmendmentList(BaseModel):
     target_law: int
     target_title: str
     target_tertip: int
-    target_rg_date: date | None
-    target_rg_number: str | None
+    target_rg_date: date | None = None
+    target_rg_number: str | None = None
     source_url: str
     source_sha256: str
     acts: list[AmendingAct]
