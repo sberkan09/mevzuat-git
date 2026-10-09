@@ -118,3 +118,10 @@ maddelerin arkasına gitmez.
 
 `mevzuat-git history 193 213` 140 commit üretir. Bunların 26'sında bir torba kanun iki
 dosyayı birlikte değiştirir.
+
+## GVK, VUK ve KDV birlikte
+
+`mevzuat-git history 193 213 3065` 176 commit üretir (2001-07-03 .. 2026-08-01). Bunların
+52'sinde bir torba kanun birden çok dosyayı birlikte değiştirir. Yürürlüğü konsolide
+metnin indirildiği günden sonra olan işlemler (KDV md. 30 ve 58, 1/1/2030) tarihçeye
+girmez; o tarih geldiğinde konsolide metin yeniden indirilip tarihçe yeniden üretilir.

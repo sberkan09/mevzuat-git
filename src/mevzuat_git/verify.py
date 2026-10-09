@@ -65,6 +65,7 @@ class Report:
     sentences: int
     parsed_sentences: int
     unparsed: list[UnparsedSentence]
+    pending: list[OpResult] = field(default_factory=list)  # yürürlük still to come
 
     @property
     def counts(self) -> Counter:
@@ -110,15 +111,34 @@ def batches(ops: list[OpResult]) -> list[list[OpResult]]:
     rewrite what an earlier one wrote."""
     out: list[list[OpResult]] = []
     for r in ops:
-        last = out[-1][-1] if out else None
-        if last and r.op.op is OpType.REPLACE_PHRASE is last.op.op \
-                and not r.op.paren and not last.op.paren \
-                and (r.act, r.article, r.op.target, r.op.source_sentence) \
-                == (last.act, last.article, last.op.target, last.op.source_sentence):
-            out[-1].append(r)
+        if (b := _batch_for(out, r)) is not None:
+            b.append(r)
         else:
             out.append([r])
     return out
+
+
+def _batch_for(out: list[list[OpResult]], r: OpResult) -> list[OpResult] | None:
+    """The batch of the same sentence that ``r`` joins, if any. Batches on other parts in
+    between do not keep them apart: 700/90 replaces “Bakanlar Kurulu” in md. 38's first
+    and fourth fıkras, then “Bakanlar Kurulunca” in the first."""
+    if r.op.op is not OpType.REPLACE_PHRASE or r.op.paren:
+        return None
+    key = (r.act, r.article, r.op.source_sentence)
+    for b in reversed(out):
+        last = b[-1]
+        if (last.act, last.article, last.op.source_sentence) != key:
+            return None
+        if last.op.target == r.op.target:
+            ok = all(x.op.op is OpType.REPLACE_PHRASE and not x.op.paren for x in b)
+            return b if ok else None
+        if _overlaps(str(last.op.target), str(r.op.target)):
+            return None
+    return None
+
+
+def _overlaps(a: str, b: str) -> bool:
+    return a == b or a.startswith(b + "/") or b.startswith(a + "/")
 
 
 def unwind(current: Law, groups: list[list[OpResult]]) -> Law:
@@ -186,7 +206,7 @@ def replay_batch(law: Law, batch: list[OpResult]) -> None:
 
 def op_results(opsfile: OpsFile) -> list[OpResult]:
     return [OpResult(act=a.act, article=am.article, op=op, effective=am.effective_date)
-            for a, am, op in opsfile.ops()]
+            for a, am, op in opsfile.ops() if op.pending is None]
 
 
 def _redone(r: OpResult) -> bool:
@@ -244,8 +264,10 @@ def run(current: Law, opsfile: OpsFile) -> Report:
 
     sentences = sum(a.sentences for a in opsfile.acts)
     unparsed = [u for a in opsfile.acts for u in a.unparsed]
+    pending = [OpResult(act=a.act, article=am.article, op=op, effective=am.effective_date)
+               for a, am, op in opsfile.ops() if op.pending is not None]
     return Report(ops=ops, articles=articles, sentences=sentences,
-                  parsed_sentences=sentences - len(unparsed), unparsed=unparsed)
+                  parsed_sentences=sentences - len(unparsed), unparsed=unparsed, pending=pending)
 
 
 def current_tree(fetcher: Fetcher, law: int) -> Law:
@@ -302,6 +324,12 @@ def render_report(rep: Report, law: int) -> str:
     for a in rep.articles:
         if a.status == "unverified":
             lines.append(f"- {a.id}")
+    if rep.pending:
+        lines += ["", "## Henüz yürürlüğe girmemiş işlemler", "",
+                  "Konsolide metinde yoklar; geri sarılmaz, oynatılmaz.", ""]
+        for r in rep.pending:
+            lines.append(f"- {act_label(r.act, r.article)}: `{r.op.op.value}` {r.op.target} "
+                         f"({r.op.pending:%d/%m/%Y})")
     return "\n".join(lines) + "\n"
 
 

@@ -253,7 +253,25 @@ def test_mevcut_fikra_counts_before_the_insert():
 
 def test_plural_word_inside_the_ibare_is_not_plural():
     (op,) = ops_of("5035/48/Geçici")
-    assert op.old == "1.1.1999 - 31.12.2003 tarihleri arasında" and not op.all
+    assert op.old == "1.1.1999 - 31.12.2003 tarihleri arasında"
+    # Not plural, but the target is a whole article: every occurrence in it (see
+    # test_ibare_of_a_whole_article_is_every_occurrence).
+    assert str(op.target) == "md.gecici-55" and op.all
+    op = am.parse_instruction(
+        "3065 sayılı Kanunun 41 inci maddesinin (1) numaralı fıkrasında yer alan “1.1.1999 - "
+        "31.12.2003 tarihleri arasında” ibaresi “x” şeklinde değiştirilmiştir.", [], 3065)[0]
+    assert not op.all
+
+
+def test_ibare_of_a_whole_article_is_every_occurrence():
+    # 5615/10: "3065 sayılı Katma Değer Vergisi Kanununun 41 inci maddesinde yer alan
+    # "yirminci günü" ibaresi "yirmidördüncü günü" olarak değiştirilmiştir"; md. 41 has it
+    # in its first and fourth fıkras, both changed.
+    (op,) = am.parse_instruction(
+        "25/10/1984 tarihli ve 3065 sayılı Katma Değer Vergisi Kanununun 41 inci maddesinde "
+        "yer alan \"yirminci günü\" ibaresi \"yirmidördüncü günü\" olarak değiştirilmiştir.",
+        [], 3065)
+    assert str(op.target) == "md.41" and op.all
 
 
 def test_ordinal_bent():
@@ -1005,3 +1023,134 @@ def test_marker_insertion_keeps_the_unwound_text():
     # So does one whose node is not the one there.
     op.footnote, op.new_nodes = None, [b("d)", "... sekiz ...")]
     assert unapply(law, op).status == "fail"
+
+
+# -- KDV (3065) -----------------------------------------------------------------------------
+
+def _kdv(sentence, payload=()):
+    return am.parse_instruction(sentence, list(payload), 3065)
+
+
+def test_title_ibare_and_a_list_of_deleted_ibareler():
+    # 6745/36
+    ops = _kdv(
+        "25/10/1984 tarihli ve 3065 sayılı Katma Değer Vergisi Kanununun geçici 30 uncu "
+        "maddesinin madde başlığında yer alan “ve stratejik” ibaresi ile birinci fıkrasının "
+        "birinci cümlesinde yer alan “stratejik” ibaresi madde metninden çıkarılmış ve aynı "
+        "maddenin birinci fıkrasından sonra gelmek üzere aşağıdaki fıkra eklenmiştir.",
+        ["“(2) Birinci fıkrada yer alan ... yetkilidir.”"])
+    assert [(o.op, str(o.target), o.old) for o in ops] == [
+        (OpType.DELETE_PHRASE, "md.gecici-30/başlık", "ve stratejik"),
+        (OpType.DELETE_PHRASE, "md.gecici-30/f1/c1", "stratejik"),
+        (OpType.INSERT_NODE, "md.gecici-30/f1", None)]
+
+
+def test_new_article_ends_at_its_closing_quote():
+    # 5804/3: the next article's title "Yürürlük" comes after the closing quote.
+    (op,) = _kdv("25/10/1984 tarihli ve 3065 sayılı Katma Değer Vergisi Kanununa aşağıdaki "
+                 "geçici madde eklenmiştir.", [
+        ("\"GEÇİCİ MADDE 27 – (1) 2009 yılı Mart ayında İstanbul’da yapılacak Beşinci Dünya "
+         "Su Forumunun ... müstesnadır."),
+        ("(2) Maliye Bakanlığı, istisnanın uygulanmasına ilişkin usul ve esasları "
+         "belirlemeye yetkilidir.\""),
+        "Yürürlük"])
+    (md,) = op.new_nodes
+    assert [(f.label, f.text[-11:], f.children) for f in md.children][-1] == (
+        "(2)", "yetkilidir.", [])
+
+
+def test_parenthesised_provision_added_after_an_ibare():
+    # 6728/43 (a)
+    (op,) = _kdv(
+        "25/10/1984 tarihli ve 3065 sayılı Katma Değer Vergisi Kanununun 17 nci maddesinin (4) "
+        "numaralı fıkrasının (g) bendine “tahvil” ibaresinden sonra gelmek üzere “(elde edilen "
+        "faiz gelirleri ile sınırlı olmak üzere tahvil satın almak suretiyle verilen finansman "
+        "hizmetleri dâhil)” parantez içi hüküm eklenmiştir.")
+    assert (op.op, str(op.target), op.anchor) == (OpType.INSERT_PHRASE, "md.17/f4/bg", "tahvil")
+    assert op.new.startswith("(elde edilen")
+
+
+def test_unquoted_new_text_goes_by_the_labels_each_operation_names():
+    # 5035/8
+    ops = _kdv(
+        "3065 sayılı Kanunun 17 nci maddesinin (2) numaralı fıkrasının (b) bendi ve (4) "
+        "numaralı fıkrasının (g) bendi aşağıdaki şekilde değiştirilmiş, fıkranın mülga (ı) "
+        "bendi aşağıdaki şekilde yeniden düzenlenmiş ve fıkraya aşağıdaki (n) bendi "
+        "eklenmiştir.", [
+            "b) Kanunların gösterdiği gerek üzerine bedelsiz olarak yapılan mal teslimi ...",
+            "g) Külçe altın, dore külçe altın, külçe gümüş, döviz, para, ...",
+            "ı) Serbest bölgelerde verilen hizmetler, ...",
+            "n) Basın, Yayın ve Enformasyon Genel Müdürlüğüne verilen haber hizmetleri."])
+    assert [(o.op, str(o.target), [n.label for n in o.new_nodes]) for o in ops] == [
+        (OpType.REPLACE_NODE, "md.17/f2/bb", ["b)"]), (OpType.REPLACE_NODE, "md.17/f4/bg", ["g)"]),
+        (OpType.REPLACE_NODE, "md.17/f4/bı", ["ı)"]), (OpType.INSERT_NODE, "md.17/f4", ["n)"])]
+    # 5228/15: "fıkraya (o) ve (p) bentleri eklenmiştir", with no "aşağıdaki".
+    ops = _kdv(
+        "3065 sayılı Kanunun 17 nci maddesinin (2) numaralı fıkrasının (b) bendi aşağıdaki "
+        "şekilde değiştirilmiş ve fıkraya aşağıdaki (e) bendi eklenmiş, (4) numaralı "
+        "fıkrasının (f), (g), (ı) ve (m) bentleri aşağıdaki şekilde değiştirilmiş ve fıkraya "
+        "(o) ve (p) bentleri eklenmiştir.", [
+            "b) Üniversite ve yüksekokullar ...", "e) Kamu kurumu niteliğindeki ...",
+            "f) Darphane ve Damga Matbaası ...", "g) Külçe altın, külçe gümüş, ...",
+            "ı) Serbest bölgelerde verilen hizmetler,", "m) Bankalar Kanunu uyarınca; ...",
+            "Bu istisna işlem bedelinden Fona intikal eden tutarla orantılı uygulanır.",
+            "o) Gümrük antrepoları ...", "p) Hazine ve Arsa Ofisi Genel Müdürlüğünce ..."])
+    assert [[n.label for n in o.new_nodes] for o in ops] == [
+        ["b)"], ["e)"], ["f)"], ["g)"], ["ı)"], ["m)"], ["o)", "p)"]]
+    assert ops[5].new_nodes[0].children[0].text.startswith("Bu istisna")
+    # Text left over is not dropped silently.
+    with pytest.raises(am.Unparsed):
+        _kdv("3065 sayılı Kanunun 17 nci maddesinin (2) numaralı fıkrasının (b) bendi ve (4) "
+             "numaralı fıkrasının (g) bendi aşağıdaki şekilde değiştirilmiş ve fıkraya "
+             "aşağıdaki (n) bendi eklenmiştir.", ["b) ...", "g) ...", "n) ...", "s) ..."])
+
+
+def test_existing_sentence_counts_before_the_insert():
+    # 7524/21: "mevcut birinci cümlesi" is the second once the new one is in.
+    ops = _kdv(
+        "3065 sayılı Kanunun 36 ncı maddesinin ikinci fıkrasına birinci cümlesinden önce "
+        "gelmek üzere aşağıdaki cümle eklenmiş ve mevcut birinci cümlesinde yer alan “Maliye "
+        "Bakanlığı” ibaresi “Şu kadar ki, Hazine ve Maliye Bakanlığı” şeklinde "
+        "değiştirilmiştir.", [("“Bu Kanun hükümleri uyarınca iade hakkı doğuran işlemlerden "
+                               "kaynaklanan iade taleplerinin vergi inceleme raporu sonucuna "
+                               "göre yerine getirilmesi esastır.”")])
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.INSERT_NODE, "md.36/f2/c1"), (OpType.REPLACE_PHRASE, "md.36/f2/c2")]
+
+
+def test_genitive_ibare_and_a_verb_given_once_at_the_end():
+    # 5615/13 ("ibaresinin" for "ibaresi"; "aşağıdaki şekilde;" without its verb)
+    ops = _kdv(
+        "3065 sayılı Kanunun 17 nci maddesinin (2) numaralı fıkrasının (b) bendinde yer alan "
+        "\"Üniversite ve yüksekokullar ile ... % 10 unu\" ibaresi \"8/2/2007 tarihli ... % "
+        "50’sini\" şeklinde; (4) numaralı fıkrasının (o) bendinde yer alan \"işlemlerine konu "
+        "mallar\" ibaresinin \"işlemlerine konu mallar ile transit rejim kapsamında işlem "
+        "gören mallar\" şeklinde; aynı fıkranın (r) bendi aşağıdaki şekilde; 29 uncu "
+        "maddesinin (2) numaralı fıkrasındaki \"işletmelerden\" ibaresi ise \"işletmeler ile "
+        "organize sanayi bölgelerinden\" şeklinde değiştirilmiştir.",
+        ["\"r) Basılı kitap ve süreli yayınların ...\""])
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.REPLACE_PHRASE, "md.17/f2/bb"), (OpType.REPLACE_PHRASE, "md.17/f4/bo"),
+        (OpType.REPLACE_NODE, "md.17/f4/br"), (OpType.REPLACE_PHRASE, "md.29/f2")]
+
+
+def test_annulled_part_of_a_change():
+    # E.2024/54, K.2025/163 on KDV md. 36 (footnote 91): "veya iade", which 7491/31 had put
+    # in two places; the consolidated text marks both with "(…)".
+    act = AmendingAct(kind="aym", number="E.2024/54, K.2025/163")
+    text = am.footnote_instruction(act, (
+        "Anayasa Mahkemesinin 22/7/2025 tarihli ve E.: 2024/54, K.: 2025/163 sayılı Kararı "
+        "ile bu fıkrada yer alan “…indirim hakkını…” ibaresinin “…indirim veya iade "
+        "hakkını…” şeklinde değiştirilmesinde bulunan “…veya iade…” ibaresi ile “…indirim "
+        "hakkı…” ibaresinin “…indirim veya iade hakkı…” şeklinde değiştirilmesinde bulunan "
+        "“…veya iade…” ibaresi iptal edilmiştir."))
+    assert text == "bu fıkrada yer alan “veya iade” ibaresi ile “veya iade” ibaresi iptal edilmiştir."
+    (op,) = am.parse_instruction(text, [], 3065, law_ctx="3065", ctx=Addr(madde="36", fikra=1))
+    assert (op.op, op.old, op.all) == (OpType.DELETE_PHRASE, "veya iade", True)
+    f1 = Node(level=Level.FIKRA, text="Cumhurbaşkanı indirim (…) hakkını kısmen ... bu şekilde "
+              "indirim (…) hakkı kısıtlanan mal veya hizmetleri belirlemeye ...")
+    law = Law(number=3065, name="", body=[
+        Node(level=Level.MADDE, id="36", label="Madde 36 –", children=[f1])])
+    assert unapply(law, op).status == "ok"
+    assert f1.text.startswith("Cumhurbaşkanı indirim veya iade hakkını kısmen")
+    assert "indirim veya iade hakkı kısıtlanan" in f1.text

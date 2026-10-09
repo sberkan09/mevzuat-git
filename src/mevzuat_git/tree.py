@@ -70,6 +70,12 @@ def _text_of(node: LexborNode) -> tuple[str, list[int]]:
         if m := re.fullmatch(r"#_ftn(\d+)", a.attributes.get("href") or ""):
             fns.append(int(m.group(1)))
             a.decompose()
+    # A reference without its link: KDV md. 13/f1 (l) "... dahil değildir.),"
+    # <sup><span class=MsoFootnoteReference>19</span></sup>.
+    for sp in node.css("span.MsoFootnoteReference"):
+        if re.fullmatch(r"\d+", t := sp.text(strip=True)):
+            fns.append(int(t))
+            sp.decompose()
     return mg.squash(node.text()), fns
 
 
@@ -471,7 +477,31 @@ def parse_fragment(texts: list[str], kind: Level) -> list[Node]:
     return items
 
 
+def _join_split_titles(bs: list[Block]) -> list[Block]:
+    """A title broken over two paragraphs right above its article, the second starting
+    in lower case, is one: KDV md. 13's "Araçlar, kıymetli maden ve petrol aramaları ile
+    ulusal güvenlik" / "harcamaları ve yatırımlarda istisna"."""
+    out = list(bs)
+    i = 1
+    while i + 1 < len(out):
+        first, second = out[i], out[i + 1]
+        j = _next_nonblank(out, i + 1)
+        if out[i - 1].blank and not first.blank and first.table is None \
+                and second.table is None and second.text[:1].islower() \
+                and len(first.text) + len(second.text) < 200 \
+                and not first.text.endswith((".", ";", ",", ":")) \
+                and not ARTICLE_RE.match(first.text) and not ITEM_RE.match(first.text) \
+                and not HEADING_RE.match(first.text) \
+                and j is not None and out[j].table is None and ARTICLE_RE.match(out[j].text):
+            out[i:i + 2] = [Block(text=f"{first.text} {second.text}",
+                                  footnotes=first.footnotes + second.footnotes,
+                                  html_class=first.html_class)]
+        i += 1
+    return out
+
+
 def _build(bs: list[Block], law: Law) -> None:
+    bs = _join_split_titles(bs)
     b = _Builder(law)
     pending_title: Block | None = None
     i = 0

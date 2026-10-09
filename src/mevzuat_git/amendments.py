@@ -81,11 +81,12 @@ ALT_ORD_RE = re.compile(r"(?P<ord>" + ORD_RE + r")\s+alt\s+ben[dt]")
 BENT_ORD_RE = re.compile(r"(?P<ord>" + ORD_RE + r")\s+ben[dt]")  # "üçüncü bendinde" (5228)
 CUMLE_RE = re.compile(r"(?P<ord>" + ORD_RE + r"|son)\s+cümle")
 PARAGRAF_RE = re.compile(r"(?P<ord>" + ORD_RE + r"|son)\s+paragraf")
-TITLE_TARGET_RE = re.compile(r"madde(?:sinin)?\s+başlığı(?!\s*(?:yla|\s+ile))")
+TITLE_TARGET_RE = re.compile(r"madde(?:sinin)?\s+başlığ(?:ı(?!\s*(?:yla|\s+ile))|ında)")
 
 # -- operation patterns (matched on the whole instruction) -------------------------------
 
-PHRASE_NOUN = r"(?:ibare(?:si|leri)|cümle(?:si|leri)|rakam(?:ı|ları)|tarih(?:i|leri))"
+PHRASE_NOUN = (r"(?:ibare(?:si|leri)|cümle(?:si|leri)|rakam(?:ı|ları)|tarih(?:i|leri)"
+               r"|parantez\s+içi\s+hüküm(?:ler)?)")  # "parantez içi hüküm": 6728/43
 _QQ = Q + QTEXT + Q
 _QLIST = r"(?:" + _QQ + r"\s*(?:,|\bve\b)\s*)+" + _QQ
 # Inline new text: anything, quotes included, but not the end of a quoted ibare ("“A”
@@ -119,7 +120,9 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     )),
     ("replace_phrase", re.compile(
         # "“X” ibaresi “Y” ve “Z” ibaresi ise “W” olarak" (5281/43)
-        Q + r"(?P<old>" + QTEXT + r")" + Q + r"\s*" + PHRASE_NOUN + r",?\s+(?:sırasıyla\s+|ise\s+)?"
+        # "“X” ibaresinin “Y” şeklinde" (5615/13, for "ibaresi")
+        Q + r"(?P<old>" + QTEXT + r")" + Q + r"\s*(?:" + PHRASE_NOUN + r"|ibaresinin)"
+        r",?\s+(?:sırasıyla\s+|ise\s+)?"
         + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:ibaresi\s+)?(?:(?:şeklinde|olarak)\b"
         # in a series the pairs are separated by commas: "X" ibaresi "Y", "Z" ibaresi "W"
         # şeklinde değiştirilmiştir
@@ -164,7 +167,10 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         + r"\s+(?:(?:madde|fıkra|bent)\s+)?(?:met(?:in|n)\w*\s+çıkarıl|yürürlükten\s+kaldırıl"
         r"|iptal\s+edilmiş(?:tir\b|\s+(?:olup|ve)\b)"
         # “X” ibaresi ile 6964 sayılı Kanunun ek 2 nci maddesi yürürlükten kaldırılmıştır
-        r"|ile\b(?=[^“”\"]*(?:yürürlükten\s+kaldırıl|çıkarıl)))"
+        # “X” ibaresi ile birinci fıkrasında yer alan “Y” ibaresi madde metninden çıkarılmış
+        # (6745/36).
+        r"|ile\b(?=(?:[^“”\"]*" + Q + QTEXT + Q + r"\s*" + PHRASE_NOUN + r")?"
+        r"[^“”\"]*(?:yürürlükten\s+kaldırıl|çıkarıl|iptal\s+edil)))"
     )),
     ("paren_delete", re.compile(
         r"(?P<which>\w+\s+)?parantez\s+içi\s+hükm?ü?\w*\s+(?:(?:madde\s+)?met(?:in|n)\w*\s+"
@@ -183,12 +189,18 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         r"|\s+hükm[üu](?:nü)?)\s+aşağıdaki\s+şekilde\s+değiştiril"
     )),
     ("replace_node", re.compile(
-        r"(?P<title>başlığı(?:yla|\s+ile)\s+birlikte\s+)?aşağıdaki\s+şekilde\s+"
-        r"(?:değiştiril|yeniden\s+düzenlen|düzenlen)"
+        r"(?P<title>başlığı(?:yla|\s+ile)\s+birlikte\s+)?aşağıdaki\s+şekilde\s*(?:"
+        r"değiştiril|yeniden\s+düzenlen|düzenlen"
+        # "aynı fıkranın (r) bendi aşağıdaki şekilde; 29 uncu maddesinin ... şeklinde
+        # değiştirilmiştir" (5615/13): the verb comes last.
+        r"|;(?=.*(?:şeklinde|olarak)\s+değiştiril))"
     )),
     ("insert_node", re.compile(
         # "274 üncü maddesinden sonra gelmek üzere 274/A maddesi eklenmiştir" (7524/8)
-        r"(?:aşağıdaki\s+|(?<=üzere\s)(?=\d+/[A-ZÇĞİÖŞÜ]\s+madde))(?:(?P<label>\(\w+\))\s*(?:numaralı\s+)?)?(?P<kind>(?:alt\s+)?ben[dt](?:ler)?"
+        r"(?:aşağıdaki\s+|(?<=üzere\s)(?=\d+/[A-ZÇĞİÖŞÜ]\s+madde)"
+        # "fıkraya (o) ve (p) bentleri eklenmiştir" (5228/15): the new text is below.
+        r"|(?<=fıkraya\s)(?=\(\w+\)(?:\s*(?:,|ve)\s*\(\w+\))*\s*bentleri\s+eklen))"
+        r"(?:(?P<label>\(\w+\))(?:\s*(?:,|ve)\s*\(\w+\))*\s*(?:numaralı\s+)?)?(?P<kind>(?:alt\s+)?ben[dt](?:ler)?"
         r"|fıkra(?:lar)?"
         # "aşağıdaki geçici madde", "aşağıdaki ek 3 üncü madde", "aşağıdaki 107/A maddesi"
         r"|(?:(?:geçici|ek|mükerrer)\s+)?(?:\d+(?:/[A-ZÇĞİÖŞÜ])?\s*\w*\s+)?madde(?:ler)?"
@@ -628,6 +640,15 @@ def _strip_quotes(texts: list[str]) -> list[str]:
         return out
     opened = out[0][:1] in Q_OPEN
     if opened:
+        # The quote closes before the end: what follows is the next article's title
+        # ("... yetkilidir.\"", "Yürürlük": 5804/3).
+        balance = 0
+        for i, t in enumerate(texts[:-1]):
+            balance += _quote_balance(t)
+            if balance <= 0 and re.search(r"[”\"]\s*\.?\s*$", t) \
+                    and not any(re.search(r"[“”\"]", u) for u in texts[i + 1:]):
+                out = out[:i + 1]
+                break
         out[0] = out[0][1:].lstrip()
     m = re.search(r"[”\"’]\s*\.?\s*$", out[-1])
     if m and not out[-1].startswith(TABLE_MARK) and (opened or _quote_balance(" ".join(texts)) < 0):
@@ -736,6 +757,13 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
     payload_ops = [o for o in matches
                    if o.name in ("replace_node", "insert_node", "paren_replace")]
     chunks = split_payload(payload, len(payload_ops))
+    # Unquoted new text that does not split one run per operation (5035/8: "(2) numaralı
+    # fıkrasının (b) bendi ve (4) numaralı fıkrasının (g) bendi ... değiştirilmiş, fıkranın
+    # mülga (ı) bendi ... yeniden düzenlenmiş ve fıkraya aşağıdaki (n) bendi eklenmiştir"):
+    # each operation takes the labelled paragraphs it names, in order.
+    by_label = (len(chunks) != len(payload_ops) and len(payload_ops) > 1
+                and not any(re.search(r"[“”\"]", p) for p in payload))
+    pos = 0
     target = str(target_law)
     cur_law = law_ctx
     prev_end = 0
@@ -745,7 +773,9 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         pieces = law_segments(seg, cur_law)
         cur_law = pieces[-1][0] if pieces else cur_law
         raw: list[str] = []
-        if o in payload_ops:
+        if o in payload_ops and by_label:
+            raw, pos = _labelled_run(payload, pos, seg + o.m.group(0))
+        elif o in payload_ops:
             i = payload_ops.index(o)
             raw = chunks[i] if i < len(chunks) else []
         mine = [(a, b) for law, a, b in pieces if law == target]
@@ -801,10 +831,18 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
                     raise Unparsed("'bu ibare' without an ibare before it")
                 for op in made:
                     op.anchor, op.target = ops[-1].new, ops[-1].target
+            if len(made) == 1 and made[0].op is OpType.DELETE_PHRASE and ops \
+                    and ops[-1].op is OpType.DELETE_PHRASE \
+                    and (ops[-1].old, ops[-1].target) == (made[0].old, made[0].target):
+                # "“veya iade” ibaresi ile “veya iade” ibaresi" (KDV md. 36): both places.
+                ops[-1].all = True
+                continue
             ops.extend(made)
             if o.name == "relabel_node":
                 # "..., bu bendin içerisinde": the node under its new number.
                 ctx = _relabelled(t, o.m.group("kind"), o.m.group("new"))
+    if by_label and pos < len(payload):
+        raise Unparsed("new text left over after the labelled runs")
     return ops
 
 
@@ -830,6 +868,18 @@ def _after_inserts(path: Path, sub: str, ops: list[AmendmentOp]) -> Path:
                     and op.kind is Level.BENT and op.position == "after"
                     and op.target.madde == path.madde and op.target.bent == path.bent)
         return path.model_copy(update={"bent": str(int(path.bent) + added + 1)})
+    if re.search(r"\bmevcut\b", sub) and path.cumle:
+        # "birinci cümlesinden önce gelmek üzere aşağıdaki cümle eklenmiş ve mevcut birinci
+        # cümlesinde ..." (7524/21): the old first sentence is the second one.
+        n = path.cumle
+        for op in ops:
+            t = op.target
+            if op.op is OpType.INSERT_NODE and t.cumle and (t.madde, t.fikra, t.bent) \
+                    == (path.madde, path.fikra, path.bent) \
+                    and ((op.position == "after" and n > t.cumle)
+                         or (op.position == "before" and n >= t.cumle)):
+                n += 1
+        return path.model_copy(update={"cumle": n})
     if not re.search(r"\bmevcut\b", sub) or not path.fikra or path.fikra < 1:
         return path
     n = path.fikra
@@ -868,6 +918,20 @@ def split_addresses(seg: str) -> list[str]:
             start = m.end()
     out.append(seg[start:])
     return out
+
+
+def _labelled_run(payload: list[str], pos: int, text: str) -> tuple[list[str], int]:
+    """The paragraphs from ``pos`` on that belong to the operation in ``text``: they start
+    with a label it names ("(g) bendi") and run up to a label it does not name."""
+    keys = {label_key(k) for k in re.findall(r"\(([a-zçğıöşü]{1,2}|\d+)\)", text)}
+    end = pos
+    while end < len(payload):
+        m = LABEL_RE.match(payload[end])
+        key = label_key(m.group("label")) if m else None
+        if (key is None and end == pos) or (key is not None and key not in keys):
+            break
+        end += 1
+    return payload[pos:end], end
 
 
 def split_by_labels(raw: list[str], targets: list[Path]) -> list[list[str]]:
@@ -911,8 +975,10 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
     if o.name in ("replace_phrase", "replace_phrase_yerine"):
         plural = bool(re.search(r"ibareleri|cümleleri|rakamları|tarihleri",
                                 text_after(o.m, "old")))
-        return [AmendmentOp(op=OpType.REPLACE_PHRASE, old=g["old"], new=g["new"], all=plural,
-                            **base)]
+        whole = path.madde and path.fikra is None and path.bent is None and path.cumle is None \
+            and path.paragraf is None and not path.baslik
+        return [AmendmentOp(op=OpType.REPLACE_PHRASE, old=g["old"], new=g["new"],
+                            all=plural or bool(whole), **base)]
     if o.name == "replace_phrase_seq":
         olds = re.findall(Q + "(" + QTEXT + ")" + Q, g["olds"])
         news = re.findall(Q + "(" + QTEXT + ")" + Q, g["news"])
@@ -1389,6 +1455,11 @@ _FOOTNOTE_AYM = re.compile(
 )
 
 
+_CHANGE_PART_RE = re.compile(
+    Q + QTEXT + Q + r"\s*ibaresinin\s+" + Q + QTEXT + Q
+    + r"\s*şeklinde\s+değiştirilmesinde\s+bulunan\s+(" + Q + QTEXT + Q + ")")
+
+
 def footnote_instruction(act: AmendingAct, text: str) -> str | None:
     """The amendment sentence in a footnote, without the act that made it: "700 sayılı
     KHK’nin 45 inci maddesiyle, bu bentte yer alan ..." -> "bu bentte yer alan ...". For a
@@ -1398,7 +1469,13 @@ def footnote_instruction(act: AmendingAct, text: str) -> str | None:
         named = [m.groups()[-2:] for m in _FOOTNOTE_AYM.finditer(text)]
         if [f"E.{e}, K.{k}" for e, k in named] != [act.number]:
             return None
-        return " ".join(_FOOTNOTE_AYM.sub(" ", text).split())
+        t = " ".join(_FOOTNOTE_AYM.sub(" ", text).split())
+        # "“…indirim hakkını…” ibaresinin “…indirim veya iade hakkını…” şeklinde
+        # değiştirilmesinde bulunan “…veya iade…” ibaresi" (KDV md. 36): the annulled
+        # ibare is the last one; the dots only mark it as cut out of a longer text.
+        t = _CHANGE_PART_RE.sub(r"\1", t)
+        return re.sub(r"([“\"])\s*(?:…|\.\.\.)\s*|\s*(?:…|\.\.\.)\s*([”\"])",
+                      lambda m: m.group(1) or m.group(2), t)
     m = _FOOTNOTE_ACT.match(text)
     return text[m.end():] if m else None
 

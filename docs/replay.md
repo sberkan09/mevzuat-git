@@ -64,8 +64,8 @@ metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 6'sı farklı,
 5'i doğrulanamıyor. **Oran: %94,2.**
 
-VUK (213) için (2026-10): 120 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 15'i
-farklı, 7'si doğrulanamıyor. **Oran: %86,7** (ilk ölçümde %83,3). Kapatılan ucuz farklar:
+VUK (213) için (2026-10): 120 maddeye işlem uygulandı. Bunların 100'ü eşleşiyor, 14'ü
+farklı, 6'sı doğrulanamıyor. **Oran: %87,7** (ilk ölçümde %83,3). Kapatılan ucuz farklar:
 harfli fıkralar ("(a) fıkrası", 7394/4, 7423/1) bent olarak okunur; kanuna ekli cetveli
 değiştiren cümleler atlanır (7524/10); RG metni PDF olan Anayasa Mahkemesi kararlarının
 iptalleri "(İptal ...)" işaretinden okunur (367); işaretten okunan bir eklemenin metni,
@@ -93,12 +93,52 @@ VUK'ta kalan farklar tek tek ele alınması gereken durumlardır:
   ağaçta yoktur.
 - **mükerrer 355**: 7524/13 tek cümlede birçok işlem yapar.
 - **geçici 38**: 7587/11'in ödeme yükü kesiktir (32 satırın 1'i okunur).
-- **140, mükerrer 49, mükerrer 242, mükerrer 257, 153/A, 344, 353, ek-1, ek-11,
-  geçici 25**: bir işlemin (çoğu 5228, 6009, 7338, 7524) geri sarmada izi bulunamaz;
-  ayrıntılar `mevzuat-git replay 213` raporundadır.
+- **mükerrer 49, mükerrer 242, mükerrer 257, 153/A, 344, 353, ek-1, ek-11, geçici 25**:
+  bir işlemin (çoğu 5228, 7338, 7524) geri sarmada izi bulunamaz; ayrıntılar
+  `mevzuat-git replay 213` raporundadır.
 
-Doğrulanamayanlar arasında **352** (kanuna ekli cetvel) ve **160** (5228/6'nın tırnaksız
-ödeme yükü iki işleme bölünemez) vardır.
+Doğrulanamayanlar arasında **352** (kanuna ekli cetvel) vardır. 6009/9 (md. 140)
+ayrıştırılamayan cümle olarak raporlanır: tırnaksız yeni metni işlemlere bölünemez.
+
+KDV (3065) için (2026-10): 55 maddeye işlem uygulandı. Bunların 46'sı eşleşiyor, 9'u
+farklı. **Oran: %83,6** (ilk ölçümde %71,4). Bu turda eklenenler:
+
+- Yürürlüğü konsolide metnin indirildiği günden sonra olan işlemler ne geri sarılır ne
+  oynatılır; raporda "Henüz yürürlüğe girmemiş işlemler" başlığı altında listelenir.
+  7524/20 ve 7524/22'nin md. 30 ve 58'e eklediği hükümler 1/1/2030'da yürürlüğe girer.
+  Tarih, `fetch`'in önbelleğe yazdığı `fetched_at` alanından okunur.
+- Bir maddenin tamamını anan ibare değişikliği ("41 inci maddesinde yer alan “yirminci
+  günü” ibaresi", 5615/10) maddedeki her geçişe uygulanır.
+- Aynı cümlenin ibare değişiklikleri, aradaki başka fıkralara yapılan değişiklikler
+  araya girse de tek geçişte yapılır. 700/90'da “Bakanlar Kurulu”, md. 38'deki
+  “Bakanlar Kurulunca”yı yemez.
+- Tırnaksız eski metinlerde yeni metin, her işlemin andığı etiketlere göre bölünür
+  (5035/8, 5228/15). Artan paragraf kalırsa cümle ayrıştırılamaz sayılır.
+- Diğer okunan kalıplar:
+  - "madde başlığında yer alan" (6745/36)
+  - "“X” ibaresi ile ... “Y” ibaresi madde metninden çıkarılmış"
+  - "parantez içi hüküm eklenmiştir" (6728/43)
+  - "mevcut birinci cümlesi", ekleme sonrası ikinci cümle olarak okunur (7524/21)
+  - "ibaresinin ... şeklinde" ve fiili sonda olan "aşağıdaki şekilde;" (5615/13)
+  - kapanış tırnağından sonra gelen başlık ("Yürürlük", 5804/3)
+- Bir Anayasa Mahkemesi kararı bir değişikliğin yalnız bir parçasını iptal edebilir: "“…X…”
+  ibaresinin “…Y…” şeklinde değiştirilmesinde bulunan “…Z…” ibaresi". Bu durumda
+  silinen ibare Z'dir. Her geçiş "(…)" ile işaretliyse geri sarmada hepsine geri konur.
+- Ağaçta iki satıra bölünmüş madde başlıkları (md. 13) birleştirilir. Bağlantısız
+  dipnot numaraları (`<sup><span class=MsoFootnoteReference>19</span></sup>`) metinden
+  ayrılır; bu, GVK ve VUK'ta metne yapışık kalan "(…)134" gibi numaraları da temizler.
+
+### KDV'de bilinen açıklar
+
+- **geçici 17, geçici 23**: süreler Cumhurbaşkanı kararlarıyla da uzatılmıştır; bunlar
+  değişiklik listesinde yoktur.
+- **geçici 39**: 7201/8 "makine ve teçhizatı belirlemeye" ibaresinden sonra ekleme yapar,
+  ama metin "makina" yazar.
+- **17**: 4684/19'un metni "mükellefler" yazar, konsolide metin "mükellefeler". Ayrıca
+  sona eklenen bentlerin sırası tutmaz.
+- **13**: 5228/14'ün yeni metni ve sonradan çıkarılan kurum adları.
+- **8, 11, 12, 29**: bir işlemin geri sarmada izi bulunamaz. Ayrıntılar `mevzuat-git
+  replay 3065` raporundadır.
 
 ## RG metni taranmış PDF olan değişiklikler
 

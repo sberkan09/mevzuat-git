@@ -826,14 +826,16 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
         marks = [(sl, m.start(), m.end()) for sl in slots
                  # A footnote number may stick to the mark: "bu (…)134 kazanç" (md. 106).
                  for m in re.finditer(r"\(\s*(?:…|\.\.\.)\s*\)\d*", sl.get()[sl.lo:sl.hi])]
-        if len(marks) == 1:
-            sl, s, e = marks[0]
-            txt = sl.get()
-            left, old = txt[:sl.lo + s], op.old or ""
-            if old[:1] in ",.;:)":
-                # "akşamına kadar (…) tam" with “, gelirin ... kadar,” put back (7338/6).
-                left = left.rstrip(" ")
-            sl.set(left + old + txt[sl.lo + e:])
+        if len(marks) == 1 or (op.all and marks):
+            # Every occurrence: each place is marked (KDV md. 36, "indirim (…) hakkını" and
+            # "indirim (…) hakkı"); right to left, so the offsets hold.
+            for sl, s, e in reversed(marks):
+                txt = sl.get()
+                left, old = txt[:sl.lo + s], op.old or ""
+                if old[:1] in ",.;:)":
+                    # "akşamına kadar (…) tam" with “, gelirin ... kadar,” put back (7338/6).
+                    left = left.rstrip(" ")
+                sl.set(left + old + txt[sl.lo + e:])
             return Check("ok")
         return Check("lossy", "deleted ibare: its place in the text is not marked")
     if op.op is OpType.REPEAL_NODE:
