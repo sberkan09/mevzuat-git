@@ -223,3 +223,93 @@ def test_lower_case_line_continues_the_fikra():
     assert [(c.level, c.label) for c in f.children] == [
         (Level.BENT, "i)"), (Level.BENT, "ii)"), (Level.PARAGRAF, "")]
     assert f.children[-1].text.startswith("itibarıyla dağıtılmış")
+
+
+def _gvk(*paras: tuple[str, str] | str):
+    """A law from paragraphs of the consolidated text: "text" or ("class", "text")."""
+    ps = [p if isinstance(p, tuple) else ("Nor", p) for p in paras]
+    body = "".join(f'<p class="{c}">{t}</p>' for c, t in ps)
+    return build_tree(f"<html><body>{body}</body></html>", 193)
+
+
+def test_changed_title_ends_with_its_marker():
+    # Mükerrer 20/B's title is 203 characters with its marker and has no ":".
+    law = _gvk(
+        "", "Basit usulde tespit olunan kazançlarda gelir vergisi istisnası:",
+        "Mükerrer Madde 20/A- (Ek:14/10/2021-7338/1 md.)",
+        ("Bu Kanuna göre kazançları basit usulde tespit olunan mükelleflerin 46 ncı maddeye "
+         "göre tespit edilen kazançları gelir vergisinden müstesnadır."),
+        "",
+        ("Sosyal içerik üreticiliği, internet ve benzeri elektronik ortamlar üzerinden "
+         "sunulan hizmetler ile mobil cihazlar için uygulama geliştiriciliğinde kazanç "
+         "istisnası (Değişik Başlık: 27/12/2023-7491/7 md.)"),
+        "Mükerrer Madde 20/B- (Ek:14/10/2021-7338/2 md.)",
+        "(Değişik: 27/12/2023-7491/7 md.) İnternet ve benzeri elektronik ortamlar ...")
+    assert len(law.article("mukerrer-20/A").children) == 1
+    assert law.article("mukerrer-20/B").title.startswith("Sosyal içerik üreticiliği")
+
+
+def test_sentence_with_title_class_is_not_a_title():
+    # The last fıkra of geçici 59 has the class "MaddeBasl" on mevzuat.gov.tr.
+    law = _gvk(
+        "", "Geçici Madde 59- (Ek:10/11/2001-4710/1 md.)",
+        ("MsoNormal", "31.12.2007 tarihine kadar, 26.7.2001-31.12.2005 tarihleri arasında ..."),
+        ("MaddeBasl", ("Ticari işletmelere ait olan bu tür gelirler hakkında bu madde hükmü "
+                       "uygulanmaz.")),
+        ("MaddeBasl", ""), ("MaddeBasl", "Geçici Madde 60- (Ek: 12/6/2002-4761/3 md.)"),
+        ("ksmblm", "Mevcut veya yeni kurulacak olan sermaye şirketlerine, ..."))
+    assert len(law.article("gecici-59").children) == 2
+    assert law.article("gecici-60").title is None
+
+
+def test_heading_over_a_title():
+    # "Muhtasar beyanname:" heads md. 98 ("a) Verilme zamanı:") and md. 99 ("b)
+    # Muhteviyatı:"); it is not the last fıkra of md. 98/A.
+    law = _gvk(
+        "", "Muhtasar ve prim hizmet beyannamesi:", "Madde 98/A- (Ek: 15/7/2016-6728/16 md.)",
+        ("Bu Kanunda ve diğer kanunlarda, muhtasar beyanname ile aylık prim ve hizmet "
+         "belgesine yapılmış olan atıflar, bu iki belgenin tek bir beyanname olarak "
+         "birleştirildiği durumlarda, muhtasar ve prim hizmet beyannamesine yapılmış sayılır."),
+        ("MaddeBasl", ""), ("MaddeBasl", "Muhtasar beyanname:"), "b) Muhteviyatı:",
+        ("MsoNormal", "Madde 99 – (Değişik: 28/3/2007-5615/7 md.)"),
+        ("MsoNormal", "Muhtasar beyannamenin şekil, içerik ve ekleri ile ..."))
+    assert len(law.article("98/A").children) == 1
+    assert law.article("99").title == "b) Muhteviyatı:"
+    assert [(n.level, n.title) for n in law.body if n.level is Level.BOLUM] == [
+        (Level.BOLUM, "Muhtasar beyanname:")]
+
+
+def test_numbered_items_without_lead_text_are_fikras():
+    # GVK md. 22: "1. Sigorta süresi ...", ..., which 6728/11 calls "(1) numaralı fıkrası".
+    law = _gvk(
+        "", "Menkul sermaye iratlarında:",
+        ("MsoNormal", ("Madde 22 – (Mülga: 4/12/1985-3239/138 md.; Yeniden düzenleme: "
+                       "9/4/2003-4842/2 md.)")),
+        ("ksmblm", "1. (Değişik: 15/7/2016-6728/11 md.) Sigorta süresi en az on yıl ..."),
+        ("MsoNormal", "2. (Ek: 15/7/2016-6728/11 md.) 75 inci maddenin ikinci fıkrasının ..."),
+        ("MsoNormal", "3. Tam mükellef kurumlardan elde edilen, ..."))
+    assert shape(law.article("22")) == [("fikra", "1."), ("fikra", "2."), ("fikra", "3.")]
+    # 7491/8 "22 nci maddesine aşağıdaki fıkralar eklenmiştir.": the same in the act
+    # (quotes already stripped, as in _make_ops).
+    new = parse_fragment(["4. Kanuni ve iş merkezi Türkiye’de bulunmayan ...",
+                          "5. Cumhurbaşkanı, üçüncü ve dördüncü fıkralarda ..."],
+                         Level.FIKRA)
+    assert [(n.level, n.label) for n in new] == [(Level.FIKRA, "4."), (Level.FIKRA, "5.")]
+
+
+def test_short_line_after_an_open_list_closes_the_fikra():
+    # GVK md. 109: "Tarh edilir." ends fıkra 1; 7349/3 repeals the "ikinci ve üçüncü
+    # fıkraları" after it.
+    law = _gvk(
+        "", "Tarh zamanı:", "Madde 109 – (Değişik: 24/12/1980-2361/74 md.)", "",
+        "Gelir Vergisi:",
+        ("1. Beyanname verilmesi icabeden hallerde, beyannamenin verildiği günde, beyanname "
+         "posta ile gönderilmişse, vergiyi tarh edecek daireye geldiği tarihi takibeden yedi "
+         "gün içinde;"),
+        "2. (Mülga:22/12/2021-7349/3 md.)", "3. (Mülga: 22/7/1998-4369/82 md.)",
+        "Tarh edilir.",
+        "(Mülga ikinci fıkra:22/12/2021-7349/3 md.)",
+        "(Mülga üçüncü fıkra:22/12/2021-7349/3 md.)")
+    f1, f2, f3 = law.article("109").children
+    assert shape(f1) == [("bent", "1."), ("bent", "2."), ("bent", "3."), ("paragraf", "")]
+    assert f1.children[-1].text == "Tarh edilir." and f2.repealed and f3.repealed

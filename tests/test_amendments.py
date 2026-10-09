@@ -507,3 +507,50 @@ def test_act_on_a_day_page_ends_at_the_next_act():
         ("MADDE 1. – 4.11.1981 tarihli ve 2547 sayılı Yükseköğretim Kanununun 48 inci "
          "maddesi başlığıyla birlikte aşağıdaki şekilde değiştirilmiştir.")]
     assert [a.number for a in am.act_articles(paras, "4684")] == ["17"]
+
+
+def test_numbered_fikras_amending_different_laws():
+    # 5838/32: "(1) 4447 sayılı ...", "(2) 5510 sayılı ...:" a) b) c), ..., "(5) 193 sayılı
+    # Gelir Vergisi Kanununun 99 uncu maddesinde yer alan ..." each with its own verb.
+    items = _items("5838/32")
+    assert [it.instruction[:3] for it in items] == [f"({n})" for n in range(1, 8)]
+    assert items[1].payload[0].startswith("a) 5 inci maddesinin")
+    (op,) = _ops(items)
+    assert (op.op, str(op.target)) == (OpType.REPLACE_PHRASE, "md.99")
+    assert op.old == "Muhtasar beyannamenin şekil, içerik ve eklerini belirlemeye"
+
+
+def test_lettered_items_naming_laws_with_one_verb():
+    # 5024/9: "a) ... 213 sayılı ...,", "b) ... 193 sayılı ...; 38 inci maddesinin dördüncü
+    # ve beşinci fıkraları ile ...,", "c) ...", "Yürürlükten kaldırılmıştır."
+    ops = _ops(_items("5024/9"))
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.REPEAL_NODE, "md.38/f4"), (OpType.REPEAL_NODE, "md.38/f5"),
+        (OpType.REPEAL_NODE, "md.41/f1/b8"), (OpType.REPEAL_NODE, "md.57/f-1")]
+
+
+def test_sonraki_bent_is_the_one_after_the_added_bent():
+    # 5766/8 a): "(6) numaralı bentten sonra gelmek üzere aşağıdaki bent eklenmiş ve
+    # sonraki bentte yer alan "1-6 numaralı" ibaresi ..." The old (7) is (8) by then.
+    items = _items("5766/8")
+    ops = am.parse_instruction(items[0].instruction, items[0].payload, 193)
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.INSERT_NODE, "md.9/f1/b6"), (OpType.REPLACE_PHRASE, "md.9/f1/b8")]
+
+
+def test_second_pair_with_ise():
+    # 5281/43 f): "“31.12.2006 tarihine kadar” ibaresi “31.12.2007 tarihine kadar” ve
+    # “26.7.2001-31.12.2004 tarihleri arasında” ibaresi ise “...2005 ...”"
+    ops = [o for o in _ops(_items("5281/43")) if o.target.madde == "gecici-59"]
+    assert [(o.old, o.new) for o in ops] == [
+        ("31.12.2006 tarihine kadar", "31.12.2007 tarihine kadar"),
+        ("26.7.2001-31.12.2004 tarihleri arasında", "26.7.2001-31.12.2005 tarihleri arasında")]
+
+
+def test_insert_phrase_series_with_ibaresi_between_pairs():
+    # 7194/19: "“23/8,” ibaresinden sonra gelmek üzere “23/10,” ibaresi, “31,” ibaresinden
+    # sonra gelmek üzere “40/1, 40/7,” ibaresi ve “48,” ibaresinden sonra ... eklenmiştir."
+    ops = ops_of("7194/19")
+    assert [(o.anchor, o.new) for o in ops] == [
+        ("23/8,", "23/10,"), ("31,", "40/1, 40/7,"), ("48,", "68,")]
+    assert {str(o.target) for o in ops} == {"md.mukerrer-123/f2"}

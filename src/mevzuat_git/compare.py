@@ -17,8 +17,10 @@ _MARKER_ANYWHERE = re.compile(
 )
 _ELLIPSIS = re.compile(r"\(\s*(?:…|\.\s*\.\s*\.)\s*\)\d*")
 # Amounts that mevzuat.gov.tr adds after an amount for its current value: "600 milyon
-# lirayı (22.000 TL) aşmayan", "51 (300 TL) Türk lirasını".
-_EDITORIAL_AMOUNT = re.compile(r"\s*\(\s*\d[\d.,]*\s*TL\s*\)")
+# lirayı (22.000 TL) aşmayan", "51 (300 TL) Türk lirasını", "220.000 (1.900.000 TL.)
+# Türk lirasını", and the space it leaves before a comma: "135.000 Türk lirasını
+# (1.380.000 TL) , söz konusu".
+_EDITORIAL_AMOUNT = re.compile(r"\s*\(\s*\d[\d.,]*\s*TL\.?\s*\)(?:\s+(?=[,;:]))?")
 _TRANSLATE = str.maketrans({
     "“": '"', "”": '"', "„": '"', "‘": "'", "’": "'", "´": "'", "`": "'",
     "–": "-", "—": "-", " ": " ", "­": "",
@@ -34,7 +36,8 @@ def strip_editorial(text: str) -> str:
     """``text`` without what mevzuat.gov.tr adds to the law's own words: change markers,
     current values of old amounts and footnote numbers. ``(…)`` stays (it marks where an
     ibare was removed), and so do typography and spacing elsewhere. For output that shows
-    the law at an earlier date (Faz 4), where those additions would be anachronistic."""
+    the law at an earlier date (Faz 4), where those additions would be anachronistic, and
+    for the unwind (Faz 3), which looks for the acts' ibareler in the text."""
     t = re.sub(r"[ \t]*" + _MARKER_ANYWHERE.pattern, "", text)
     t = _EDITORIAL_AMOUNT.sub("", t)
     t = _FOOTNOTE.sub("", t)
@@ -49,6 +52,8 @@ def norm(text: str) -> str:
     t = " ".join(t.split())
     t = re.sub(r"\s+([,.;:)])", r"\1", t)
     t = re.sub(r"\(\s+", "(", t)
+    t = re.sub(r"%\s+(?=\d)", "%", t)  # "% 15'ini" and "%15’ini" (7061/14)
+    t = re.sub(r"(?<=\d)\s*-\s*(?=\d)", "-", t)  # "1.1.1999 - 31.12.2004" (5035/48)
     # Unlinked footnote numbers glued to the end of a sentence: "yararlanılır.218".
     t = _FOOTNOTE.sub("", t)
     return t

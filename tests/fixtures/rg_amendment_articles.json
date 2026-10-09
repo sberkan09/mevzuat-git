@@ -326,5 +326,39 @@
    "F) 3.6.1949 tarihli ve 5422 sayılı Kurumlar Vergisi Kanununun 14 üncü maddesinin birinci fıkrasının (6) numaralı bendinde yer alan \"okul\" ibaresi, \"okul, sağlık tesisi\" şeklinde,",
    "Değiştirilmiştir."
   ]
+ },
+ "5838/32": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2009/02/20090228M1-1.htm",
+  "instruction": "(1) 4447 sayılı İşsizlik Sigortası Kanununun geçici 7 nci maddesinin birinci fıkrasındaki “bu maddenin yürürlük tarihinden önceki altı aylık dönemde” ibaresi “bu maddenin yürürlük tarihinden önceki altı aya veya 2008 yılı Aralık ve 2009 yılı Ocak aylarına ilişkin Sosyal Güvenlik Kurumuna verilen” şeklinde ve “bir yıl” ibaresi “iki yıl” olarak değiştirilmiştir.",
+  "payload": [
+   "(2) 5510 sayılı Sosyal Sigortalar ve Genel Sağlık Sigortası Kanununun:",
+   "a) 5 inci maddesinin birinci fıkrasının (b) bendine “meslek liselerinde okumakta iken veya yüksek öğrenimleri sırasında zorunlu staja tabi tutulan öğrenciler” ibaresinden sonra gelmek üzere “ile 2547 sayılı Yükseköğretim Kanununun 46 ncı maddesine tabi olarak kısmi zamanlı çalıştırılan öğrencilerden aylık prime esas kazanç tutarı, 82 nci maddeye göre belirlenen günlük prime esas kazanç alt sınırının otuz katından fazla olmayanlar” ibaresi eklenmiştir.",
+   "b) 93 üncü maddesinin birinci fıkrasına, “Bu fıkraya göre haczi yasaklanan gelir, aylık ve ödeneklerin haczedilmesine ilişkin talepler, borçlunun muvafakati bulunmaması halinde, icra müdürü tarafından reddedilir.” ibaresi eklenmiştir.",
+   "c) Geçici 14 üncü maddesine “2925 sayılı Tarım İşçileri Sosyal Sigortalar Kanununa göre yaşlılık aylığı almakta iken çalışmaya başlayanların aylıkları kesilmez ve bunlar hakkında da bu maddenin sosyal güvenlik destek primi alınmasına ilişkin hükümleri uygulanır.” fıkrası eklenmiştir.",
+   "(3) 4749 sayılı Kamu Finansmanı ve Borç Yönetiminin Düzenlenmesi Hakkında Kanunun 2 nci maddesinin birinci fıkrasına “merkezi yönetim kapsamındaki kamu idareleri,” ibaresinden sonra gelmek üzere “sosyal güvenlik kurumları,” ibaresi eklenmiştir.",
+   "(4) 22/5/2003 tarihli ve 4857 sayılı İş Kanununun 18 inci maddesinin üçüncü fıkrasının (c) bendine “Mevzuattan veya sözleşmeden doğan haklarını takip” ibaresinden sonra gelmek üzere “veya yükümlülüklerini yerine getirmek” ibaresi eklenmiştir.",
+   "(5) 193 sayılı Gelir Vergisi Kanununun 99 uncu maddesinde yer alan “Muhtasar beyannamenin şekil, içerik ve eklerini belirlemeye” ibaresi “Muhtasar beyannamenin şekil, içerik ve ekleri ile üçer aylık verilen beyannamelerin dönemini aylık olarak belirlemeye” şeklinde değiştirilmiştir.",
+   "(6) 5520 sayılı Kurumlar Vergisi Kanununun 4 üncü maddesinin birinci fıkrasının (g) bendinde yer alan “Milli Piyango İdaresi Genel Müdürlüğü.” ibaresi “Şans oyunları lisans veya işletim hakkının hasılatın belli oranında hesaplanan pay karşılığında verilmesi halinde bu hakkı devralan kurumlar hariç olmak üzere, 14/3/2007 tarihli ve 5602 sayılı Şans Oyunları Hasılatından Alınan Vergi, Fon ve Payların Düzenlenmesi Hakkında Kanunun 3 üncü maddesinde tanımlanan ilgili kurum ve kuruluşlar.” şeklinde değiştirilmiştir.",
+   "(7) 3065 sayılı Katma Değer Vergisi Kanununun geçici 17 nci maddesinde yer alan “31/12/2008” ibaresi “31/12/2010” olarak değiştirilmiştir."
+  ]
+ },
+ "5024/9": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2003/12/20031230.htm",
+  "instruction": "a) 4.1.1961 tarihli ve 213 sayılı Vergi Usul Kanununun 280 inci maddesinin son fıkrası ve 319 uncu maddesi,",
+  "payload": [
+   "b) 31.12.1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun; 38 inci maddesinin dördüncü ve beşinci fıkraları ile 41 inci maddesinin birinci fıkrasının (8) numaralı bendi ve 57 nci maddesinin son fıkrası,",
+   "c) 3.6.1949 tarihli ve 5422 sayılı Kurumlar Vergisi Kanununun 15 inci maddesinin (13) numaralı bendi,",
+   "Yürürlükten kaldırılmıştır."
+  ]
+ },
+ "7194/19": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2019/12/20191207-1.htm",
+  "instruction": "193 sayılı Kanunun mükerrer 123 üncü maddesinin ikinci fıkrasına “23/8,” ibaresinden sonra gelmek üzere “23/10,” ibaresi, “31,” ibaresinden sonra gelmek üzere “40/1, 40/7,” ibaresi ve “48,” ibaresinden sonra gelmek üzere “68,” ibaresi eklenmiştir.",
+  "payload": []
+ },
+ "7061/14": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2017/12/20171205-12.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 74 üncü maddesinin üçüncü fıkrasında yer alan “%25’ini” ibaresi “%15’ini” şeklinde değiştirilmiştir.",
+  "payload": []
  }
 }

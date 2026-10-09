@@ -16,6 +16,13 @@ Bu yüzden replay iki geçişte yapılır (`mevzuat_git.verify`):
    `lossy` (eski metin geri getirilemez: yeri işaretlenmemiş bir ibare çıkarma, parantez
    içi hükmün kaldırılması) olur. Bütünüyle değiştirilmiş bir düğümün eski metni
    bilinmez; yerinde `UNKNOWN` yer tutucusu kalır.
+
+   Geri sarmadan önce mevzuat.gov.tr'nin metne kendi eklediği açıklamalar (değişiklik
+   işaretleri, eski tutarlara eklenen `(158 TL)` notları, dipnot numaraları) çıkarılır
+   (`compare.strip_editorial`). Bunlar kanun metni değildir ve değiştiren kanunun
+   ibaresinde yer almaz: 7194/11'in md. 23/10'a eklediği "… 10 Türk lirasını aşmaması …"
+   ibaresi konsolide metinde "10 Türk lirasını (158 TL) aşmaması" diye geçer. Kanun
+   metninin kendisine dokunulmaz.
 2. **İleri oynatma.** Böylece elde edilen ~2000 tarihli taban metne işlemler eskiden yeniye
    yeniden uygulanır (`replay.apply`). Ardından işlem gören her madde konsolide metinle
    karşılaştırılır.
@@ -24,8 +31,10 @@ Karşılaştırma `compare.node_lines` ile, normalize edilmiş satırlar üzerin
 Normalizasyon yalnız bu katmandadır ve şunları kapsar: değişiklik işaretlerini
 (`(Değişik: …)`), `(…)` işaretlerini, mevzuat.gov.tr'nin eski tutarlara eklediği
 `(22.000 TL)` notlarını ve cümle sonuna yapışmış dipnot numaralarını çıkarır; tırnak ve
-tire biçimlerini, şapkalı harfleri (`tâbi`/`tabi`) birleştirir; boşlukları sadeleştirir.
-Kaynak metinler hiçbir zaman değiştirilmez.
+tire biçimlerini, şapkalı harfleri (`tâbi`/`tabi`) birleştirir; boşlukları sadeleştirir
+(`% 15`/`%15`, `1.1.1999 - 31.12.2004`/`1.1.1999-31.12.2004` dahil). Kaynak metinler
+hiçbir zaman değiştirilmez. İbareler metinde de aynı farkları gözetmeden aranır
+(`replay.find_all`); yerine konan metin yine değiştiren kanunun yazımıyladır.
 
 Ayrıca:
 
@@ -52,8 +61,8 @@ Bir madde, replay sonucu konsolide metinle normalizasyondan sonra birebir aynıy
 **eşleşir**. Geri getirilemeyen bir metne dayanıyorsa **doğrulanamaz** sayılır ve
 metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 
-GVK için (2026-10): 108 maddeye işlem uygulandı. Bunların 77'si eşleşiyor, 27'si farklı,
-4'ü doğrulanamıyor. **Oran: %74,0.**
+GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 94'ü eşleşiyor, 9'u farklı,
+6'sı doğrulanamıyor. **Oran: %91,3.**
 
 ## RG metni taranmış PDF olan değişiklikler
 
@@ -81,10 +90,11 @@ sonradan yürürlükten kaldırılmışsa o dönemdeki metni bilinmez.
 
 ## Farkların başlıca nedenleri
 
-- **Konsolide metnin kendi yapısı.** Örneğin geçici 60'ta bir cümle madde başlığı olarak
-  okunuyor; geçici 67'nin numaralı fıkraları bent olarak okunuyor (Faz 1).
+- **Konsolide metnin kendi yazımı.** Örneğin mükerrer 123'te "9/10,19" virgülden sonra
+  boşluksuz yazılmış; karşılaştırma virgül çevresindeki boşluğu henüz birleştirmiyor.
 - **Geri sarmada izi bulunamayan işlemler.** İşlemin etkisi bugünkü metinde yok: ya
   ayrıştırma yanlış, ya da RG metni olmayan (2000 öncesi ya da dipnotsuz) bir değişiklik
   aynı yeri sonradan değiştirmiş.
-- **Henüz desteklenmeyen işlemler.** Kısım/bölüm başlığı değişiklikleri ve tek tek
-  işlem gerektiren bazı eski yazılışlar bunlar arasında.
+- **Henüz desteklenmeyen işlemler.** Anayasa Mahkemesi iptal kararları (geçici 72),
+  kısım/bölüm başlığı değişiklikleri ve tek tek işlem gerektiren bazı eski
+  yazılışlar bunlar arasında.

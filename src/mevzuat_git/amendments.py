@@ -95,7 +95,8 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         + r")\s*(?:(?:şeklinde|olarak)\b|,(?=.*(?:şeklinde|olarak)\s+değiştiril))"
     )),
     ("replace_phrase", re.compile(
-        Q + r"(?P<old>" + QTEXT + r")" + Q + r"\s*" + PHRASE_NOUN + r",?\s+(?:sırasıyla\s+)?"
+        # "“X” ibaresi “Y” ve “Z” ibaresi ise “W” olarak" (5281/43)
+        Q + r"(?P<old>" + QTEXT + r")" + Q + r"\s*" + PHRASE_NOUN + r",?\s+(?:sırasıyla\s+|ise\s+)?"
         + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:ibaresi\s+)?(?:(?:şeklinde|olarak)\b"
         # in a series the pairs are separated by commas: "X" ibaresi "Y", "Z" ibaresi "W"
         # şeklinde değiştirilmiştir
@@ -114,7 +115,9 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         # in a series: ... önce gelmek üzere “X”, “Y” ibaresinden sonra ... ibareleri eklenmiştir
         r"|,(?=\s*" + Q + r".*eklen)"
         # “Y” ibaresi ve (11) numaralı bendine ... eklenmiştir
-        r"|" + PHRASE_NOUN + r"\s+ve\b(?=.*eklen))"
+        r"|" + PHRASE_NOUN + r"\s+ve\b(?=.*eklen)"
+        # “23/8,” ibaresinden sonra gelmek üzere “23/10,” ibaresi, “31,” ibaresinden ... (7194/19)
+        r"|" + PHRASE_NOUN + r"\s*,(?=\s*" + Q + r".*eklen))"
     )),
     # (5) numaralı fıkrasına birinci cümlesinden sonra gelmek üzere “...” ibaresi eklenmiş
     ("insert_phrase_cumle", re.compile(
@@ -293,6 +296,20 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
     Each item becomes "<group head> <item> <verb>".
     """
     lines = [a.instruction] + a.payload
+    if re.match(r"\(1\)\s", lines[0]) and LAW_REF_RE.search(lines[0]):
+        # Numbered fıkras that each amend a law of their own: "MADDE 32 – (1) 4447 sayılı
+        # ... değiştirilmiştir.", ..., "(5) 193 sayılı Gelir Vergisi Kanununun 99 uncu
+        # maddesinde yer alan ..." (5838).
+        out, n, balance = [], 1, 0
+        for line in lines:
+            if balance <= 0 and re.match(rf"\({n}\)\s", line):
+                out.append(ActArticle(number=a.number, instruction=line))
+                n, balance = n + 1, 0
+            else:
+                out[-1].payload.append(line)
+                balance += _quote_balance(line)
+        if len(out) > 1:
+            return out
     verb_at = next((i for i in range(len(lines) - 1, 0, -1) if LIST_VERB_RE.match(lines[i])),
                    None)
     if verb_at is None:
@@ -342,6 +359,17 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
                 return None
         return out or None
     head = ""
+    if ITEM_RE.match(lines[0]) and LAW_REF_RE.search(lines[0]) \
+            and all(ITEM_RE.match(x) for x in lines[1:verb_at]):
+        # "a) 4.1.1961 tarihli ve 213 sayılı ... 319 uncu maddesi,", "b) 31.12.1960 tarihli
+        # ve 193 sayılı Gelir Vergisi Kanununun; 38 inci maddesinin dördüncü ve beşinci
+        # fıkraları ile ...", "c) ...", "Yürürlükten kaldırılmıştır." (5024/9).
+        vm = LIST_VERB_RE.match(lines[verb_at])
+        verb = (vm.group("how").lower() + " " if vm.group("how") else "") \
+            + vm.group("verb").lower()
+        return [ActArticle(number=a.number, instruction=(
+                    f"{ITEM_RE.match(x).group('text').rstrip().rstrip(',;').rstrip()} {verb}"))
+                for x in lines[:verb_at]]
     if not GROUP_RE.match(lines[0]):
         if not (lines[0].rstrip().endswith((";", ":")) and len(lines) > 1):
             return None
@@ -691,7 +719,15 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
 def _after_inserts(path: Path, sub: str, ops: list[AmendmentOp]) -> Path:
     """"birinci fıkrasından sonra gelmek üzere aşağıdaki fıkra eklenmiş, mevcut ikinci
     fıkrasında ...": "mevcut" counts fıkralar before the insert earlier in the sentence,
-    which is applied first. Return the position the fıkra has once that is done."""
+    which is applied first. Return the position the fıkra has once that is done.
+
+    "(6) numaralı bentten sonra gelmek üzere aşağıdaki bent eklenmiş ve sonraki bentte
+    yer alan ..." (5766/8): the bent after the added one, (8) once it is added."""
+    if re.search(r"\bsonraki\s+bent", sub) and path.bent and path.bent.isdigit():
+        added = sum(len(op.new_nodes) for op in ops if op.op is OpType.INSERT_NODE
+                    and op.kind is Level.BENT and op.position == "after"
+                    and op.target.madde == path.madde and op.target.bent == path.bent)
+        return path.model_copy(update={"bent": str(int(path.bent) + added + 1)})
     if not re.search(r"\bmevcut\b", sub) or not path.fikra or path.fikra < 1:
         return path
     n = path.fikra

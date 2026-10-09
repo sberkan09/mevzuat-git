@@ -19,11 +19,12 @@ from mevzuat_git.replay import (
     apply,
     apply_batch,
     find_all,
+    locate,
     unapply,
     unapply_batch,
 )
 from mevzuat_git.tree import build_tree, parse_fragment
-from mevzuat_git.verify import OpResult, batches, mark_replaced
+from mevzuat_git.verify import OpResult, batches, mark_replaced, unwind
 
 FIX = Path(__file__).parent / "fixtures"
 ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="utf-8"))
@@ -283,6 +284,20 @@ def test_find_all_ignores_typography():
     assert find_all(text, '"yemek" verilmek suretiyle - sağlanan')
 
 
+@pytest.mark.parametrize(("text", "phrase"), [
+    # 5035/48 on geçici 55: "1.1.1999 - 31.12.2004"; mevzuat.gov.tr: "1.1.1999-31.12.2005".
+    ("1.1.1999-31.12.2004 tarihleri arasında elde edilen",
+     "1.1.1999 - 31.12.2004 tarihleri arasında"),
+    # 7061/14 on md. 68: "%15’ini"; mevzuat.gov.tr: "% 15'ini".
+    ("hasılatlarından % 15'ini götürü olarak", "%15’ini"),
+    # 5228/59 on md. 23/b12: “ 3308 sayılı ...” with a space, "tâbi" against "tabi".
+    ("3308 sayılı Çıraklık ve Meslekî Eğitim Kanununa tâbi çırakların",
+     " 3308 sayılı Çıraklık ve Mesleki Eğitim Kanununa tabi çırakların"),
+])
+def test_find_all_ignores_spacing_and_circumflex(text, phrase):
+    assert find_all(text, phrase)
+
+
 @pytest.mark.parametrize(("raw", "normal"), [
     # Change markers are editorial: "(Değişik: ...)", "(Ek cümle: ...)".
     ("(Değişik: 9/4/2003-4842/5 md.) Ticari kazanç", "Ticari kazanç"),
@@ -298,6 +313,12 @@ def test_find_all_ignores_typography():
     # A footnote number glued to the end, but not a number that ends the text.
     ("ile birlikte işverenden tahsil edilir.10", "ile birlikte işverenden tahsil edilir."),
     ("tutarı 1.000", "tutarı 1.000"),
+    # The amount may end with a dot or stand before a comma (md. 18, md. 40).
+    ("hasılatın 220.000 (1.900.000 TL.) Türk lirasını", "hasılatın 220.000 Türk lirasını"),
+    ("135.000 Türk lirasını (1.380.000 TL) , söz konusu", "135.000 Türk lirasını, söz konusu"),
+    # 7061/14 writes "%15", mevzuat.gov.tr "% 15"; 5035/48 "1.1.1999 - 31.12.2004".
+    ("hasılatlarından % 15'ini", "hasılatlarından %15'ini"),
+    ("1.1.1999 - 31.12.2004 tarihleri", "1.1.1999-31.12.2004 tarihleri"),
 ])
 def test_norm(raw, normal):
     assert norm(raw) == normal
@@ -370,3 +391,114 @@ def test_operations_before_a_whole_article_replacement_are_superseded():
     mark_replaced([insert, whole])
     mark_replaced([early, failed])
     assert (insert.check, early.check) == ("fail", "fail")
+
+
+def test_fikras_of_a_repealed_article_are_not_known():
+    # 5479/2 repealed md. 19. Once that is undone, the article's text is not known, so
+    # 5228/59 on its "(4) numaralı fıkrasının üçüncü bendi" cannot be checked.
+    law = Law(number=193, name="", body=[Node(
+        level=Level.MADDE, id="19", label="Madde 19 –", repealed=True,
+        text="(Mülga: 30/3/2006-5479/2 md.)")])
+    (repeal,) = am.parse_instruction(
+        "193 sayılı Kanunun 19 uncu maddesi yürürlükten kaldırılmıştır.", [], 193)
+    assert unapply(law, repeal).status == "ok"
+    assert law.article("19").text == UNKNOWN
+    (op,) = am.parse_instruction(
+        "193 sayılı Kanunun 19 uncu maddesinin (4) numaralı fıkrasının üçüncü bendinde yer "
+        "alan \"Gayri maddi haklar\" ibaresi \"Gayri maddi haklar ile ekonomik ömrü 5 yıldan "
+        "daha kısa olan özel maliyet bedelleri\" şeklinde değiştirilmiştir", [], 193)
+    assert unapply(law, op).status == "superseded"
+
+
+def test_fikra_ordinal_skips_repealed_fikras():
+    # Md. 38 in 2001: "(Mülga üçüncü fıkra: 4/12/1985-3239/138 md.)", then the fıkra
+    # 3946/8 added, which 4684/17 calls "üçüncü fıkrası".
+    law = _article_law("38", "Bilanço esasına göre ticari kazanç, ...",
+                       "Ticari kazancın bu suretle tesbit edilmesi sırasında, ...",
+                       "(Mülga üçüncü fıkra: 4/12/1985-3239/138 md.)",
+                       "Mükelleflerin iktisap tarihinden itibaren ...")
+    fikras = law.article("38").children
+    fikras[2].repealed = True
+    at = Addr(madde="38", fikra=3)
+    assert locate(law, at).node is fikras[3]
+    # Undoing a repeal ("Mülga üçüncü fıkra") means the repealed one.
+    assert locate(law, at, live=False).node is fikras[2]
+
+
+def test_replacement_does_not_run_into_the_next_word():
+    # 6663/3: “, 86 ve mükerrer 121 inci maddelerinde” ibaresi “ve 86 ncı maddeleri ile 89
+    # uncu maddesinin birinci fıkrasının (15) numaralı bendinde” (mükerrer 123).
+    law = _article_law("123", "Bu Kanunun 19, 21, 23/8, 31, 47, 48, mükerrer 80, 82, 86 ve "
+                              "mükerrer 121 inci maddelerinde yer alan maktu had ve tutarlar")
+    op = AmendmentOp(op=OpType.REPLACE_PHRASE, target=Addr(madde="123", fikra=1),
+                     old=", 86 ve mükerrer 121 inci maddelerinde",
+                     new="ve 86 ncı maddeleri ile 89 uncu maddesinin birinci fıkrasının "
+                         "(15) numaralı bendinde", source_sentence="")
+    apply(law, op)
+    assert law.article("123").children[0].text == (
+        "Bu Kanunun 19, 21, 23/8, 31, 47, 48, mükerrer 80, 82 ve 86 ncı maddeleri ile 89 uncu "
+        "maddesinin birinci fıkrasının (15) numaralı bendinde yer alan maktu had ve tutarlar")
+
+
+def test_deleted_ibare_goes_back_into_its_mark():
+    # 7338/6 removed “, gelirin sadece basit usulde ... akşamına kadar,” from md. 92/1.
+    law = _article_law("92", "Bir takvim yılına ait beyanname izleyen yılın Mart ayının "
+                             "başından yirmibeşinci günü akşamına kadar (…) tam mükellefiyette")
+    old = ("[, gelirin sadece basit usulde tespit edilen ticarî kazançlardan ibaret olması "
+           "halinde izleyen yılın Şubat ayının başından yirmibeşinci günü akşamına kadar,]")[1:-1]
+    op = AmendmentOp(op=OpType.DELETE_PHRASE, target=Addr(madde="92", fikra=1), old=old,
+                     source_sentence="")
+    assert unapply(law, op).status == "ok"
+    assert law.article("92").children[0].text == (
+        "Bir takvim yılına ait beyanname izleyen yılın Mart ayının başından yirmibeşinci günü "
+        "akşamına kadar" + old + " tam mükellefiyette")
+    # A footnote number may stick to the mark: md. 106/1/b2 after 6728 removed "ücret ve".
+    law = _article_law("106", "Gezici olarak çalışanların ticaret ve serbest meslek "
+                              "kazançlarının vergileri bu (…)134 kazanç sahiplerinin")
+    op = AmendmentOp(op=OpType.DELETE_PHRASE, target=Addr(madde="106", fikra=1),
+                     old="ücret ve", source_sentence="")
+    assert unapply(law, op).status == "ok"
+    assert law.article("106").children[0].text.endswith(
+        "vergileri bu ücret ve kazanç sahiplerinin")
+
+
+def test_bent_added_before_the_words_that_close_the_list():
+    # 7394/2 adds bent 6 to md. 66/2, whose bents end in "Bu işleri dolayısiyle serbest
+    # meslek erbabı sayılırlar."
+    f2 = Node(level=Level.FIKRA, text="Bu maddenin uygulanmasında:", children=[
+        Node(level=Level.BENT, label="5.", text="Vergi Usul Kanununun 155 inci maddesinde ..."),
+        Node(level=Level.PARAGRAF, text="Bu işleri dolayısiyle serbest meslek erbabı sayılırlar.")])
+    law = Law(number=193, name="", body=[Node(
+        level=Level.MADDE, id="66", label="Madde 66 –",
+        children=[Node(level=Level.FIKRA, text="Serbest meslek faaliyetini ..."), f2])])
+    op = AmendmentOp(op=OpType.INSERT_NODE, target=Addr(madde="66", fikra=2), position="end",
+                     kind=Level.BENT, source_sentence="", new_nodes=[Node(
+                         level=Level.BENT, label="6.",
+                         text="5510 sayılı Kanunun ek 10 uncu maddesi uyarınca ...")])
+    apply(law, op)
+    assert [(c.level, c.label) for c in law.article("66").children[1].children] == [
+        (Level.BENT, "5."), (Level.BENT, "6."), (Level.PARAGRAF, "")]
+    assert unapply(law, op).status == "ok"
+    assert len(law.article("66").children[1].children) == 2
+
+
+def test_unwind_ignores_the_current_amounts():
+    # 7194/11 inserted “(İşverenlerce ... 10 Türk lirasını aşmaması ...)” into md. 23/1/b10;
+    # mevzuat.gov.tr writes "10 Türk lirasını (158 TL) aşmaması".
+    added = ("(İşverenlerce taşıma hizmeti verilmeyen durumlarda, çalışılan günlere ait bir "
+             "günlük ulaşım bedelinin 10 Türk lirasını aşmaması ve buna ilişkin ödemenin toplu "
+             "taşıma kartı, bileti veya bu amaçla kullanılan ödeme araçlarının temini şeklinde "
+             "yapılması şarttır.)")
+    head = ("Hizmet erbabının toplu olarak işyerlerine gidip gelmelerini sağlamak maksadıyla "
+            "işverenler tarafından yapılan taşıma giderleri")
+    shown = (head + " (Ek parantez içi hüküm:5/12/2019-7194/11 md.) "
+             + added.replace("lirasını aşmaması", "lirasını (158 TL) aşmaması") + ";")
+    law = Law(number=193, name="", body=[Node(
+        level=Level.MADDE, id="23", label="Madde 23 –", children=[Node(
+            level=Level.FIKRA, children=[Node(level=Level.BENT, label="10.", text=shown)])])])
+    r = OpResult(act="7194", article="11", op=AmendmentOp(
+        op=OpType.INSERT_PHRASE, target=Addr(madde="23", fikra=1, bent="10"), new=added,
+        anchor="taşıma giderleri", position="after", source_sentence=""))
+    old = unwind(law, [[r]])
+    assert r.check == "ok"
+    assert old.article("23").children[0].children[0].text == head + ";"
