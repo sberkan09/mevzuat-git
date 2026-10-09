@@ -116,5 +116,28 @@ def replay(
                f"({c['match']} match, {c['mismatch']} mismatch, {c['unverified']} unverified)")
 
 
+@app.command()
+def history(
+    law: int = typer.Argument(..., help="Kanun numarası, ör. 193"),
+    cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, help="Raw response cache"),
+    data_dir: Path = typer.Option(PROCESSED_DIR, help="Where <law>_ops.json is"),
+    out: Path = typer.Option(None, help="New git repository [default: data/history/<law>]"),
+    offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
+) -> None:
+    """Write the replayed amendments as a git history, dated by yürürlük (Faz 4)."""
+    from mevzuat_git.amendments import OpsFile, load_list
+    from mevzuat_git.history import build
+    from mevzuat_git.verify import current_tree
+
+    ops = OpsFile.model_validate_json((data_dir / f"{law}_ops.json").read_text())
+    alist = load_list(data_dir / f"{law}_amendments.json")
+    with Fetcher(cache_dir=cache_dir, offline=offline) as f:
+        current = current_tree(f, law)
+    out = out or Path("data/history") / str(law)
+    commits = build(current, ops, alist, out)
+    typer.echo(f"{out}: {len(commits)} commits, {commits[0].date} .. "
+               f"{max(c.date for c in commits)}")
+
+
 if __name__ == "__main__":
     app()

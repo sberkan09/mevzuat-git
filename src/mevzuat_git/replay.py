@@ -380,6 +380,17 @@ def _law_insert_articles(law: Law, nodes: list[Node]) -> None:
         sibs.insert(_index(sibs, anchor) + 1, new)
 
 
+def _past_family(siblings: list[Node], i: int, new_id: str) -> int:
+    """7338 md. 1-3 add mükerrer 20/A, 20/B and 20/C, each "mükerrer 20 nci maddesinden
+    sonra gelmek üzere": a new article goes after the ones of its family before it."""
+    family = new_id.split("/")[0]
+    while i < len(siblings) and siblings[i].level is Level.MADDE and siblings[i].id \
+            and siblings[i].id.split("/")[0] == family and "/" in siblings[i].id \
+            and siblings[i].id < new_id:
+        i += 1
+    return i
+
+
 # -- apply -----------------------------------------------------------------------------
 
 def _is_sentence_op(op: AmendmentOp) -> bool:
@@ -543,6 +554,8 @@ def _apply_insert(law: Law, op: AmendmentOp) -> None:
         raise ReplayError("insert without new nodes")
     if op.position in ("after", "before"):
         i = _index(loc.siblings, loc.node) + (1 if op.position == "after" else 0)
+        if op.kind is Level.MADDE and op.position == "after":
+            i = _past_family(loc.siblings, i, new_nodes[0].id or "")
         loc.siblings[i:i] = new_nodes
         if op.renumber:
             _renumber(loc.siblings, i + len(new_nodes), new_nodes, +len(new_nodes))

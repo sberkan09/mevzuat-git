@@ -7,6 +7,7 @@ dist/
 *.egg-info/
 data/raw/*
 data/processed/*
+data/history/
 !data/**/.gitkeep
 # Small derived data that is worth versioning (see docs/sources.md)
 !data/processed/*_amendments.json

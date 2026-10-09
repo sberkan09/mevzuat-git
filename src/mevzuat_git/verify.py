@@ -74,7 +74,7 @@ class Report:
         return c["match"] / denom if denom else 0.0
 
 
-def _articles_of(op: AmendmentOp) -> list[str]:
+def articles_of(op: AmendmentOp) -> list[str]:
     if op.op is OpType.INSERT_NODE and op.kind is Level.MADDE:
         return [n.id for n in op.new_nodes if n.id]  # not the article it goes after
     if op.target.madde:
@@ -118,30 +118,45 @@ def batches(ops: list[OpResult]) -> list[list[OpResult]]:
     return out
 
 
-def run(current: Law, opsfile: OpsFile) -> Report:
-    ops = [OpResult(act=a.act, article=am.article, op=op) for a, am, op in opsfile.ops()]
-    groups = batches(ops)
+def unwind(current: Law, groups: list[list[OpResult]]) -> Law:
+    """The law before the operations: ``current`` with every batch undone, newest first.
+    Sets each operation's check."""
     state = current.model_copy(deep=True)
     for b in reversed(groups):
         for r, chk in zip(b, unapply_batch(state, [r.op for r in b]), strict=True):
             r.check, r.check_message = chk.status, chk.message
-    replayed = state  # the baseline, replayed forward in place
+    return state
+
+
+def replay_batch(law: Law, batch: list[OpResult]) -> None:
+    """Apply one batch in place; errors are recorded on the operations."""
+    live = [r for r in batch if r.check != "superseded" and not _not_undone(r)]
+    if not live:
+        return
+    try:
+        errors = apply_batch(law, [r.op for r in live])
+    except Superseded:
+        errors = ["target inside text replaced later"] * len(live)
+    except ReplayError as exc:
+        errors = [str(exc)] * len(live)
+    for r, err in zip(live, errors, strict=True):
+        r.replay_error = err
+
+
+def op_results(opsfile: OpsFile) -> list[OpResult]:
+    return [OpResult(act=a.act, article=am.article, op=op) for a, am, op in opsfile.ops()]
+
+
+def run(current: Law, opsfile: OpsFile) -> Report:
+    ops = op_results(opsfile)
+    groups = batches(ops)
+    replayed = unwind(current, groups)  # the baseline, replayed forward in place
     for b in groups:
-        live = [r for r in b if r.check != "superseded" and not _not_undone(r)]
-        if not live:
-            continue
-        try:
-            errors = apply_batch(replayed, [r.op for r in live])
-        except Superseded:
-            errors = ["target inside text replaced later"] * len(live)
-        except ReplayError as exc:
-            errors = [str(exc)] * len(live)
-        for r, err in zip(live, errors, strict=True):
-            r.replay_error = err
+        replay_batch(replayed, b)
 
     by_article: dict[str, list[OpResult]] = {}
     for r in ops:
-        for a in _articles_of(r.op):
+        for a in articles_of(r.op):
             by_article.setdefault(a, []).append(r)
     articles: list[ArticleResult] = []
     order = {a.id: i for i, a in enumerate(current.articles())}

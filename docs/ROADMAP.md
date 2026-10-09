@@ -28,9 +28,9 @@
 - [x] Metrik: madde düzeyinde birebir eşleşme oranı (GVK: %64,4; bkz. `docs/replay.md`)
 
 ## Faz 4: Git deposu üretimi
-- [ ] Commit tarihi = yürürlük tarihi (madde bazında farklılık → ayrı commit)
-- [ ] Commit mesajı: kanun no, RG tarih/sayı, değiştirilen maddeler
-- [ ] Çıktı deposu ayrı: `mevzuat-tarihce` (bu repo üretici)
+- [x] Commit tarihi = yürürlük tarihi (madde bazında farklılık → ayrı commit; `mevzuat-git history`, bkz. `docs/history.md`)
+- [x] Commit mesajı: kanun no, RG tarih/sayı, değiştirilen maddeler
+- [ ] Çıktı deposu ayrı: `mevzuat-tarihce` (bu repo üretici; şimdilik yerelde `data/history/<kanun>`, yayımlanmadı)
 
 ## Faz 5: Ölçekleme
 - [ ] Torba kanunlar (tek kanun → çok hedef)
