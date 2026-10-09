@@ -116,5 +116,5 @@ maddelerin arkasına gitmez.
 
 ## GVK ve VUK birlikte
 
-`mevzuat-git history 193 213` 140 commit üretir. 26 torba kanun commit'i iki dosyayı birlikte
-commit'te değiştirir.
+`mevzuat-git history 193 213` 140 commit üretir. Bunların 26'sında bir torba kanun iki
+dosyayı birlikte değiştirir.
