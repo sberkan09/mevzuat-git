@@ -27,6 +27,20 @@ _TRANSLATE = str.maketrans({
 })
 
 
+_FOOTNOTE = re.compile(r"(?<=[^\d\s][.;:])\d{1,3}$")
+
+
+def strip_editorial(text: str) -> str:
+    """``text`` without what mevzuat.gov.tr adds to the law's own words: change markers,
+    current values of old amounts and footnote numbers. ``(…)`` stays (it marks where an
+    ibare was removed), and so do typography and spacing elsewhere. For output that shows
+    the law at an earlier date (Faz 4), where those additions would be anachronistic."""
+    t = re.sub(r"[ \t]*" + _MARKER_ANYWHERE.pattern, "", text)
+    t = _EDITORIAL_AMOUNT.sub("", t)
+    t = _FOOTNOTE.sub("", t)
+    return t.lstrip(" ") if t != text else text
+
+
 def norm(text: str) -> str:
     t = _MARKER_ANYWHERE.sub(" ", text)
     t = _ELLIPSIS.sub(" ", t)
@@ -36,7 +50,7 @@ def norm(text: str) -> str:
     t = re.sub(r"\s+([,.;:)])", r"\1", t)
     t = re.sub(r"\(\s+", "(", t)
     # Unlinked footnote numbers glued to the end of a sentence: "yararlanılır.218".
-    t = re.sub(r"(?<=[^\d\s][.;:])\d{1,3}$", "", t)
+    t = _FOOTNOTE.sub("", t)
     return t
 
 

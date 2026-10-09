@@ -149,6 +149,35 @@ def test_inserted_node_is_undone_after_a_later_replacement():
     assert [b.label for b in law.article("94").children[0].children] == ["14."]
 
 
+def test_articles_added_after_the_same_article_keep_their_order():
+    # 7338 md. 1, 2 and 3 add mükerrer 20/A, 20/B and 20/C, each one "mükerrer 20 nci
+    # maddesinden sonra gelmek üzere".
+    def art(i):
+        return Node(level=Level.MADDE, id=i, label=f"Madde {i} –", children=[
+            Node(level=Level.FIKRA, text=f"text of {i}")])
+    law = Law(number=193, name="", body=[art("mukerrer-20"), art("21")])
+    for new in ("mukerrer-20/A", "mukerrer-20/B", "mukerrer-20/C"):
+        apply(law, am.AmendmentOp(op=OpType.INSERT_NODE, kind=Level.MADDE, position="after",
+                                  target=am.Path(madde="mukerrer-20"), new_nodes=[art(new)],
+                                  source_sentence=""))
+    assert [a.id for a in law.articles()] == [
+        "mukerrer-20", "mukerrer-20/A", "mukerrer-20/B", "mukerrer-20/C", "21"]
+
+
+def test_articles_added_at_the_end_go_in_number_order():
+    # 6322 md. 12 and 13 add geçici 80 and 81 at the end of the law; the history applies
+    # 81 first, since it takes effect earlier.
+    def art(i):
+        return Node(level=Level.MADDE, id=i, label=f"Geçici Madde {i[7:]} –", children=[
+            Node(level=Level.FIKRA, text=f"text of {i}")])
+    law = Law(number=193, name="", body=[art("gecici-79")])
+    for new in ("gecici-81", "gecici-80"):
+        apply(law, am.AmendmentOp(op=OpType.INSERT_NODE, kind=Level.MADDE, position="end",
+                                  target=am.Path(madde=""), new_nodes=[art(new)],
+                                  source_sentence=""))
+    assert [a.id for a in law.articles()] == ["gecici-79", "gecici-80", "gecici-81"]
+
+
 def test_failed_check_is_reported():
     law = Law(number=193, name="")
     law.body.append(Node(level=Level.MADDE, id="74", label="Madde 74 –", children=[
