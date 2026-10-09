@@ -428,6 +428,15 @@ def _article_key(art_id: str) -> tuple[int, str]:
     return (int(m.group(1)), m.group(2) or "") if m else (0, art_id)
 
 
+def _mukerrer_base(arts: list[Node], new_id: str) -> Node | None:
+    """The article a new mükerrer article follows: the plain article with the greatest
+    number not after its own ("290" for mükerrer 290, "20" for mükerrer 20/A, "113" for
+    mükerrer 116 when there is no md. 116)."""
+    key = _article_key(new_id)
+    plain = [a for a in arts if a.id and "-" not in a.id and _article_key(a.id) <= key]
+    return max(plain, key=lambda a: _article_key(a.id or ""), default=None)
+
+
 def _law_insert_articles(law: Law, nodes: list[Node]) -> None:
     """Add new articles among those of the same kind, in number order: geçici 81 goes
     after geçici 80 even when it is inserted first (6322 adds both; they take effect on
@@ -435,6 +444,19 @@ def _law_insert_articles(law: Law, nodes: list[Node]) -> None:
     for new in nodes:
         prefix = (new.id or "").split("-")[0] if "-" in (new.id or "") else ""
         arts = list(law.articles())
+        if prefix == "mukerrer" and (base := _mukerrer_base(arts, new.id)):
+            # A mükerrer article stands after the article of its number, not with the other
+            # mükerrer ones: "213 sayılı Vergi Usul Kanununa aşağıdaki mükerrer 290 ıncı
+            # madde eklenmiştir" (4842/25) goes after md. 290.
+            sibs = siblings_of(law, base)
+            i = _index(sibs, base) + 1
+            while i < len(sibs) and sibs[i].id and (
+                    sibs[i].id.startswith(base.id + "/")
+                    or (sibs[i].id.startswith("mukerrer-")
+                        and _article_key(sibs[i].id) < _article_key(new.id or ""))):
+                i += 1  # past "290/A", and "mükerrer 20/A" before a new "mükerrer 20/B"
+            sibs.insert(i, new)
+            continue
         same = [a for a in arts if (a.id or "").startswith(prefix + "-")] if prefix else []
         before = [a for a in same if _article_key(a.id or "") < _article_key(new.id or "")]
         if same and not before:

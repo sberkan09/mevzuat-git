@@ -10,6 +10,31 @@
   "acts": [
     {
       "kind": "kanun",
+      "number": "189",
+      "kabul_date": "1960-12-28",
+      "title": "MİLLİ SAVUNMA BAKANLIĞI İSKAN İHTİYAÇLARI İÇİN SARFİYAT İCRASI VE BU BAKANLIKÇA KULLANILAN GAYRİMENKULLERDEN LÜZUMU KALMIYANLARIN SATILMASINA SELAHİYET VERİLMESİ HAKKINDA KANUN",
+      "rg": {
+        "date": "1961-01-02",
+        "number": "10696",
+        "source": "mevzuat.gov.tr"
+      },
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "297",
+          "effective": "20/2/1963",
+          "effective_date": "1963-02-20"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "kanun",
       "number": "205",
       "kabul_date": "1961-01-03",
       "title": "ORDU YARDIMLAŞMA KURUMU KANUNU",
@@ -236,10 +261,22 @@
           "text": "Bu bölüm ve başlığı, 19/2/1963 tarih ve 205 sayılı Kanunun 22 nci maddesi ile eklenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "277, Geçici Madde 10",
+          "effective": "1/1/1962",
+          "effective_date": "1962-01-01"
+        },
+        {
+          "articles": "30, Birinci Kitap İkinci Kısım İkinci Bölüm Başlığı, Mükerrer Madde 30, 40, 46, 49, 72, 73, 83, 84, 85, 89, 177, 213, 227, 242, 243, 245, Mükerrer Madde 315, Mükerrer Madde 320, 328, Dördüncü Kitap Üçüncü Kısım Üçüncü Bölüm (Ek Madde 1, Ek Madde 2, Ek Madde 3, Ek Madde 4, Ek Madde 5, Ek Madde 6, Ek Madde 7, Ek Madde 8, Ek Madde 9, Ek Madde 10), Geçici Madde 5, Geçici Madde 11",
+          "effective": "28/2/1963",
+          "effective_date": "1963-02-28"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": [
         "kabul tarihi: consolidated text says 1963-02-19, mevzuat.gov.tr page says 1961-01-03 (used)"
@@ -308,9 +345,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5, 30, 42, 43, 92, 279, 280, 294, 352, 354, Ek Madde 3",
+          "effective": "8/7/1964",
+          "effective_date": "1964-07-08"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -345,10 +389,17 @@
           "text": "Bu maddenin yolcu biletleri ve sigorta primleri üzerinden alınacak damga resmi kayıtlariyle ilgili hükümleri, 1/7/1964 tarih ve 488 sayılı Kanunun 31 inci maddesinin 7 numaralı bendi ile kaldırılmıştır."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "112, 205, 220, 356",
+          "effective": "1/11/1964",
+          "effective_date": "1964-11-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -375,9 +426,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "297, Geçici Madde 1",
+          "effective": "10/8/1970",
+          "effective_date": "1970-08-10"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -444,9 +502,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "50, 51, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 77, 78",
+          "effective": "1/3/1971",
+          "effective_date": "1971-03-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -1065,10 +1130,22 @@
           "text": "30/12/1980 tarih ve 2365 sayılı Kanunun 86 ncı maddesi ile değişik şeklidir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "247 nci Maddenin 3 üncü Bendi, 255",
+          "effective": "1/1/1982",
+          "effective_date": "1982-01-01"
+        },
+        {
+          "articles": "3, 5, 29, 30, 42, 43, 46, Dördüncü Kısım Başlığı, 72, 73, 75, Dördüncü Bölüm Başlığı, 83, 84, Mükerrer Madde 86, 87, 89, 90, 92, 94, 104, 107, 127, 134, 171, 172, 173, 177, 182, 185, 193, Mükerrer Madde 194, 204, 219, 220, 230, 231, 233, 234, 235, 236, 237, 240, 247 nci Maddenin 3 üncü Bendi haricindeki kısmı, 257, Mükerrer Madde 257, 261, 266, Mükerrer Madde 266, 268, 270, 272, 275, 297, 298, 313, 323, 328, 329, 331, 333, 334, 335, 336, 337, 338, 339, 340, 343, 344, 345, 346, 347, Dördüncü Kitap İkinci Kısım İkinci Bölüm başlığı, Mükerrer Madde 347, 348, 349, Mükerrer Madde 349, 352, 353, 354, 355, Mükerrer Madde 355, 357, 358, 359, 360, 361, 367, 368, 369, 370, 371, 374, 376, Ek Bölüm Ek 3 üncü Madde, 389, 392, 406, Ek Geçici Madde 1, Ek Geçici Madde 2, Ek Geçici Madde 3, Ek Geçici Madde 4, Ek Geçici Madde 5, Ek Geçici Madde 6, Ek Geçici Madde 7, Ek Geçici Madde 8, Usulsüzlük Cezalarına Ait Cetvel",
+          "effective": "1/1/1981",
+          "effective_date": "1981-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -1112,9 +1189,41 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "45, 46, 323, 371, 374, Usulsüzlük Cezalarına Ait Cetvel",
+          "effective": "1/1/1981 tarihinden geçerli olmak üzere 5/5/1981",
+          "effective_date": "1981-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "kanun",
+      "number": "2577",
+      "kabul_date": "1982-01-06",
+      "title": "İDARİ YARGILAMA USULÜ KANUNU",
+      "rg": {
+        "date": "1982-01-20",
+        "number": "17580",
+        "source": "mevzuat.gov.tr"
+      },
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412",
+          "effective": "20/1/1982",
+          "effective_date": "1982-01-20"
+        }
+      ],
+      "seen_in": [
+        "table"
       ],
       "notes": []
     },
@@ -1479,10 +1588,32 @@
           "text": "23/6/1982 tarih ve 2686 sayılı Kanunun 51 inci maddesiyle değişik şeklidir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "45, 248, 249, 255, 367, 374",
+          "effective": "1/1/1981 tarihinden geçerli olmak üzere 29/6/1982",
+          "effective_date": "1981-01-01"
+        },
+        {
+          "articles": "257, 298",
+          "effective": "1/1/1983 tarihinden geçerli olmak üzere 29/6/1982",
+          "effective_date": "1983-01-01"
+        },
+        {
+          "articles": "5, 6, 14, 16, 26, Mükerrer Madde 30, 35, 41, 101, 108, 112, 121, 122, 123, 124, 125, 126, 267, 366, 368, 376, Ek Madde 1, Ek Madde 4, Ek Madde 6, Ek Madde 7, Ek Madde 8, Beşinci Kitap Başlığı, 377, 378",
+          "effective": "Vergi mahkemelerinin göreve başlayacakları tarihten geçerli olmak üzere 29/6/1982",
+          "effective_date": "1982-06-29"
+        },
+        {
+          "articles": "Birinci Kitap İkinci Kısım Beşinci Bölüm başlığı, Mükerrer Madde 49, 72, 73, 74, 84, 85, Mükerrer Madde 86, 92, Mükerrer Madde 185, 232, 233, Mükerrer Madde 257, 344, 353, Ek Geçici Madde 9, Ek Geçici Madde 10, Ek Geçici Madde 11, Ek Geçici Madde 12, Ek Geçici Madde 13",
+          "effective": "29/6/1982",
+          "effective_date": "1982-06-29"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -1543,9 +1674,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "30, 40, 112, 177, Mükerrer Madde 257, 313, 315, Mükerrer Madde 315, 318, 344, Mükerrer Madde 347, Ek 3 üncü Bölüm Ek Madde 3, Mükerrer Madde 378, Geçici Madde 11",
+          "effective": "1/1/1983 tarihinden geçerli olmak üzere 22/1/1983",
+          "effective_date": "1983-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -1573,9 +1711,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "91, 113, 114, 115, 116, Mükerrer Madde 116, 358",
+          "effective": "27/4/1983",
+          "effective_date": "1983-04-27"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -1596,9 +1741,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "341",
+          "effective": "17/4/1985",
+          "effective_date": "1985-04-17"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -1627,10 +1779,17 @@
           "text": "30/5/1985 tarihli ve 3210 sayılı Kanunun 2 nci maddesiyle, parantez içindeki hüküm metne işlendiği şekilde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 49, 73, 74, Usulsüzlük Cezalarına Ait Cetvel",
+          "effective": "4/6/1985",
+          "effective_date": "1985-06-04"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -1985,13 +2144,44 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5, 11, 49, Mükerrer Madde 49, 72, 74, 75, 104, 112, 114, 115, 126, 127, 141 inci maddeyi takiben Ek Madde, 149, 168, 177, 183, 201, 202, 203, 206, 221, 223, 230, 231, 232, 233, Mükerrer Madde 257, 285, 313, 343, 344, 345, Mükerrer Madde 347, 352, 353, Mükerrer Madde 354, Mükerrer Madde 355, 356, 358, 361, 371, 376, Ek Bölüm Ek Madde 4, Ek Bölüm Ek Madde 11, Ek Bölüm Ek Madde 12, 377, 414, 415, Geçici Madde 12, Geçici Madde 13, Geçici Madde 14, Geçici Madde 15",
+          "effective": "1/1/1986[187]",
+          "effective_date": "1986-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": [
         "other dates in consolidated text: 1985-11-04 (1x)"
       ]
+    },
+    {
+      "kind": "kanun",
+      "number": "3332",
+      "kabul_date": "1987-03-25",
+      "title": "SERMAYE PİYASASININ TEŞVİKİ, SERMAYENİN TABANA YAYGINLAŞTIRILMASI VE EKONOMİYİ DÜZENLEMEDE ALINACAK TEDBİRLER İLE 5422 SAYILI KURUMLAR VERGİSİ KANUNU, 213 SAYILI VERGİ USUL KANUNU VE 3182 SAYILI BANKALAR KANUNUNDA DEĞİŞİKLİK YAPILMASI HAKKINDA KANUN",
+      "rg": {
+        "date": "1987-03-31",
+        "source": "mevzuat.gov.tr"
+      },
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 298 (Geçici Madde 11)",
+          "effective": "1/1/1987",
+          "effective_date": "1987-01-01"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
     },
     {
       "kind": "kanun",
@@ -2048,9 +2238,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5, 11, 135, Ek Madde 13, Geçici Madde 16",
+          "effective": "31/3/1988",
+          "effective_date": "1988-03-31"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -2071,9 +2268,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5",
+          "effective": "5/11/1988",
+          "effective_date": "1988-11-05"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -2125,9 +2329,21 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "4, 227, 352, 358, Ek Madde 11",
+          "effective": "10/12/1988",
+          "effective_date": "1988-12-10"
+        },
+        {
+          "articles": "10, 353, Mükerrer Madde 354, 359, 360",
+          "effective": "1/1/1989 tarihinden geçerli olmak üzere 10/12/1988",
+          "effective_date": "1989-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -2156,9 +2372,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "4, Geçici Madde 17",
+          "effective": "1/1/1991",
+          "effective_date": "1991-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -2195,9 +2418,41 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "175, Mükerrer Madde 241, Mükerrer Madde 242",
+          "effective": "7/9/1991",
+          "effective_date": "1991-09-07"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "kanun",
+      "number": "3824",
+      "kabul_date": "1992-06-25",
+      "title": "BAZI VERGİ KANUNLARINDA DEĞİŞİKLİK YAPILMASI HAKKINDA KANUN (213 SAYILI VERGİ USUL KANUNU, 193 SAYILI GELİR VERGİSİ KANUNU, 5422 SAYILI KURUMLAR VERGİSİKANUNU, 492 SAYILI HARÇLAR KANUNU İLE 474 SAYILI KANUNA EKLİ GÜMRÜK GİRİŞ TARİFE CETVELİNDE DEĞİŞİKLİK YAPILMASI; GELİR VE KURUMLAR VERGİLERİ ÜZERİNDEN ÖDENEN FONLARIN BİRLEŞTİRİLMESİ; GÜMRÜK VERGİSİ HASILATI İLE FON PAYI HASILATININ DAĞILIMI; 26.1.1967 TARİHLİ VE 827 SAYILI KANUN İLE 31.10.1990 TARİHLİ VE 3675 SAYILI KANUNUN, 31.12.1960 TARİHLİ VE 193 SAYILI, 2.2.1981 TARİHLİ VE 2380 SAYILI, 7.11.1985 TARİHLİ VE 3238 SAYILI, 29.5.1986 TARİHLİ VE 3294 SAYILI KANUNLARIN BAZI HÜKÜMLERİNİN YÜRÜRLÜKTEN KALDIRILMASI HAKKINDA KANUN)",
+      "rg": {
+        "date": "1992-07-11",
+        "number": "21281",
+        "source": "mevzuat.gov.tr"
+      },
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 298",
+          "effective": "1/1/1992 tarihinden geçerli olmak üzere 11/7/1992",
+          "effective_date": "1992-01-01"
+        }
+      ],
+      "seen_in": [
+        "table"
       ],
       "notes": []
     },
@@ -2240,10 +2495,22 @@
           "text": "Bu fıkradaki \"31.12.1993\" tarihi 26/12/1993 tarih ve 3946 sayılı Kanunun 36 ncı maddesi ile 31.12.1998 olarak daha sonra; 22/7/1998 tarih ve 4369 sayılı Kanunun 81/K maddesi ile de 31/12/2003 olarak değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 414, Ek Madde 13",
+          "effective": "30/12/1993",
+          "effective_date": "1993-12-30"
+        },
+        {
+          "articles": "40, 41, Ek Madde 10",
+          "effective": "1/1/1994",
+          "effective_date": "1994-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -2357,10 +2624,27 @@
           "text": "Bu madde başlığı 24/6/1994 tarih ve 4008 sayılı Kanunun 16 ncı maddesi ile metne işlendiği şekilde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "8, 135, 220, Mükerrer Madde 227, Mükerrer Madde 257, Mükerrer Madde 315, 320, 353, Mükerrer Madde 354, 358, Geçici Madde 18",
+          "effective": "6/7/1994",
+          "effective_date": "1994-07-06"
+        },
+        {
+          "articles": "30, Mükerrer Madde 196, Mükerrer Madde 298, 315, 344, Mükerrer Madde 347, 349, 350, 359, 360, 376",
+          "effective": "1/1/1995",
+          "effective_date": "1995-01-01"
+        },
+        {
+          "articles": "274",
+          "effective": "1/1/1996",
+          "effective_date": "1996-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -2441,9 +2725,26 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "8",
+          "effective": "1/1/1994 tarihinden geçerli olmak üzere 2/6/1995",
+          "effective_date": "1994-01-01"
+        },
+        {
+          "articles": "Mükerrer Madde 227, 344",
+          "effective": "1/1/1995 tarihinden geçerli olmak üzere 2/6/1995",
+          "effective_date": "1995-01-01"
+        },
+        {
+          "articles": "30, 163, 175, 320, 353, 359, 367",
+          "effective": "2/6/1995",
+          "effective_date": "1995-06-02"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -3100,10 +3401,32 @@
           "text": "Bu fıkradaki \"31.12.1993\" tarihi 26/12/1993 tarih ve 3946 sayılı Kanunun 36 ncı maddesi ile 31.12.1998 olarak daha sonra; 22/7/1998 tarih ve 4369 sayılı Kanunun 81/K maddesi ile de 31/12/2003 olarak değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5 inci maddenin 4 üncü fıkrası ve 6 ncı fıkrası ile müteakip fıkraları, 11, 30 uncu maddenin 5 ve 9 uncu bentleri, 135, 160 ncı maddeye eklenen fıkra, 173 üncü maddenin birinci fıkrasının 1 inci bendi, 235, 256, 257, 268, 280, Mükerrer Madde 298, 313, 352 nci maddenin 4 üncü bendi, 353, 355, 361, Mükerrer Madde 414, Geçiçi Madde 19, Geçiçi Madde 20",
+          "effective": "29/7/1998",
+          "effective_date": "1998-07-29"
+        },
+        {
+          "articles": "279",
+          "effective": "31/12/1998",
+          "effective_date": "1998-12-31"
+        },
+        {
+          "articles": "5 inci maddenin 3 üncü fıkrası, 30 uncu maddenin 7 nci bendi, 109, 112, 153, 154, 157, 160 ncı maddenin 2 nci fıkrası, 173 üncü maddenin 1 inci fıkrasının 2 nci bendi, 182, 185, 193, Mükerrer Madde 194, Mükerrer Madde 196, 220, 232, 233, 234, 238, 240, 247, 251, 331, 333, Dördüncü Kitabın İkinci Kısmının Üçüncü Bölüm Başlığı, 335, 336, 337, 338, 339, 340, 344, 345, 346, 347, Bölüm Başlığıyla beraber Mükerrer Madde 347, 348, 349, 350, 352 nci maddenin 9 uncu bendi, 358, 359, 360, 363, 367, 371, 374, 376, Ek Madde 1, Ek Madde 6, Ek Madde 11, Geçiçi Madde 4, Geçiçi Madde 5, Geçiçi Madde 21, Geçiçi Madde 22,",
+          "effective": "1/1/1999",
+          "effective_date": "1999-01-01"
+        },
+        {
+          "articles": "368",
+          "effective": "1/1/2003",
+          "effective_date": "2003-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": [
         "other dates in consolidated text: 2003-07-22 (1x)"
@@ -3192,10 +3515,17 @@
           "text": "Bu fıkrada yer alan, “Mükellef tarafından, ikmalen, re'sen veya idarece yapılacak tarhiyatta...” ibaresi, 11/8/1999 tarih ve 4444 sayılı Kanunun 7 nci maddesiyle, metne işlendiği şekilde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "86, 112, Mükerrer Madde 115, 232, 235, 242, 243, 344, 368, Ek Madde 1, Ek Madde 11, Geçici Madde 23",
+          "effective": "14/8/1999",
+          "effective_date": "1999-08-14"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -3216,13 +3546,48 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 23",
+          "effective": "31/12/1999 tarihinden geçerli olmak üzere 29/1/2000",
+          "effective_date": "1999-12-31"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": [
         "not found in Resmî Gazete index"
       ]
+    },
+    {
+      "kind": "kanun",
+      "number": "4684",
+      "kabul_date": "2001-06-20",
+      "title": "BAZI KANUN VE KANUN HÜKMÜNDE KARARNAMELERDE DEĞİŞİKLİK YAPILMASINA DAİR KANUN",
+      "rg": {
+        "date": "2001-07-03",
+        "number": "24451",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2001/07/20010703.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2001/07/20010703.htm",
+        "anchor": "1",
+        "source": "mevzuat.gov.tr"
+      },
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13",
+          "effective": "1/1/2002",
+          "effective_date": "2002-01-01"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
     },
     {
       "kind": "kanun",
@@ -3323,10 +3688,17 @@
           "text": "Bu fıkranın başında bulunan “1.” Ibaresi, 28/12/2001 tarihli ve 4731 sayılı Kanunla eklenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "15, 111, 112, 115, Mükerrer Madde 242, Mükerrer Madde 298, Ek Madde 13",
+          "effective": "30/12/2001",
+          "effective_date": "2001-12-30"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -3379,10 +3751,22 @@
           "text": "Bu bentlerde bulunan “20 nci maddesinin ikinci fıkrası” ibaresi 3/4/2002 tarihli ve 4751 sayılı Kanunla “29 uncu maddesinin birinci fıkrasının (a) bendi” olarak değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "268",
+          "effective": "1/1/2002 tarihinden geçerli olmak üzere 9/4/2002",
+          "effective_date": "2002-01-01"
+        },
+        {
+          "articles": "74, Mükerrer Madde 249, 352",
+          "effective": "9/4/2002",
+          "effective_date": "2002-04-09"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -3412,9 +3796,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "30",
+          "effective": "1/1/2003 tarihinden geçerli olmak üzere 9/1/2003",
+          "effective_date": "2003-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -3444,9 +3835,21 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 290",
+          "effective": "1/7/2003 tarihinden itibaren yapılacak kiralama işlemlerinde uygulanmak üzere 24/4/2003",
+          "effective_date": "2003-07-01"
+        },
+        {
+          "articles": "Ek Madde 13",
+          "effective": "1/4/2003 tarihinden geçerli olmak üzere 24/4/2003",
+          "effective_date": "2003-04-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -3500,9 +3903,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "153, 168, 223, 224",
+          "effective": "17/6/2003",
+          "effective_date": "2003-06-17"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -3538,9 +3948,16 @@
           "text": "30/7/2003 tarihli ve 4962 sayılı Kanunun 17 nci maddesiyle, bu fıkrada yer alan \"banka veya benzeri finans kurumlarınca\" ibaresi, \"banka, benzeri finans kurumları veya posta idarelerince\" olarak değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5, Mükerrer Madde 257, 413",
+          "effective": "7/8/2003",
+          "effective_date": "2003-08-07"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -3633,9 +4050,21 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "274, Mükerrer 298 inci Maddenin (A) fıkrasının 8 inci bendi haricindeki kısmı, 315, Mükerrer Madde 315, Geçici Madde 25, Geçici Madde 26",
+          "effective": "30/12/2003",
+          "effective_date": "2003-12-30"
+        },
+        {
+          "articles": "Mükerrer 298 inci Maddenin (A) fıkrasının 8 inci bendi",
+          "effective": "1/1/2004",
+          "effective_date": "2004-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -3687,10 +4116,22 @@
           "text": "Bu bentte yer alan \"on gün\" ibaresi, 25/12/2003 tarihli ve 5035 sayılı Kanunun 48 inci maddesiyle \"yedi gün\" olarak değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "104",
+          "effective": "31/12/2003 tarihinden geçerli olmak üzere 2/1/2004",
+          "effective_date": "2003-12-31"
+        },
+        {
+          "articles": "120, Birinci Kitabın Altıncı Kısmının Üçüncü Bölüm başlığı, 231, 270",
+          "effective": "1/1/2004 tarihinden geçerli olmak üzere 2/1/2004",
+          "effective_date": "2004-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -3930,10 +4371,55 @@
           "text": "Bu maddede yer alan” Dileyen mükellefler, 2004 yılının (kendilerine özel hesap dönemi tayin edilenlerde 2004 yılında biten hesap döneminden sonra başlayan) ilk geçici vergi döneminde beyan edecekleri geçici vergi matrahının tespitinde;” ibaresi, 16/7/2004 tarihli ve 5228 sayılı Kanunun 59 uncu maddesiyle”31.12.2003 tarihi (kendilerine özel hesap dönemi tayin edilenlerde 2004 yılında biten hesap döneminin sonu) itibarıyla aktif toplamı 7,5 trilyon Türk Lirasını veya hesap dönemine ait ciroları toplamı 15 trilyon Türk Lirasını aşmayan mükelleflerden dileyenler, 2004 yılı (kendilerine özel hesap dönemi tayin edilenlerde 2004 yılında biten hesap döneminden sonra başlayan hesap dönemine ilişkin) geçici vergi dönemlerinde beyan edecekleri geçici vergi matrahının tespitinde;”olarak değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "281, Mükerrer Madde 298’in (A) fıkrasının (2), (5) ve (9) numaralı bentleri, Geçici Madde 25",
+          "effective": "1/1/2004 tarihinden geçerli olmak üzere 31/7/2004",
+          "effective_date": "2004-01-01"
+        },
+        {
+          "articles": "15, 17, 28, 111, 114, 160, 204, 215, Mükerrer Madde 257, 285, Mükerrer Madde 298’in (A) fıkrasının (4) numaralı bendi, Mükerrer Madde 315, 353, Mükerrer Madde 354; İşlenemeyen Hüküm (5024 sayılı Kanunun Geçici 1 inci Maddesi)",
+          "effective": "31/7/2004",
+          "effective_date": "2004-07-31"
+        },
+        {
+          "articles": "Mükerrer Madde 355",
+          "effective": "31/7/2004 tarihini izleyen üçüncü günde",
+          "effective_date": "2004-07-31"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "kanun",
+      "number": "5234",
+      "kabul_date": "2004-09-17",
+      "title": "BAZI KANUN VE KANUN HÜKMÜNDE KARARNAMELERDE DEĞİŞİKLİK YAPILMASINA DAİR KANUN",
+      "rg": {
+        "date": "2004-09-21",
+        "number": "25590",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2004/09/20040921.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2004/09/20040921.htm",
+        "anchor": "1",
+        "source": "mevzuat.gov.tr"
+      },
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "13",
+          "effective": "21/9/2004",
+          "effective_date": "2004-09-21"
+        }
+      ],
+      "seen_in": [
+        "table"
       ],
       "notes": []
     },
@@ -3971,9 +4457,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "355, 356",
+          "effective": "31/12/2004",
+          "effective_date": "2004-12-31"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -4002,9 +4495,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "128, Ek Madde 13",
+          "effective": "16/5/2005",
+          "effective_date": "2005-05-16"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -4072,10 +4572,17 @@
           "text": "Bu maddenin başlığı “Gayrimenkullerde maliyet bedelinin artması” iken 3/7/2005 tarihli ve 5398 sayılı Kanunun 24 üncü maddesiyle metne işlendiği şekliyle değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 257, 272, 327, Mükerrer Madde 355",
+          "effective": "21/7/2005",
+          "effective_date": "2005-07-21"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4119,9 +4626,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 298, 344, Geçici Madde 27",
+          "effective": "1/1/2006 tarihinden geçerli olmak üzere 8/4/2006",
+          "effective_date": "2006-01-01"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -4173,9 +4687,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 28, 120, 353, 367, 377",
+          "effective": "4/4/2007",
+          "effective_date": "2007-04-04"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -4305,10 +4826,17 @@
           "text": "Bu madde başlığı “İştirak”iken, 23/1/2008 tarihli ve 5728 sayılı Kanunun 277 nci maddesiyle metne işlendiği şekilde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "2, 5, 87, 246, 344, 359, 360, 362, 363, 367, 371",
+          "effective": "8/2/2008",
+          "effective_date": "2008-02-08"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4343,9 +4871,16 @@
           "text": "20/2/2008 tarihli ve 5736 sayılı Kanunun 6 ncı maddesiyle; bu fıkrada bulunan \"(344 üncü maddenin üçüncü fıkrası uyarınca vergi ziyaı cezası kesilecek tarhiyata ilişkin vergi ve ceza hariç)\" ibaresi \"(359 uncu maddede yazılı fiillerle vergi ziyaına sebebiyet verilmesi halinde tarh edilecek vergi ve kesilecek ceza ile bu fiillere iştirak edenlere kesilecek ceza hariç)\" şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 1, Ek Madde 11",
+          "effective": "8/2/2008 tarihinden geçerli olmak üzere 27/2/2008",
+          "effective_date": "2008-02-08"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4374,9 +4909,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer 242",
+          "effective": "6/6/2008",
+          "effective_date": "2008-06-06"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -4441,10 +4983,49 @@
           "text": "16/6/2009 tarihli ve 5904 sayılı Kanunun 23 üncü maddesiyle; bu maddenin (a) fıkrasında yer alan “bir yıldan” ibaresi “on sekiz aydan” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "72, 359",
+          "effective": "3/7/2009",
+          "effective_date": "2009-07-03"
+        },
+        {
+          "articles": "Mükerrer Madde 355",
+          "effective": "3/7/2009 tarihini izleyen aybaşında",
+          "effective_date": "2009-07-03"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "kanun",
+      "number": "5917",
+      "kabul_date": "2009-06-25",
+      "title": "BÜTÇE KANUNLARINDA YER ALAN BAZI HÜKÜMLERİN İLGİLİ KANUN VE KANUN HÜKMÜNDE KARARNAMELERE EKLENMESİ İLE BAZI KANUN VE KANUN HÜKMÜNDE KARARNAMELERDE DEĞİŞİKLİK YAPILMASINA İLİŞKİN KANUN",
+      "rg": {
+        "date": "2009-07-10",
+        "number": "27284",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2009/07/20090710.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2009/07/20090710-1.htm",
+        "source": "mevzuat.gov.tr"
+      },
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13",
+          "effective": "10/7/2009",
+          "effective_date": "2009-07-10"
+        }
+      ],
+      "seen_in": [
+        "table"
       ],
       "notes": []
     },
@@ -4680,10 +5261,27 @@
           "text": "Anayasa Mahkemesinin 26/1/2012 tarihli ve E.: 2011/74, K.: 2012/15 sayılı Kararı ile; 23/7/2010 tarihli ve 6009 sayılı Kanunun 62 nci maddesinin (d) bendinde yer alan “… 1/7/2010 tarihinden geçerli olmak üzere …” ibaresi, bu bentte yer alan 8 inci ve 16 ncı maddeler yönünden iptal edilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "107/A, Mükerrer 227, 353, Mükerer 355, 369, 413",
+          "effective": "1/8/2010",
+          "effective_date": "2010-08-01"
+        },
+        {
+          "articles": "114, Geçici Madde 28",
+          "effective": "1/7/2010 tarihinden geçerli olmak üzere 1/8/2010[188]",
+          "effective_date": "2010-07-01"
+        },
+        {
+          "articles": "140, 367",
+          "effective": "1/1/2011",
+          "effective_date": "2011-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4741,9 +5339,16 @@
           "text": "13/2/2011 tarihli ve 6111 sayılı Kanunun 82 nci maddesiyle, bu fıkrada yer alan “levhayı merkezlerine, şubelerine, satış mağazalarına iş sahipleri ile mükellefler tarafından kolayca okunup görünecek şekilde asmak zorundadırlar.” ibaresi “levhayı almak zorundadırlar.” şeklinde değiştirilmiş ve metne işlenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5",
+          "effective": "25/2/2011",
+          "effective_date": "2011-02-25"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4778,9 +5383,16 @@
           "text": "7/7/2011 tarihli ve 646 sayılı KHK’nin 4 üncü maddesiyle, bu maddenin birinci fıkrasında yer alan “maliye müfettişleri, hesap uzmanları ile bunların yardımcıları ve gelirler kontrolörleri ile stajyer gelirler kontrolörleri” ibaresi “Vergi Müfettişleri ve Vergi Müfettiş Yardımcıları” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "135, 140, 367 ve Ek Madde 13",
+          "effective": "10/7/2011",
+          "effective_date": "2011-07-10"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4871,10 +5483,17 @@
           "text": "31/5/2012 tarihli ve 6322 sayılı Kanunun 14 üncü maddesiyle bu maddeye (5) numaralı fıkra eklenmiş ve mevcut (5) numaralı fıkra (6) numaralı fıkra olarak teselsül ettirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "112, 325/A, Geçici Madde 29",
+          "effective": "15/6/2012",
+          "effective_date": "2012-06-15"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": [
         "mevzuat.gov.tr gives RG 2012-05-16 (28324); found in RG index on 2012-06-15 (28324), used"
@@ -4912,10 +5531,17 @@
           "text": "Bu fıkrada yer alan 28/3/2013 tarihli ve 6455 sayılı Kanunun 1 inci maddesiyle düzenlenen miktar aynen bırakılmış olup, daha sonra 29/12/2020 tarihli ve 31349 Mükerrer sayılı Resmi Gazete'de yayımlanan Maliye Bakanlığının (Gelir İdaresi Başkanlığı) 522 Sıra No.’lu Tebliği ile 1/1/2021 tarihinden geçerli olmak üzere tespit edilen miktar metne parantez içinde koyu siyah punto ile işlenmiştir. Daha önce yapılan değişiklikler için bu Kanunun sonundaki \"ÇEŞİTLİ MEVZUAT İLE YAPILAN DEĞİŞİKLİKLER CETVELİ\" ne bakınız."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "153/A",
+          "effective": "11/4/2013",
+          "effective_date": "2013-04-11"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4952,10 +5578,17 @@
           "text": "24/5/2013 tarihli ve 6487 sayılı Kanunun 8 inci maddesiyle bu bentte yer alan “giderlerine” ibaresinden sonra gelmek üzere “ayrıca avukatlık veya dava vekilliği sıfatı dışındaki sıfatları dolayısıyla muttali oldukları ahval ve hususlara” ibaresi eklenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "151, 152/A",
+          "effective": "11/6/2013",
+          "effective_date": "2013-06-11"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -4984,9 +5617,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 257",
+          "effective": "19/2/2014",
+          "effective_date": "2014-02-19"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -5015,9 +5655,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "107/A, 132/A",
+          "effective": "7/4/2015",
+          "effective_date": "2015-04-07"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -5106,10 +5753,17 @@
           "text": "15/7/2016 tarihli ve 6728 sayılı Kanunun 20 nci maddesiyle, bu madde başlığı metne işlendiği şekilde yeniden düzenlenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "28, 153, 153/A, Mükerrer 355, 370",
+          "effective": "9/8/2016",
+          "effective_date": "2016-08-09"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5138,9 +5792,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "11",
+          "effective": "7/9/2016",
+          "effective_date": "2016-09-07"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -5169,9 +5830,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer 355",
+          "effective": "27/5/2017",
+          "effective_date": "2017-05-27"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -5246,10 +5914,22 @@
           "text": "28/11/2017 tarihli ve 7061 sayılı Kanunun 20 nci maddesiyle, bu maddenin birinci fıkrasında yer alan “veya ikamet” ibaresi madde metninden çıkarılmıştır."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "157, Mükerrer Madde 257",
+          "effective": "5/12/2017",
+          "effective_date": "2017-12-05"
+        },
+        {
+          "articles": "101, 102, 103",
+          "effective": "1/1/2018",
+          "effective_date": "2018-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5285,10 +5965,17 @@
           "text": "Bu fıkranın 15/2/2018 tarihli ve 7099 sayılı Kanunun 2 nci maddesiyle değiştirilen metni, aynı Kanunun 34 üncü maddesi uyarınca 15/3/2018 tarihinde yürürlüğe girmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "223",
+          "effective": "15/3/2018",
+          "effective_date": "2018-03-15"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5407,10 +6094,32 @@
           "text": "a) 21/3/2018 tarihli ve 7103 sayılı Kanunun 93 üncü maddesi uyarınca, bu madde yayım tarihi olan 27/3/2018’i izleyen ikinci ay başı olan 1/5/2018 tarihinde yürürlüğe girer. b) 6948 sayılı Sanayi Sicil Kanununa göre sanayi sicil belgesini haiz mükelleflerce münhasıran imalat sanayinde kullanılmak üzere, bu maddeye göre amortisman oran ve süreleri faydalı ömür sürelerinin yarısı dikkate alınarak hesaplanabilecek ve 3065 sayılı Kanunun Geçici 39 uncu maddesine göre katma değer vergisi istisnası kapsamında teslim edilecek yeni makine ve teçhizat için 5/5/2018 tarihli ve 30412 sayılı Resmî Gazete’de yayımlanan, 30/4/2018 tarihli ve 2018/11674 sayılı Bakanlar Kurulu Kararı eki Kararın 4 üncü maddesi ile Karara ekli listeye bakınız."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "5, 10, 278/A, 353, Mükerrer Madde 355, 376",
+          "effective": "27/3/2018",
+          "effective_date": "2018-03-27"
+        },
+        {
+          "articles": "280/A",
+          "effective": "27/3/2018 tarihinden sonra tescil edilen sermaye şirketlerine uygulanmak üzere 27/3/2018",
+          "effective_date": "2018-03-27"
+        },
+        {
+          "articles": "Ek Madde 11",
+          "effective": "27/3/2018 tarihinden önce tarhiyat öncesi uzlaşma talep edilenler hariç olmak üzere 27/3/2018",
+          "effective_date": "2018-03-27"
+        },
+        {
+          "articles": "Geçici Madde 30",
+          "effective": "Yayım tarihi olan 27/3/2018’i izleyen ikinci aybaşında (1/5/2018)",
+          "effective_date": "2018-03-27"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5447,10 +6156,22 @@
           "text": "29/3/2018 tarihli ve 7104 sayılı Kanunun 20 nci maddesiyle bu maddenin son cümlesinde yer alan; “tasdike” ibaresinden sonra gelmek üzere “ve 3568 sayılı Kanunun 8/A maddesi uyarınca düzenlenecek katma değer vergisi iadesine dayanak teşkil eden rapora” ibaresi ve “yeminli mali müşavirler” ibaresinden sonra gelmek üzere “ve serbest muhasebeci mali müşavirler” ibaresi eklenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "256",
+          "effective": "6/4/2018",
+          "effective_date": "2018-04-06"
+        },
+        {
+          "articles": "140",
+          "effective": "1/1/2019 tarihinden sonraki vergilendirme dönemlerine ilişkin yapılacak incelemelerde uygulanmak üzere 1/1/2019",
+          "effective_date": "2019-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5479,9 +6200,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 31",
+          "effective": "25/5/2018",
+          "effective_date": "2018-05-25"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -5605,9 +6333,16 @@
           "text": "2/7/2018 tarihli ve 700 sayılı KHK’nin 46 ncı maddesiyle, bu maddede yer alan “Bakanlar Kurulu” ibaresi “Cumhurbaşkanı” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "11, 48, Mükerrer Madde 49, 74, 92, 127, 140, 215, Mükerrer Madde 242, 267, Mükerrer Madde 298, Mükerrer Madde 414, Geçici Madde 30",
+          "effective": "24/6/2018 tarihinde birlikte yapılan Türkiye Büyük Millet Meclisi ve Cumhurbaşkanlığı seçimleri sonucunda Cumhurbaşkanının andiçerek göreve başladığı tarihte (9/7/2018)",
+          "effective_date": "2018-06-24"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5635,9 +6370,16 @@
           "text": "29/11/2018 tarihli ve 7153 sayılı Kanunun 28 nci maddesiyle bu fıkrada yer alan “İçişleri Bakanlığınca” ibaresi “İçişleri Bakanlığının görüşü alınarak Çevre ve Şehircilik Bakanlığınca” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 1",
+          "effective": "10/12/2018",
+          "effective_date": "2018-12-10"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5714,10 +6456,17 @@
           "text": "5/12/2019 tarihli ve 7194 sayılı Kanunun 28 inci maddesiyle, bu parantez içi hükümde yer alan “kesilen ceza hariç” ibaresi “kesilen ceza ve 370 inci maddenin (b) fıkrası kapsamında kendilerine ön tespite ilişkin yazı tebliğ edilen mükelleflere mezkur maddeye göre kesilen ceza hariç” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "112, 160, 370, 376, 379, Ek Madde 1, Ek Madde 9",
+          "effective": "112 nci, 370 inci, 379 uncu ve Ek 1 inci maddesi 1/1/2020 tarihinde diğer hükümler 7/12/2019",
+          "effective_date": "2020-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5785,10 +6534,17 @@
           "text": "29/4/2021 tarihli ve 7318 sayılı Kanunun 1 inci maddesiyle, bu bendin son cümlesinde yer alan “süre” ibaresi “süreler” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "231, Mükerrer Madde 257, Mükerrer Madde 355, 359, 367",
+          "effective": "30/4/2021",
+          "effective_date": "2021-04-30"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -5817,9 +6573,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 31",
+          "effective": "9/6/2021",
+          "effective_date": "2021-06-09"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -6378,10 +7141,42 @@
           "text": "14/10/2021 tarihli ve 7338 sayılı Kanunun 46 ncı maddesiyle ek 13 üncü maddeden sonra gelmek üzere bu bölüm başlığı eklenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "4, 5, 97, 120, 170/A, 226/A, 227, Mükerrer Madde 227, Mükerrer Madde 242, Mükerrer Madde 257, 261, 262, 268/A, 270, 273, 315, 318, 320, 323, 328, 329, 339, 352, 353, Mükerrer Madde 355, 371, 376, Ek Madde 1, Ek Madde 11",
+          "effective": "26/10/2021",
+          "effective_date": "2021-10-26"
+        },
+        {
+          "articles": "Dördüncü Bölüm Başlığı, Ek Madde 14, Ek Madde 15, Ek Madde 16, Ek Madde 17, Ek Madde 18, Geçici Madde 30",
+          "effective": "1/1/2022 tarihinden itibaren yapılacak başvurulara uygulanmak üzere yayımı tarihinde (26/10/2021)",
+          "effective_date": "2022-01-01"
+        },
+        {
+          "articles": "234",
+          "effective": "Yayımı tarihini takip eden ayın başında (1/11/2021)",
+          "effective_date": "2021-11-01"
+        },
+        {
+          "articles": "Mükerrer Madde 298, Geçici Madde 32",
+          "effective": "1/1/2022",
+          "effective_date": "2022-01-01"
+        },
+        {
+          "articles": "104",
+          "effective": "1/6/2022",
+          "effective_date": "2022-06-01"
+        },
+        {
+          "articles": "139, 140",
+          "effective": "1/7/2022",
+          "effective_date": "2022-07-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": [
         "other dates in consolidated text: 2021-10-04 (1x)"
@@ -6411,9 +7206,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "367",
+          "effective": "9/3/2022",
+          "effective_date": "2022-03-09"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -6442,9 +7244,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 33",
+          "effective": "29/1/2022",
+          "effective_date": "2022-01-29"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -6532,10 +7341,17 @@
           "text": "8/4/2022 tarihli ve 7394 sayılı Kanunun 4 üncü maddesiyle (a) fıkrasında yer alan “üç” ibaresi “beş” şeklinde, (b), (c) ve (ç) fıkralarında yer alan “beş” ibareleri “sekiz” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "4, 359, 367, Geçici Madde 34",
+          "effective": "15/4/2022",
+          "effective_date": "2022-04-15"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -6587,10 +7403,22 @@
           "text": "1/7/2022 tarihli ve 7417 sayılı Kanunun 27 nci maddesiyle bu maddenin birinci fıkrasının;(1) ve (2) numaralı bentlerinde yer alan “240” ibareleri “1.000” şeklinde, “120.000” ibareleri “500.000” şeklinde, “12.000” ibaresi “50.000” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 257",
+          "effective": "5/7/2022",
+          "effective_date": "2022-07-05"
+        },
+        {
+          "articles": "353, Mükerrer Madde 355",
+          "effective": "yayımını izleyen ayın başında (1/8/2022)",
+          "effective_date": "2022-08-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -6617,9 +7445,16 @@
           "text": "Anayasa Mahkemesinin 28/9/2022 tarihli ve E: 2022/59, K: 2022/111 sayılı Kararı ile bu cümle; birinci fıkranın birinci cümlesinde yer alan “…infaz…” ibaresi yönünden ve ikinci fıkrada yer alan “…kovuşturma…” ibaresi yönünden iptal edilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 34",
+          "effective": "23/3/2023",
+          "effective_date": "2023-03-23"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -6647,9 +7482,16 @@
           "text": "13/10/2022 tarihli ve 7418 sayılı Kanunun 28 inci maddesiyle; bu bendin birinci cümlesine “gazetede” ibaresinden sonra gelmek üzere “ve bir internet haber sitesinde” ibaresi ve aynı bendin ikinci cümlesine “gazetelerden birinde” ibaresinden sonra gelmek üzere “ve bir internet haber sitesinde” ibaresi eklenmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "104",
+          "effective": "1/4/2023",
+          "effective_date": "2023-04-01"
+        }
+      ],
       "seen_in": [
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -6686,10 +7528,17 @@
           "text": "16/11/2022 tarihli ve 7421 sayılı Kanunun 2 nci maddesiyle, bu maddenin birinci fıkrasınının dördüncü cümlesinde yer alan “(8) numaralı bendi” ibaresi “(8) ve (10) numaralı bentleri” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 257, Mükerrer Madde 355",
+          "effective": "26/11/2022",
+          "effective_date": "2022-11-26"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -6726,10 +7575,17 @@
           "text": "30/11/2022 tarihli ve 7423 sayılı Kanunun 2 nci maddesiyle bu fıkranın birinci cümlesinde yer alan “(ç) fıkrasında” ibaresi “(ç) ve (d) fıkralarında” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "359, 367",
+          "effective": "1/1/2024",
+          "effective_date": "2024-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -6757,9 +7613,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "359",
+          "effective": "29/11/2023",
+          "effective_date": "2023-11-29"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -6804,10 +7667,22 @@
           "text": "27/12/2023 tarihli ve 7491 sayılı Kanunun 16 ncı maddesiyle, bu fıkrada yer alan “31/12/2023” ibaresi “31/12/2024” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 30, Geçici Madde 33",
+          "effective": "28/12/2023",
+          "effective_date": "2023-12-28"
+        },
+        {
+          "articles": "Mükerrer Madde 413",
+          "effective": "1/1/2024",
+          "effective_date": "2024-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -7126,10 +8001,17 @@
           "text": "28/7/2024 tarihli ve 7524 sayılı Kanunun 10 uncu maddesi ile Kanuna bağlı “Usulsüzlük Cezalarına Ait Cetvel” başlığı “1 Sayılı Usulsüzlük Cezalarına Ait Cetvel” şeklinde, mevcut Usulsüzlük Cezalarına Ait Cetveldeki miktarlar cetvele işlendiği şekilde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "112, 153/A, Mükerrer Madde 257, 263, 274/A, 344, 352, 353, Mükerrer Madde 355, 376, Ek Madde 1, Ek Madde 7, Ek Madde 8, Ek Madde 9, Ek Madde 11, Ek Madde 13, Geçici Madde 35",
+          "effective": "2/8/2024",
+          "effective_date": "2024-08-02"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -7173,10 +8055,17 @@
           "text": "24/10/2024 tarihli ve 7529 sayılı Kanunun 12 nci maddesi ile bu fıkranın birinci cümlesinde yer alan “ile sigorta ve reasürans şirketleri ve emeklilik şirketleri” ibaresi “, sigorta ve reasürans şirketleri, emeklilik şirketleri, tasfiye ve iflas hallerindeki şirketler, 8/6/1984 tarihli ve 233 sayılı Kamu İktisadi Teşebbüsleri Hakkında Kanun Hükmünde Kararname kapsamındaki iktisadi devlet teşekkülleri ile kamu iktisadi kuruluşları” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Mükerrer Madde 298, Geçici Madde 33",
+          "effective": "1/1/2024 tarihinden, özel hesap dönemi tayin edilen mükellefler için 2024 yılında başlayan hesap döneminden geçerli olmak üzere yayımı tarihinde (30/10/2024)",
+          "effective_date": "2024-01-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -7213,9 +8102,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "15, Geçici Madde 36",
+          "effective": "27/12/2024",
+          "effective_date": "2024-12-27"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -7252,10 +8148,22 @@
           "text": "20/7/2025 tarihli ve 7555 sayılı Kanunun 5 inci maddesiyle bu fıkrada yer alan “160” ibaresi “300” şeklinde ve “%20’sini” ibaresi “%40’ını” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "131",
+          "effective": "24/7/2025",
+          "effective_date": "2025-07-24"
+        },
+        {
+          "articles": "Ek Madde 13",
+          "effective": "yayımını izleyen ayın başında (1/8/2025)",
+          "effective_date": "2025-08-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
       ],
       "notes": []
     },
@@ -7284,9 +8192,16 @@
         }
       ],
       "footnotes": [],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 37",
+          "effective": "25/12/2025",
+          "effective_date": "2025-12-25"
+        }
+      ],
       "seen_in": [
-        "marker"
+        "marker",
+        "table"
       ],
       "notes": []
     },
@@ -7331,10 +8246,151 @@
           "text": "24/6/2026 tarihli ve 7587 sayılı Kanunun 10 uncu maddesi ile bu bentte yer alan “iki katına” ibaresi “beş katına” şeklinde değiştirilmiştir."
         }
       ],
-      "effective": [],
+      "effective": [
+        {
+          "articles": "107/A, Mükerrer Madde 257, Geçici Madde 38",
+          "effective": "1/7/2026",
+          "effective_date": "2026-07-01"
+        }
+      ],
       "seen_in": [
         "marker",
-        "footnote"
+        "footnote",
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "aym",
+      "number": "E.2011/139, K.2012/205",
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13",
+          "effective": "10/10/2013",
+          "effective_date": "2013-10-10"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "khk",
+      "number": "433",
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13",
+          "effective": "15/7/1991 tarihinden geçerli olmak üzere 8/7/1991",
+          "effective_date": "1991-07-15"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "khk",
+      "number": "449",
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13",
+          "effective": "15/10/1991",
+          "effective_date": "1991-10-15"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "khk",
+      "number": "570",
+      "title": "MEMURLAR VE DİĞER KAMU GÖREVLİLERİ İLE İLGİLİ BAZI KANUN VE KANUN HÜKMÜNDE KARARNAMELERDE DEĞİŞİKLİK YAPILMASINA DAİR KANUN HÜKMÜNDE KARARNAME Kanun Hükmünde Kararnamenin Tarihi : 20/3/1997 No : 570 Yetki Kanununun Tarihi : 28/11/1996 No : 4214 Yayımlandığı Resmî Gazete Tarihi : 3/4/1997 No : 22953 (Mükerrer) V. Tertip Düsturun Cildi : 36 Madde 1 – 2 – (23/1/1997 tarih ve 270 sayılı Kanun Hükmünde Kararnamenin bazı cetvellerinin değiştirilmesi ile ilgili olup, yerlerine işlenmiştir.) Madde 3 – (24/2/1983 tarih ve 2802 sayılı Kanunun 106 ncı maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Madde 4 – 7 – (11/10/1983 tarih ve 2914 sayılı Kanunun bazı maddelerinin değiştirilmesi ve ek madde 2 ile Makam tazminatı cetveli eklenmesi ile ilgili olup, yerlerine işlenmiştir.) Madde 8 – 10 – (14/7/1965 tarih ve 657 sayılı Kanunun bazı maddelerinin değiştirilmesi ve makam tazminatı cetvelinin değiştirilmesi ile ilgili olup, yerlerine işlenmiştir.) Madde 11– (8/6/1949 tarih ve 5434 sayılı Kanunun Ek 70 inci maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Madde 12 – (4/1/1961 tarih ve 213 sayılı Kanunun Ek 13 üncü maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Madde 13 – (Mülga: 17/9/2004 – 5234/33 md.) Madde 14 – 484 sayılı Kanun Hükmünde Kararnamenin Geçici 4 üncü ve 485 sayılı Kanun Hükmünde Kararnamenin Geçici 8 inci maddeleri ile 24.2.1983 tarih ve 2802 sayılı Kanunun 103 üncü maddesinin son fıkrası yürürlükten kaldırılmıştır. Madde 15 – (27/6/1989 tarih ve 375 sayılı Kanun Hükmünde Kararnamenin 2 nci maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Madde 16 – (23/2/1995 tarih ve 547 sayılı Kanun Hükmünde Kararnamenin 20 nci maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Madde 17 – (27/7/1967 tarih ve 926 sayılı Kanunun Ek 17 nci maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Madde 18 – (10/11/1983 tarih ve 2949 sayılı Kanunun 16 ncı maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Madde 19 – (13/10/1983 tarih ve 2919 sayılı Kanunun Ek 2 nci maddesinin değiştirilmesi ile ilgili olup, yerine işlenmiştir.) Geçici Madde 1 – 5434 sayılı \"Türkiye Cumhuriyeti Emekli Sandığı Kanununun değişik Ek 20 nci maddesine göre verilecek emekli ikramiyesinin hesaplanmasında, anılan Kanunun Ek 70 inci maddesinin (b) bendindeki oranlardan % 160 oranı; 1997 yılında % 75, 1998 yılında % 100, 1999 yılında % 130; % 100 oranı; 1997 yılında % 60, 1998 yılında % 75, 1999 yılında % 90; % 60 oranı; 1997 yılında % 40, 1998 yılında % 45, 1999 yılında % 50; %35 oranı; 1997 yılında % 26, 1998 yılında % 28, 1999 yılında % 30 olarak uygulanır. Geçici Madde 2 – 15 Nisan 1997 tarihi itibariyle kamu görevlisi ve bunların emeklisi durumunda olanlara anılan tarihteki özlük durumları dikkate alınarak bu Kanun Hükmünde Kararnamenin 1, 2, 3, 4, 7, 9, 10, 11 ve 19 uncu maddeleri ile yapılan ek iyileştirmeden doğan farkın 3,5 katı tahakkuk ettirilerek herhangi bir vergi ve kesintiye tabi tutulmaksızın memurlar ve diğer kamu görevlilerine 15.4.1997 tarihinde, bunların emeklilerine ise fark ödemesinin hesaplandığı tarihi müeakip ayrıca ödenir. 1 Ocak 1997 tarihinden 15 Nisan 1997 tarihine kadar geçen dönem içinde; aylıksız izin kullananlara, açıktan atananlara ve 569 sayılı Kanun Hükmünde Kararname ile ek iyileştirmeden yararlananlara (uçucular dahil) net artış farkı gün hesabı ile kıst olarak ödenir. Bu maddenin uygulanmasında ortaya çıkacak tereddütleri, ödemeye esas olacak şekilde gidermeye Maliye Bakanlığı yetkilidir. Madde 20 – Bu Kanun Hükmünde Kararname 15/4/1997 tarihinden geçerli olmak üzere yayımı tarihinde yürürlüğe girer. Madde 21 – Bu Kanun Hükmünde Kararname hükümlerini Bakanlar Kurulu yürütür. 570 SAYILI KHK’YE EK VE DEĞİŞİKLİK GETİREN MEVZUATIN YÜRÜRLÜĞE GİRİŞ TARİHİNİ GÖSTERİR LİSTE Kanun No. Farklı Tarihte Yürürlüğe Giren Maddeler Yürürlüğe Giriş Tarihi 5234 13 5/12/2004 Emekli Sandığı Kanununun Ek 20 nci maddesine göre verilecek emekli ikramiyelerinin hesaplanmasında, aynı Kanunun Ek 70 inci maddesine göre 25/8/1998 tarih ve 98/11588 sayılı Bakanlar Kurulu Kararı ile belirlenen oranlardan; % 240, % 200 ve % 180 oranları; 1998 yılında % 100, 1999 yılında % 130; % 150 ve % 130 oranları; 1998 yılında % 75, 1999 yılında % 90; % 70 oranı; 1998 yılında % 45, 1999 yılında % 50; % 40 oranı; 1998 yılında % 28, 1999 yılında % 30 olarak; 1/12/1998 tarihinden geçerli olmak üzere uygulanacağı; sözü edilen Bakanlar Kurulu Kararı ile hüküm altına alınmıştır. (Bkz. R:G: 5/9/1998-23454) $(document).ready(function () { jQuery('table').each(function (cmp) { var parent = this.parentNode; var wrapper = document.createElement('div'); parent.replaceChild(wrapper, this); wrapper.appendChild(this); this.parentElement.style.overflowX = 'auto'; }); if (window.location.search.indexOf(\"2709\") != -1 || window.location.search.indexOf(\"MevzuatTur=19\") != -1) { var tableCss = document.styleSheets.cssRules.style; tableCss.cssText = tableCss.cssText.replace(\"100%\", \"initial\"); } //$('.tooltip').tooltipster(); //replaceTable(); //$(window).on('resize', function () { // replaceTable(); //}); //replaceTable(); }); //function replaceTable() { // //if (window.location.search.indexOf(\"MevzuatTur=19\") == -1) { // // var iframe = document.getElementsByTagName(\"td\"); // // var value = $('body').width() - 10; // // for (var i = 0; i < iframe.length; i++) { // // iframe[i].style.width = \"initial !important\"; // // } // //} // //var iframe = document.getElementsByClassName(\"MsoNormalTable\"); // //var value = $('body').width() - 10; // // //for (var i = 0; i < iframe.length; i++) { // // iframe[i].style.width = value; // //} // //var iframe2 = document.getElementsByClassName(\"MsoNormal\"); // ////for (var j = 0; j < iframe2.length; j++) { // //// iframe2[j].style.width = value; // ////} //}",
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13",
+          "effective": "15/4/1997 tarihinden geçerli olmak üzere 3/4/1997",
+          "effective_date": "1997-04-15"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "khk",
+      "number": "666",
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13’ün 4 üncü fıkrasının (b), (c) ve (d) bentleri ile aynı fıkrada yürürlükten kaldırılan “Maliye Bakanı:” ve “Yetkilidir.” ibareleri",
+          "effective": "31/12/2011 tarihinden geçerli olmak üzere 2/11/2011",
+          "effective_date": "2011-12-31"
+        },
+        {
+          "articles": "Ek Madde 13’ün 4 üncü fıkrasının (a) bendi, aynı fıkranın “Yetkilidir.” ibaresinden sonra gelen 1 inci, 2 nci, 3 üncü ve 4 üncü paragrafları ile 6 ncı fıkrası",
+          "effective": "14/1/2012 tarihinden geçerli olmak üzere 2/11/2011",
+          "effective_date": "2012-01-14"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": [
+        "not found in Resmî Gazete index"
+      ]
+    },
+    {
+      "kind": "kanun",
+      "number": "3094",
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Geçici Madde 11",
+          "effective": "12/12/1984",
+          "effective_date": "1984-12-12"
+        }
+      ],
+      "seen_in": [
+        "table"
+      ],
+      "notes": []
+    },
+    {
+      "kind": "kanun",
+      "number": "4315",
+      "affected_articles": [],
+      "markers": [],
+      "footnotes": [],
+      "effective": [
+        {
+          "articles": "Ek Madde 13",
+          "effective": "30/6/1997 tarihinden geçerli olmak üzere 25/12/1997",
+          "effective_date": "1997-06-30"
+        }
+      ],
+      "seen_in": [
+        "table"
       ],
       "notes": []
     }

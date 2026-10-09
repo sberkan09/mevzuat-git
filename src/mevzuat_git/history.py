@@ -25,7 +25,7 @@ import os
 import re
 import subprocess
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from mevzuat_git import amendments as am
@@ -102,6 +102,10 @@ def _month_start(d: date, months: int) -> date:
     return date(d.year + m // 12, m % 12 + 1, 1)
 
 
+_DAY_ORDINALS = {"birinci": 1, "ikinci": 2, "üçüncü": 3, "dördüncü": 4, "beşinci": 5,
+                 "altıncı": 6, "yedinci": 7, "sekizinci": 8, "dokuzuncu": 9, "onuncu": 10}
+
+
 def yururluk_date(text: str, rg_date: date | None) -> date | None:
     """The yürürlük date in the second column of a yürürlük table row, or None if the
     text does not give one date for the whole row.
@@ -125,9 +129,17 @@ def yururluk_date(text: str, rg_date: date | None) -> date | None:
         if len(dates) > 1:
             return None
         return mg.parse_date(dates[0]) if dates else rg_date
-    if m := re.search(rf"\btarihte\s*\(\s*({_DATE})\s*\)\s*$", clause):
-        # KHK 700: "... Cumhurbaşkanının andiçerek göreve başladığı tarihte (9/7/2018)".
+    if m := re.search(rf"\b(?:tarihte|ay(?:ın)?\s*başında)\s*\(\s*({_DATE})\s*\)\s*$", clause):
+        # KHK 700: "... Cumhurbaşkanının andiçerek göreve başladığı tarihte (9/7/2018)";
+        # VUK: "yayımını izleyen ayın başında (1/8/2025)" (7555), "Yayım tarihi olan
+        # 27/3/2018’i izleyen ikinci aybaşında (1/5/2018)" (7103).
         return mg.parse_date(m.group(1))
+    if m := re.search(rf"({_DATE})\s+tarihini\s+(?:izleyen|takip\s+eden)\s+(?:(\w+)\s+)?günde\s*$",
+                      clause):
+        # "31/7/2004 tarihini izleyen üçüncü günde" (VUK mükerrer 355, 5228).
+        n = _DAY_ORDINALS.get(m.group(2) or "", None) if m.group(2) else 1
+        d = mg.parse_date(m.group(1))
+        return d + timedelta(days=n) if d and n else None
     dates = re.findall(_DATE, clause)
     if len(dates) == 1 and re.fullmatch(rf"\s*\d*\s*{_DATE}\s*(?:tarihinde)?\s*", clause):
         return mg.parse_date(dates[0])
@@ -384,50 +396,120 @@ def plan(groups: list[list[OpResult]], opsfile: OpsFile, alist: AmendmentList) -
 
 def build(current: Law, opsfile: OpsFile, alist: AmendmentList, out: Path) -> list[Commit]:
     """Write the history of ``current`` into a new git repository at ``out``."""
+    return build_many([(current, opsfile, alist)], out)
+
+
+@dataclass
+class _LawHistory:
+    current: Law
+    state: Law
+    steps: list[Step]
+
+    @property
+    def name(self) -> str:
+        return f"{self.current.number}.md"
+
+
+def build_many(laws: list[tuple[Law, OpsFile, AmendmentList]], out: Path) -> list[Commit]:
+    """Write the histories of several laws into one new git repository at ``out``, one
+    file per law. An act that amends more than one of them on the same yürürlük date (a
+    torba kanun) is one commit that changes every file it touches. Each law's commits keep
+    their order; across laws, commits go in publication order, then by yürürlük date."""
     if out.exists() and any(out.iterdir()):
         raise FileExistsError(f"{out} is not empty")
-    name = f"{current.number}.md"
-    groups = batches(op_results(opsfile))
-    state = unwind(current, groups)  # sets the checks the replay relies on
-    steps = plan(groups, opsfile, alist)
-    if not steps:
-        raise ValueError("no operations to replay")
+    hs: list[_LawHistory] = []
+    for current, opsfile, alist in laws:
+        groups = batches(op_results(opsfile))
+        state = unwind(current, groups)  # sets the checks the replay relies on
+        steps = plan(groups, opsfile, alist)
+        if not steps:
+            raise ValueError(f"{current.number}: no operations to replay")
+        hs.append(_LawHistory(current, state, steps))
     repo = GitRepo(out)
     repo.init()
     commits: list[Commit] = []
-    # Dated with the first step, which it precedes.
-    start = Commit(min(steps[0].date, steps[0].rg_date),
-                   f"{current.number} sayılı {current.name}: başlangıç metni", [(
-                       "Resmî Gazete metni elimizde olan en eski değişiklikten önceki hâl. "
-                       "Bugünkü konsolide metinden, değişiklikler geri alınarak elde edildi; "
-                       "sonradan bütünüyle değiştirilen metinlerin o tarihteki hâli "
-                       f"bilinmiyor, yerlerinde \"{UNKNOWN_TEXT}\" yazar.")])
-    repo.commit(start, {name: render(state)})
-    commits.append(start)
-    for s in steps:
-        for b in s.batches:
-            replay_batch(state, b)
-        c = _step_commit(s)
-        repo.commit(c, {name: render(state)})
+    pos = [0] * len(hs)
+    while True:
+        heads = [(h.steps[pos[i]], i) for i, h in enumerate(hs) if pos[i] < len(h.steps)]
+        if not heads:
+            break
+        first, _ = min(heads, key=lambda x: (x[0].rg_date, x[0].date, x[1]))
+        together = [i for s, i in heads
+                    if (s.act, s.rg_date, s.date) == (first.act, first.rg_date, first.date)]
+        for i in together:
+            if pos[i] == 0:
+                c = _start_commit(hs[i])
+                repo.commit(c, {hs[i].name: render(hs[i].state)})
+                commits.append(c)
+        parts: list[tuple[int, Step]] = []
+        for i in together:
+            s = hs[i].steps[pos[i]]
+            for b in s.batches:
+                replay_batch(hs[i].state, b)
+            parts.append((hs[i].current.number, s))
+            pos[i] += 1
+        # With several laws, every subject names the law: "7582 sayılı Kanun: 193 md. 17".
+        c = _step_commit(parts[0][1]) if len(hs) == 1 else _joint_commit(parts)
+        repo.commit(c, {hs[i].name: render(hs[i].state) for i in together})
         commits.append(c)
-    content, typography = _differing_articles(state, current)
-    if content or typography:
-        body = [("Değişikliklerin yeniden oynatılmasıyla elde edilen metin, mevzuat.gov.tr'deki "
-                 "güncel metinden ayrılıyor; bu commit dosyayı güncel metne getirir."), ""]
-        if content:
-            body += [("İçeriği ayrılan maddeler (Resmî Gazete metni okunamayan ya da henüz "
-                      "ayrıştırılamayan değişiklikler; ayrıntı: mevzuat-git replay raporu):"),
-                     _art_list(content), ""]
-        if typography:
-            body += [("Yalnız yazımı ayrılan maddeler (değiştiren kanunun yazımı ile güncel "
-                      "metninki: tırnak, tire, şapka, madde başlığı biçimi):"),
-                     _art_list(typography), ""]
-        c = Commit(max(c.date for c in commits),
-                   f"{current.number} sayılı Kanun: güncel konsolide metinle eşitleme",
-                   body[:-1])
-        repo.commit(c, {name: render(current)})
+    syncs = [(h, *_differing_articles(h.state, h.current)) for h in hs]
+    syncs = [(h, content, typo) for h, content, typo in syncs if content or typo]
+    if syncs:
+        last = max(c.date for c in commits)
+        if len(hs) == 1:
+            h, content, typo = syncs[0]
+            c = Commit(last, f"{h.current.number} sayılı Kanun: güncel konsolide metinle "
+                       "eşitleme", [_SYNC_INTRO, "", *_sync_lists(content, typo)])
+        else:
+            body = [_SYNC_INTRO]
+            for h, content, typo in syncs:
+                body += ["", f"{h.current.number} sayılı Kanun:", *_sync_lists(content, typo)]
+            c = Commit(last, "Güncel konsolide metinlerle eşitleme: "
+                       + ", ".join(str(h.current.number) for h, _, _ in syncs), body)
+        repo.commit(c, {h.name: render(h.current) for h, _, _ in syncs})
         commits.append(c)
     return commits
+
+
+_SYNC_INTRO = ("Değişikliklerin yeniden oynatılmasıyla elde edilen metin, mevzuat.gov.tr'deki "
+               "güncel metinden ayrılıyor; bu commit dosyayı güncel metne getirir.")
+
+
+def _sync_lists(content: list[str], typography: list[str]) -> list[str]:
+    body: list[str] = []
+    if content:
+        body += [("İçeriği ayrılan maddeler (Resmî Gazete metni okunamayan ya da henüz "
+                  "ayrıştırılamayan değişiklikler; ayrıntı: mevzuat-git replay raporu):"),
+                 _art_list(content), ""]
+    if typography:
+        body += [("Yalnız yazımı ayrılan maddeler (değiştiren kanunun yazımı ile güncel "
+                  "metninki: tırnak, tire, şapka, madde başlığı biçimi):"),
+                 _art_list(typography), ""]
+    return body[:-1]
+
+
+def _start_commit(h: _LawHistory) -> Commit:
+    # Dated with the law's first step, which it precedes.
+    s = h.steps[0]
+    return Commit(min(s.date, s.rg_date),
+                  f"{h.current.number} sayılı {h.current.name}: başlangıç metni", [(
+                      "Resmî Gazete metni elimizde olan en eski değişiklikten önceki hâl. "
+                      "Bugünkü konsolide metinden, değişiklikler geri alınarak elde edildi; "
+                      "sonradan bütünüyle değiştirilen metinlerin o tarihteki hâli "
+                      f"bilinmiyor, yerlerinde \"{UNKNOWN_TEXT}\" yazar.")])
+
+
+def _joint_commit(parts: list[tuple[int, Step]]) -> Commit:
+    """One act's step on one or more laws of a multi-law repository: "7338 sayılı Kanun:
+    193 md. mükerrer 20/A; 213 md. 4"."""
+    singles = [(law, _step_commit(s)) for law, s in parts]
+    first = singles[0][1]
+    head = first.subject.partition(": md. ")[0]
+    subject = head + ": " + "; ".join(f"{law} md. {_art_list(s.articles)}" for law, s in parts)
+    body: list[str] = []
+    for law, c in singles:
+        body += ([""] if body else []) + [f"{law} sayılı Kanun:", *c.body]
+    return Commit(first.date, subject, body)
 
 
 def _differing_articles(replayed: Law, current: Law) -> tuple[list[str], list[str]]:
