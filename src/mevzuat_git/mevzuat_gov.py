@@ -272,7 +272,9 @@ def parse_yururluk_table(tree: LexborHTMLParser) -> list[TableRow]:
     table = None
     for t in tree.css("table"):
         first = squash(t.css_first("tr").text()) if t.css_first("tr") else ""
-        if first.startswith("Değiştiren Kanunun Numarası"):
+        # "Değiştiren Kanunun Numarası" (GVK), "Değiştiren Kanunun/KHK’nin veya İptal Eden
+        # Kararın Numarası" (VUK)
+        if re.match(r"Değiştiren Kanunun\b.*Numarası", first):
             table = t
             break
     if table is None:

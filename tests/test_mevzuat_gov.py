@@ -118,3 +118,20 @@ def test_article_id():
     assert mg.article_id("Mükerrer ", "20/D") == "mukerrer-20/D"
     assert mg.article_id("Mükerer ", "20/B") == "mukerrer-20/B"  # source typo
     assert mg.article_id("Geçici ", "67") == "gecici-67"
+
+
+def test_yururluk_table_of_vuk():
+    # VUK (213) names the first column "Değiştiren Kanunun/KHK’nin veya İptal Eden Kararın
+    # Numarası".
+    from selectolax.lexbor import LexborHTMLParser
+    html = (
+        "<table><tr><td>Değiştiren Kanunun/KHK’nin veya İptal Eden Kararın Numarası</td>"
+        "<td>213 sayılı Kanunun Değişen veya İptal Edilen Maddeleri</td>"
+        "<td>Yürürlüğe Giriş Tarihi</td></tr>"
+        "<tr><td rowspan=2>7555</td><td>131</td><td>24/7/2025</td></tr>"
+        "<tr><td>Ek Madde 13</td><td>yayımını izleyen ayın başında (1/8/2025)</td></tr>"
+        "</table>")
+    rows = mg.parse_yururluk_table(LexborHTMLParser(html))
+    assert [(r.amending, r.articles, r.effective) for r in rows] == [
+        ("7555", "131", "24/7/2025"),
+        ("7555", "Ek Madde 13", "yayımını izleyen ayın başında (1/8/2025)")]

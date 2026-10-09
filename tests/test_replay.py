@@ -712,3 +712,18 @@ def test_ek_articles_added_after_the_same_one_keep_their_order():
                                target=Addr(madde="ek-13"), new_nodes=[art(new)],
                                source_sentence=""))
     assert [a.id for a in law.articles()] == ["ek-13", "ek-14", "ek-15", "ek-16", "gecici-1"]
+
+
+def test_mukerrer_article_goes_after_its_number():
+    # "213 sayılı Vergi Usul Kanununa aşağıdaki mükerrer 290 ıncı madde eklenmiştir."
+    # (4842/25): after md. 290, not after the last mükerrer article (mükerrer 266).
+    def art(i):
+        return Node(level=Level.MADDE, id=i, label="Madde –", children=[
+            Node(level=Level.FIKRA, text=f"text of {i}")])
+    law = Law(number=213, name="", body=[art(i) for i in (
+        "266", "mukerrer-266", "267", "290", "290/A", "291")])
+    apply(law, AmendmentOp(op=OpType.INSERT_NODE, kind=Level.MADDE, position="end",
+                           target=Addr(madde=""), new_nodes=[art("mukerrer-290")],
+                           source_sentence=""))
+    assert [a.id for a in law.articles()] == [
+        "266", "mukerrer-266", "267", "290", "290/A", "mukerrer-290", "291"]

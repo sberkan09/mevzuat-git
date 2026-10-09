@@ -15,6 +15,7 @@ from mevzuat_git.history import (
     _differing_articles,
     _step_commit,
     build,
+    build_many,
     clause_dates,
     op_date,
     render,
@@ -78,6 +79,11 @@ RG = date(2004, 12, 31)
     (("24/6/2018 tarihinde birlikte yapılan Türkiye Büyük Millet Meclisi ve Cumhurbaşkanlığı "
       "seçimleri sonucunda Cumhurbaşkanının andiçerek göreve başladığı tarihte (9/7/2018)"),
      date(2018, 7, 9)),
+    # VUK (213): 7555, 7103 and 5228 rows.
+    ("yayımını izleyen ayın başında (1/8/2025)", date(2025, 8, 1)),
+    ("Yayım tarihi olan 27/3/2018’i izleyen ikinci aybaşında (1/5/2018)", date(2018, 5, 1)),
+    ("Yayımı tarihini takip eden ayın başında (1/11/2021)", date(2021, 11, 1)),
+    ("31/7/2004 tarihini izleyen üçüncü günde", date(2004, 8, 3)),
     (("23 üncü maddesi ve 29 uncu maddesi 1/2/2019 tarihinde, Geçici madde 76 1/1/2019 "
       "tarihinde"), None),
 ])
@@ -242,6 +248,23 @@ def test_history_is_deterministic(tmp_path):
     build(current, opsfile, alist, tmp_path / "a")
     build(current, opsfile, alist, tmp_path / "b")
     assert _log(tmp_path / "a") == _log(tmp_path / "b")
+
+
+def test_history_of_two_laws(tmp_path):
+    # One act on two laws (a torba kanun) is one commit that changes both files.
+    current, opsfile, alist = _inputs()
+    vuk = current.model_copy(update={"number": 213, "name": "VERGİ USUL KANUNU"}, deep=True)
+    vuk_ops = opsfile.model_copy(update={"target_law": 213}, deep=True)
+    vuk_list = alist.model_copy(update={"target_law": 213}, deep=True)
+    commits = build_many([(current, opsfile, alist), (vuk, vuk_ops, vuk_list)],
+                         tmp_path / "a")
+    assert [line.split(" ", 2)[1:] for line in _log(tmp_path / "a")] == [
+        ["2026-06-04", "193 sayılı GELİR VERGİSİ KANUNU: başlangıç metni"],
+        ["2026-06-04", "213 sayılı VERGİ USUL KANUNU: başlangıç metni"],
+        ["2026-06-04", "7582 sayılı Kanun: 193 md. 17; 213 md. 17"]]
+    assert commits[-1].body[0] == "193 sayılı Kanun:" and "213 sayılı Kanun:" in commits[-1].body
+    assert sorted(p.name for p in (tmp_path / "a").iterdir() if p.suffix == ".md") == [
+        "193.md", "213.md"]
 
 
 def test_differences_left_after_the_replay():

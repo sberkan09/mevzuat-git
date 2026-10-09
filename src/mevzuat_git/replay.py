@@ -435,6 +435,16 @@ def _law_insert_articles(law: Law, nodes: list[Node]) -> None:
     for new in nodes:
         prefix = (new.id or "").split("-")[0] if "-" in (new.id or "") else ""
         arts = list(law.articles())
+        if prefix == "mukerrer" and (base := law.article(new.id.removeprefix("mukerrer-"))):
+            # A mükerrer article stands after the article of its number, not with the other
+            # mükerrer ones: "213 sayılı Vergi Usul Kanununa aşağıdaki mükerrer 290 ıncı
+            # madde eklenmiştir" (4842/25) goes after md. 290.
+            sibs = siblings_of(law, base)
+            i = _index(sibs, base) + 1
+            while i < len(sibs) and (sibs[i].id or "").startswith(base.id + "/"):
+                i += 1  # past "290/A"
+            sibs.insert(i, new)
+            continue
         same = [a for a in arts if (a.id or "").startswith(prefix + "-")] if prefix else []
         before = [a for a in same if _article_key(a.id or "") < _article_key(new.id or "")]
         if same and not before:

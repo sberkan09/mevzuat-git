@@ -124,24 +124,27 @@ def replay(
 
 @app.command()
 def history(
-    law: int = typer.Argument(..., help="Kanun numarası, ör. 193"),
+    laws: list[int] = typer.Argument(..., help="Kanun numaraları, ör. 193 213"),
     cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, help="Raw response cache"),
     data_dir: Path = typer.Option(PROCESSED_DIR, help="Where <law>_ops.json is"),
-    out: Path = typer.Option(None, help="New git repository [default: data/history/<law>]"),
+    out: Path = typer.Option(None, help="New git repository [default: data/history/<laws>]"),
     offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
 ) -> None:
-    """Write the replayed amendments as a git history, dated by yürürlük (Faz 4)."""
+    """Write the replayed amendments as a git history, dated by yürürlük (Faz 4). With
+    several laws, one repository holds a file per law."""
     from mevzuat_git.amendments import OpsFile, load_list
-    from mevzuat_git.history import build
+    from mevzuat_git.history import build_many
     from mevzuat_git.verify import current_tree
 
-    ops = OpsFile.model_validate_json((data_dir / f"{law}_ops.json").read_text())
-    alist = load_list(data_dir / f"{law}_amendments.json")
+    inputs = []
     with Fetcher(cache_dir=cache_dir, offline=offline) as f:
-        current = current_tree(f, law)
-    out = out or Path("data/history") / str(law)
-    commits = build(current, ops, alist, out)
-    typer.echo(f"{out}: {len(commits)} commits, {commits[0].date} .. "
+        for law in laws:
+            ops = OpsFile.model_validate_json((data_dir / f"{law}_ops.json").read_text())
+            alist = load_list(data_dir / f"{law}_amendments.json")
+            inputs.append((current_tree(f, law), ops, alist))
+    out = out or Path("data/history") / "-".join(str(law) for law in laws)
+    commits = build_many(inputs, out)
+    typer.echo(f"{out}: {len(commits)} commits, {min(c.date for c in commits)} .. "
                f"{max(c.date for c in commits)}")
 
 

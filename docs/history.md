@@ -26,6 +26,18 @@ işlemler de mesajda listelenir.
 
 Yazar ve tarih sabit olduğundan aynı girdiler aynı commit'leri (aynı hash'leri) üretir.
 
+## Birden çok kanun
+
+`mevzuat-git history 193 213` iki kanunu tek depoya yazar (varsayılan:
+`data/history/193-213`); her kanunun kendi dosyası vardır. Commit'ler yayım sırasındadır,
+aynı gün yayımlananlar yürürlük tarihine göre sıralanır; her kanunun kendi commit sırası
+korunur. Bir torba kanun aynı yürürlük tarihinde birden çok kanunu değiştiriyorsa bu tek
+commit'tir ve değiştirdiği bütün dosyalara dokunur: "7394 sayılı Kanun: 193 md. 41, 66;
+213 md. 4, 359, 367, geçici 34". Mesaj gövdesi her kanun için ayrı bir bölümdür. Bu
+depoda her başlık kanun numarasını anar. Her kanunun başlangıç commit'i, o kanunun ilk
+değişikliğinden hemen öncedir. Eşitleme commit'i tektir ve ayrılan maddeleri kanun
+kanun listeler.
+
 ## Yürürlük tarihi
 
 Commit tarihi yürürlük tarihidir (00:00, +03:00). Kaynak, konsolide metnin sonundaki
@@ -86,3 +98,23 @@ sıradan çıkan commit sayısı böylece 9 olur. İşlemi metinde bulunamadığ
 
 "(İptal: ... Kararıyla)" notları da "(Mülga: ... md.)" gibi metinden çıkarılır. İlk
 commit'te iptal edilmiş geçici 32 yalnız başlığıyla, bent "3." boş görünür.
+
+## VUK (2026-10)
+
+66 commit üretiliyor (2002-04-09 .. 2026-07-01): başlangıç metni, değiştiren kanunlar ve
+iptal kararları için 64 commit ve eşitleme commit'i. Eşitleme commit'inde 6 maddenin
+içeriği ayrılıyor: 153/A, ek 1, ek 11, geçici 25, 33 ve 38 (bkz. `docs/replay.md`).
+VUK'un yürürlük tablosunun ilk sütunu "Değiştiren Kanunun/KHK’nin veya İptal Eden
+Kararın Numarası" başlığını taşır; tarihler bu tablodan okunur. Yalnız 5234 için
+tabloda satır olmadığından yayım tarihi alınır. Tablodaki "yayımını izleyen ayın
+başında (1/8/2025)" gibi parantez içi tarihler ve "31/7/2004 tarihini izleyen üçüncü
+günde" de okunur.
+
+Yeni bir mükerrer madde, aynı numaralı maddenin hemen arkasına yerleşir. Örneğin
+4842/25'in eklediği mükerrer 290, md. 290'ın arkasına gelir; diğer mükerrer
+maddelerin arkasına gitmez.
+
+## GVK ve VUK birlikte
+
+`mevzuat-git history 193 213` 140 commit üretir. 26 torba kanun commit'i iki dosyayı birlikte
+commit'te değiştirir.
