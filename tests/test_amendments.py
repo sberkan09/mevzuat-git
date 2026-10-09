@@ -952,8 +952,16 @@ def test_bent_list_before_another_address():
         "29/4/1959 tarihli ve 7258 sayılı Kanunun 2 nci maddesinin üçüncü fıkrasının (2) "
         "numaralı bendinin (ç) ve (e) alt bentleri aşağıdaki şekilde, (d) alt bendinde yer alan "
         "“Bu fıkranın (b) ve (c) bentlerinde” ibaresi “Bu bendin (b) ve (c) alt bentlerinde” "
-        "şeklinde değiştirilmiştir.", [], 7258)
-    assert [(o.op, o.target.alt_bent) for o in ops] == [(OpType.REPLACE_PHRASE, "d")]
+        "şeklinde değiştirilmiştir.",
+        [("“ç) Bayilerle yapılacak sözleşmelerin esasları ile bayilere verilecek komisyon ve "
+          "teşvik primi oranlarını tespit etmek.”"),
+         ("“e) Başbayi ile yapılacak sözleşmelerin esasları ile komisyon ve teşvik primi dahil "
+          "olmak üzere ihale kıstaslarını tespit etmek.”")], 7258)
+    # "aşağıdaki şekilde," takes the verb at the end: (ç) and (e) are replaced by the text
+    # below (6322/39 has the same form).
+    assert [(o.op, o.target.alt_bent) for o in ops] == [
+        (OpType.REPLACE_NODE, "ç"), (OpType.REPLACE_NODE, "e"), (OpType.REPLACE_PHRASE, "d")]
+    assert ops[1].new_nodes[0].text.startswith("Başbayi ile")
 
 
 def test_table_attached_to_the_law_is_skipped():
@@ -1181,3 +1189,100 @@ def test_failed_fikra_address_is_not_a_whole_article():
         "213 sayılı Kanunun mükerrer 355 inci maddesinin Birinci fıkrasında yer alan “x” "
         "ibaresi “y” şeklinde değiştirilmiştir.", [], 213)
     assert not op.all
+
+
+def test_law_named_only_inside_a_quote_is_not_the_target():
+    # 7341/4 amends the Damga Vergisi Kanunu; 5520 is only in its new ibare.
+    s = ("1/7/1964 tarihli ve 488 sayılı Damga Vergisi Kanununa ekli (2) sayılı tablonun "
+         "“V-Kurumlarla ilgili kağıtlar” başlıklı bölümünün (22) numaralı fıkrasında yer alan "
+         "“Kurumlar Vergisi Kanununun 7 nci maddesinin 24 numaralı bendinde” ibaresi “13/6/2006 "
+         "tarihli ve 5520 sayılı Kurumlar Vergisi Kanununun 4 üncü maddesinin birinci fıkrasının "
+         "(1) ve (p) bentlerinde” şeklinde değiştirilmiştir.")
+    assert not am.mentions(s, 5520) and am.mentions(s, 488)
+
+
+def test_list_items_with_capitalised_ordinals_and_mevcut():
+    # 6728/59 on KVK md. 13: each item starts with a capital ("İkinci fıkrasına",
+    # "Mevcut sekizinci fıkrası"); the last counts past the fıkra item (ç) added.
+    a = am.ActArticle(number="59", instruction="5520 sayılı Kanunun 13 üncü maddesinin;",
+                      payload=[
+        ("a) İkinci fıkrasına “İlişkili kişiler açısından bu oranlar topluca dikkate alınır.” "
+         "cümleleri eklenmiştir."),
+        ("b) Dördüncü fıkrasının (ç) bendi aşağıdaki şekilde değiştirilmiş ve bu bentten sonra "
+         "gelmek üzere (d) bendi eklenmiştir."),
+        "“ç) İşlemsel kâr yöntemleri: ... esasına dayanır.”",
+        "“d) Emsallere uygun fiyata ... bir yöntemi de kullanabilir.”",
+        ("c) Beşinci fıkrasına “Mükellef ve Bakanlık, ... uygulanabilir.” cümlesi "
+         "eklenmiştir."),
+        ("ç) Yedinci fıkrasından sonra gelmek üzere aşağıdaki fıkra eklenmiş ve mevcut sekizinci "
+         "fıkra buna göre teselsül ettirilmiştir."),
+        "“(8) Transfer fiyatlandırmasına ilişkin ... %50 indirimli olarak uygulanır.”",
+        "d) Mevcut sekizinci fıkrası aşağıdaki şekilde değiştirilmiştir.",
+        "“(9) Bakanlar Kurulu; ikinci fıkrada yer alan oranları, ... yetkilidir.”",
+    ])
+    items = am.expand_list(a)
+    assert items[0].instruction.startswith("5520 sayılı Kanunun 13 üncü maddesinin ikinci")
+    assert items[4].instruction.startswith("5520 sayılı Kanunun 13 üncü maddesinin mevcut")
+    earlier: list = []
+    got = []
+    for it in items:
+        ops = am.parse_instruction(it.instruction, it.payload, 5520, earlier=earlier)
+        earlier += ops
+        got.append([(o.op, o.target.fikra, o.target.bent, o.position) for o in ops])
+    assert got == [
+        [(OpType.INSERT_PHRASE, 2, None, "end")],
+        [(OpType.REPLACE_NODE, 4, "ç", None), (OpType.INSERT_NODE, 4, "ç", "after")],
+        [(OpType.INSERT_PHRASE, 5, None, "end")],
+        [(OpType.INSERT_NODE, 7, None, "after")],
+        [(OpType.REPLACE_NODE, 9, None, None)],
+    ]
+    d = earlier[2].new_nodes[0]
+    assert d.label == "d)" and d.text.endswith("bir yöntemi de kullanabilir.")
+
+
+def test_renumbering_clause_is_not_the_next_address():
+    # 6322/39 on KVK md. 32/A: the sentence goes to the sixth fıkra, not to bent (c).
+    ops = am.parse_instruction(
+        "5520 sayılı Kanunun 32/A maddesinin ikinci fıkrasının (b) bendinden sonra gelmek "
+        "üzere aşağıdaki (c) bendi eklenmiş, mevcut (c) bendi (ç) bendi olarak teselsül "
+        "ettirilmiş ve altıncı fıkrasına aşağıdaki cümle eklenmiştir.",
+        ["“c) Yatırıma başlanan tarihten itibaren ...”",
+         ("“Yatırımın kısmen veya tamamen işletilmesine başlanmadan önce indirimli kurumlar "
+          "vergisi uygulanan hallerde, ...”")], 5520)
+    assert [(o.op, o.target.fikra, o.target.bent) for o in ops] == [
+        (OpType.INSERT_NODE, 2, "b"), (OpType.INSERT_NODE, 6, None)]
+    assert ops[1].new.startswith("Yatırımın kısmen")
+
+
+def test_renumbering_clause_kept_before_bu_fikrada():
+    # RG 29/6/2012, md. 59 on 5684 md. 31: "bu fıkrada" is the renumbered fourth fıkra.
+    ops = am.parse_instruction(
+        "5684 sayılı Kanunun 31 inci maddesinin başlığı “Sigortacılık Eğitim Merkezi, destek "
+        "hizmetleri ve diğer organizasyonlar” şeklinde değiştirilmiş, birinci fıkrasına "
+        "“meslek kuruluşlarının katkılarından,” ibaresinden sonra gelmek üzere “Hesaptan "
+        "aktarılacak katkı payından,” ibaresi ve ikinci fıkrasından sonra gelmek üzere "
+        "aşağıdaki fıkra eklenmiş, mevcut üçüncü fıkra dördüncü fıkra olarak teselsül "
+        "ettirilmiş ve bu fıkrada yer alan “organizasyonlara” ibaresinden sonra gelmek üzere "
+        "“ve destek hizmetlerinin veriliş şekli ile destek hizmeti kuruluşlarına” ibaresi "
+        "eklenmiştir.", ["“(3) Bu Kanun kapsamında ...”"], 5684)
+    assert ops[-1].anchor == "organizasyonlara" and ops[-1].target.fikra == 4
+
+
+def test_new_text_of_an_unrecognised_operation_is_not_given_to_another():
+    # 4842/21 on KDV md. 11: "bu bendin sonuna aşağıdaki hüküm eklenmiştir" is not read, so
+    # its text must not end up in the (a) bendi replaced by "aşağıdaki şekilde,".
+    with pytest.raises(am.Unparsed, match="unrecognised operation with new text"):
+        am.parse_instruction(
+            "3065 sayılı Katma Değer Vergisi Kanununun 11 inci maddesinin (1) numaralı "
+            "fıkrasının (a) bendi aşağıdaki şekilde, (c) bendinin üçüncü alt bendinde yer alan "
+            "\"gecikme zammının % 50 fazlası ile birlikte\" ibaresi \"gecikme zammıyla birlikte\" "
+            "şeklinde değiştirilmiş, bu bendin sonuna aşağıdaki hüküm eklenmiştir.",
+            ["\"a) İhracat teslimleri ...\"",
+             "\"İhracatın mücbir sebepler veya beklenmedik durumlar nedeniyle ...\""], 3065)
+
+
+def test_two_appended_sentences_in_one_clause_are_not_guessed():
+    with pytest.raises(am.Unparsed, match="more than one appended text"):
+        am.parse_instruction(
+            "5520 sayılı Kanunun 10 uncu maddesinin birinci fıkrasına “Z cümle.” cümlesi, "
+            "ikinci fıkrasına “W cümle.” cümlesi eklenmiştir.", [], 5520)

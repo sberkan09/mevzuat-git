@@ -218,7 +218,13 @@ class _Builder:
             if self.numbered and self.fikra is not None:
                 node = Node(level=Level.PARAGRAF, text=rest, notes=notes, footnotes=fns,
                             repealed=repealed)
-                self.fikra.children.append(node)
+                # After a bent, a new sentence is a paragraph of that bent: "(e) bendinin
+                # ikinci paragrafı" (5520 md. 5/1-e, 7456/19). One in lower case ends the
+                # sentence the list broke: the bent's, after its alt bents ("Söz konusu
+                # varlıkların," "i) ...", "ii) ...", "üçüncü kişi ve kurumlara ...", 5520 md.
+                # 5/1-j), else the fıkra's ("... gerekmektedir.", 5520 md. 5/B/2).
+                in_bent = self.stack and (rest[:1].isupper() or len(self.stack) > 1)
+                (self.stack[0][1] if in_bent else self.fikra).children.append(node)
                 return
             if self.prev is None and self.fikra is not None and self.stack:
                 self.prev = (self.fikra, list(self.stack))
@@ -522,6 +528,21 @@ def _build(bs: list[Block], law: Law) -> None:
                     and not HEADING_RE.match(bs[j].text) and not _is_title(bs, j):
                 title = bs[j].text
                 i = j + 1
+                # A heading title broken after a comma or "ve" goes on in the next
+                # paragraph (5520's "Vergi Yükünün Hesaplanması, ... Matrahı," / "Oranı ve
+                # Hesabı"; GVK's "Ortalama Kar Haddi, ... Hasılat ve" / "Gider Esaslarına
+                # Göre Gelir Tayini").
+                while re.search(r"(?:,|\sve)$", title) and i < len(bs) and not bs[i].blank \
+                        and bs[i].table is None and not ARTICLE_RE.match(bs[i].text) \
+                        and not HEADING_RE.match(bs[i].text) and not _is_title(bs, i):
+                    title += " " + bs[i].text
+                    i += 1
+            # What follows the heading stands as if after a blank line, so an article
+            # title right under it is still seen: an amendment's new text has no blank
+            # lines (7524/40), nor has KVK's "BEŞİNCİ BÖLÜM" / "Vergi Kesintisi ve Muhtasar
+            # Beyanname" / "Dar mükellefiyette vergi kesintisi" / "MADDE 30-".
+            if i < len(bs) and not bs[i].blank:
+                bs.insert(i, Block(text=""))
             # A kitap is a top-level heading, like a kısım; its kısımlar follow it.
             lvl = Level.BOLUM if m.group("kind") == "BÖLÜM" else Level.KISIM
             b.heading(lvl, text, title).footnotes = blk.footnotes

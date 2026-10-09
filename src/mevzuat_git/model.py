@@ -52,8 +52,12 @@ class Node(BaseModel):
         return label_key(self.label)
 
 
+_TR_LOWER = str.maketrans({"I": "ı", "İ": "i"})
+
+
 def label_key(label: str) -> str:
-    return re.sub(r"[\s().\-–]", "", label).casefold()
+    # Turkish case: "I)" after "h)" is bent (ı) (5520 md. 5/1), not (i).
+    return re.sub(r"[\s().\-–]", "", label).translate(_TR_LOWER).casefold()
 
 
 class Law(BaseModel):

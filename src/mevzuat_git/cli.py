@@ -1,5 +1,6 @@
 from datetime import date
 from pathlib import Path
+from typing import NamedTuple
 
 import typer
 
@@ -78,6 +79,10 @@ def amendments(
     offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
 ) -> None:
     """Parse the amending acts' RG texts into operations (Faz 2)."""
+    _amendments(law, cache_dir, out_dir, offline)
+
+
+def _amendments(law: int, cache_dir: Path, out_dir: Path, offline: bool):
     from mevzuat_git import mevzuat_gov as mg
     from mevzuat_git.amendments import add_footnote_ops, load_list, parse_all
     from mevzuat_git.history import mark_pending
@@ -106,6 +111,7 @@ def amendments(
         if a.error:
             how = f"; {len(a.ops())} operations from footnotes" if a.source == "footnotes" else ""
             typer.echo(f"  {a.act}: {a.error}{how}")
+    return ops
 
 
 @app.command()
@@ -116,6 +122,10 @@ def replay(
     offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
 ) -> None:
     """Replay parsed amendments and compare with the consolidated text (Faz 3)."""
+    _replay(law, cache_dir, out_dir, offline)
+
+
+def _replay(law: int, cache_dir: Path, out_dir: Path, offline: bool):
     from mevzuat_git.verify import OpsFile, current_tree, render_report, run
 
     ops = OpsFile.model_validate_json((out_dir / f"{law}_ops.json").read_text())
@@ -127,6 +137,7 @@ def replay(
     c = rep.counts
     typer.echo(f"{out}: article match rate {rep.match_rate:.1%} "
                f"({c['match']} match, {c['mismatch']} mismatch, {c['unverified']} unverified)")
+    return rep
 
 
 @app.command()
@@ -154,6 +165,74 @@ def history(
     commits = build_many(inputs, out)
     typer.echo(f"{out}: {len(commits)} commits, {min(c.date for c in commits)} .. "
                f"{max(c.date for c in commits)}")
+
+
+@app.command()
+def pipeline(
+    laws: list[int] = typer.Argument(..., help="Kanun numaraları, ör. 193 213 3065"),
+    fetch_first: bool = typer.Option(False, "--fetch", help="Run `fetch` for each law first"),
+    cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, help="Raw response cache"),
+    out_dir: Path = typer.Option(PROCESSED_DIR, help="Where the per-law files go"),
+    summary: Path = typer.Option(None, help="Summary table [default: <out-dir>/summary.md]"),
+) -> None:
+    """Run amendments and replay for several laws (with --fetch, fetch too) and write
+    a summary table of parse and match rates (Faz 5). A law that fails is reported
+    and the rest still run."""
+    rows = []
+    for law in sorted(set(laws)):
+        typer.echo(f"== {law}", err=True)
+        try:
+            if fetch_first:
+                fetch(law, since=2000, cache_dir=cache_dir, out_dir=out_dir,
+                      min_interval=1.0, offline=False)
+            ops = _amendments(law, cache_dir, out_dir, offline=True)
+            rep = _replay(law, cache_dir, out_dir, offline=True)
+        except Exception as e:  # noqa: BLE001 - one law's failure must not stop the others
+            typer.echo(f"  {law}: {type(e).__name__}: {e}", err=True)
+            rows.append(SummaryRow(law=law, error=f"{type(e).__name__}: {e}"))
+            continue
+        sentences = sum(a.sentences for a in ops.acts)
+        unparsed = sum(len(a.unparsed) for a in ops.acts)
+        rows.append(SummaryRow(law=law, acts=len(ops.acts), sentences=sentences,
+                               parsed=sentences - unparsed, ops=len(ops.ops()),
+                               articles=sum(rep.counts.values()),
+                               match=rep.counts["match"], rate=rep.match_rate))
+    summary = summary or out_dir / "summary.md"
+    summary.write_text(render_summary(rows))
+    typer.echo(f"{summary}: {len(rows)} laws")
+    for r in rows:
+        typer.echo("  " + (f"{r.law}: {r.error}" if r.error else
+                           f"{r.law}: {r.parsed}/{r.sentences} sentences parsed, "
+                           f"match rate {r.rate:.1%} ({r.match}/{r.articles})"))
+    if any(r.error for r in rows):
+        raise typer.Exit(1)
+
+
+class SummaryRow(NamedTuple):
+    law: int
+    acts: int = 0
+    sentences: int = 0
+    parsed: int = 0
+    ops: int = 0
+    articles: int = 0
+    match: int = 0
+    rate: float = 0.0
+    error: str | None = None
+
+
+def render_summary(rows: list[SummaryRow]) -> str:
+    lines = ["# Kanun bazında özet", "",
+             "`mevzuat-git pipeline` çıktısıdır; elle düzenlemeyin.", "",
+             ("| Kanun | Değiştiren işlem | Cümle | Ayrıştırılan | İşlem | Madde | Eşleşen "
+              "| Eşleşme oranı |"),
+             "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    for r in rows:
+        if r.error:
+            lines.append(f"| {r.law} | hata: {r.error} | | | | | | |")
+        else:
+            lines.append(f"| {r.law} | {r.acts} | {r.sentences} | {r.parsed} | {r.ops} "
+                         f"| {r.articles} | {r.match} | {r.rate:.1%} |")
+    return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":

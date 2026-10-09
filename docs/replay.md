@@ -64,8 +64,9 @@ metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 6'sı farklı,
 5'i doğrulanamıyor. **Oran: %94,2.**
 
-VUK (213) için (2026-10): 120 maddeye işlem uygulandı. Bunların 99'u eşleşiyor, 14'ü
-farklı, 7'si doğrulanamıyor. **Oran: %87,6** (ilk ölçümde %83,3). Kapatılan ucuz farklar:
+VUK (213) için (2026-10): 120 maddeye işlem uygulandı. Bunların 99'u eşleşiyor, 13'ü
+farklı, 8'i doğrulanamıyor. **Oran: %88,4** (ilk ölçümde %83,3; KVK turunda 153/A
+farklıdan doğrulanamayana geçti). Kapatılan ucuz farklar:
 harfli fıkralar ("(a) fıkrası", 7394/4, 7423/1) bent olarak okunur; kanuna ekli cetveli
 değiştiren cümleler atlanır (7524/10); RG metni PDF olan Anayasa Mahkemesi kararlarının
 iptalleri "(İptal ...)" işaretinden okunur (367); işaretten okunan bir eklemenin metni,
@@ -93,7 +94,7 @@ VUK'ta kalan farklar tek tek ele alınması gereken durumlardır:
   ağaçta yoktur.
 - **mükerrer 355**: 7524/13 tek cümlede birçok işlem yapar.
 - **geçici 38**: 7587/11'in ödeme yükü kesiktir (32 satırın 1'i okunur).
-- **mükerrer 49, mükerrer 242, mükerrer 257, 153/A, 344, 353, ek-1, ek-11, geçici 25**:
+- **mükerrer 49, mükerrer 242, mükerrer 257, 344, 353, ek-1, ek-11, geçici 25**:
   bir işlemin (çoğu 5228, 7338, 7524) geri sarmada izi bulunamaz; ayrıntılar
   `mevzuat-git replay 213` raporundadır.
 
@@ -141,6 +142,44 @@ farklı. **Oran: %83,6** (ilk ölçümde %71,4). Bu turda eklenenler:
 - **13**: 5228/14'ün yeni metni ve sonradan çıkarılan kurum adları.
 - **8, 11, 12, 29**: bir işlemin geri sarmada izi bulunamaz. Ayrıntılar `mevzuat-git
   replay 3065` raporundadır.
+
+KVK (5520) için (2026-10): 47 maddeye işlem uygulandı. Bunların 42'si eşleşiyor, 5'i
+farklı. **Oran: %89,4** (ilk ölçümde %72,3). Bu turda eklenenler:
+
+- Bölüm başlığıyla birlikte eklenen ek maddelerin başlığı okunur. Yeni metinde boş satır
+  yoktur, bölüm adı da virgülden sonra ikinci satıra taşar ("... Matrahı," / "Oranı ve
+  Hesabı", 7524/40, 43, 45, 47).
+- Harfli liste maddeleri büyük harfle başlar ("a) İkinci fıkrasına ...", "d) Mevcut
+  sekizinci fıkrası ..."). Bunlar cümle ortasındaki gibi okunur. "Mevcut", aynı maddenin
+  önceki liste maddelerinde yapılan eklemeleri de sayar (6728/59).
+- Diğer okunan kalıplar:
+  - "fıkrasına “...” cümleleri eklenmiştir" (fıkranın sonuna)
+  - "bu bentten sonra gelmek üzere (d) bendi eklenmiştir"
+  - virgülle ertelenen fiil: "(a) bendi aşağıdaki şekilde, (b) bendinde yer alan ...
+    şeklinde değiştirilmiş" (6322/39). Bu kalıp VUK'ta 7524/5 ve 7524/11'in kaçan
+    işlemlerini de getirdi.
+- "mevcut (c) bendi (ç) bendi olarak teselsül ettirilmiş ve" adres sayılmaz.
+- Başka bir kanunu değiştiren ve hedef kanunu yalnız tırnak içinde anan cümleler hedef
+  kanunun cümlesi sayılmaz (7341/4, 488 sayılı Kanuna).
+- Yürürlük tablosunda yayımdan on yıldan uzak bir tarih yazım hatası sayılır. 7555/18
+  için tabloda "24/07/2202" yazar; bu durumda yayım tarihi alınır.
+- Ağaçta, numaralı bir fıkrada bir bentten sonra gelen ve büyük harfle başlayan paragraf
+  o bendin paragrafıdır ("(e) bendinin ikinci paragrafı"). Küçük harfle başlayan satır,
+  alt bentlerden sonra gelirse bendin, bentlerden sonra gelirse fıkranın cümlesini
+  sürdürür. "h)"den sonra gelen "I)", (ı) bendidir.
+
+### KVK'da bilinen açıklar
+
+- **4**: konsolide metinde (b) bendinin parantez içi cümlesi 6009/43'ün eklediğinden
+  uzundur. Onu uzatan işlem okunmuyor.
+- **5**: (a) ve (e) bentlerinde 7351/14, 7456/19 ve 7524/32'nin bazı işlemlerinin geri
+  sarmada izi bulunamaz.
+- **10**: listeye bent ekleyen işlemlerin (6322/36, 6637/8, 7421/20, 7582/7) satır
+  sayıları tutmaz.
+- **geçici 9, geçici 14**: süre ve tarih değişiklikleri zinciri (6770/30, 7061/90,
+  7161/43; 7352/2, 7407/12, 7420/23).
+
+Ayrıntılar `mevzuat-git replay 5520` raporundadır.
 
 ## RG metni taranmış PDF olan değişiklikler
 

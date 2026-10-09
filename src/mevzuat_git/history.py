@@ -238,7 +238,8 @@ def _score(row: dict[str, set[str]], op: dict[str, set[str]]) -> int:
 def op_date(r: OpResult, act: AmendingAct | None, rg_date: date,
             as_of: date | None = None) -> Dated:
     """The yürürlük date of one operation, from the act's yürürlük table rows. A date
-    after ``as_of`` (the consolidated text's day) is taken as it is, however far."""
+    after ``as_of`` (the consolidated text's day) is taken as it is, up to ten years after
+    publication."""
     arts = articles_of(r.op)
     rows: list[tuple[EffectiveEntry, str]] = []
     for e in act.effective if act else []:
@@ -271,8 +272,11 @@ def op_date(r: OpResult, act: AmendingAct | None, rg_date: date,
     if d is None:
         return Dated(rg_date, f"{e.articles}: {e.effective} (tek tarih okunamadı; yayım "
                               "tarihi alındı)", assumed=True)
-    if (d - rg_date).days > 3 * 365 and not (as_of and d > as_of):
-        # 4761 (RG 22/6/2002): "22/6/2012" in the table.
+    if (d - rg_date).days > 3 * 365 \
+            and not (as_of and d > as_of and (d - rg_date).days <= 10 * 365):
+        # 4761 (RG 22/6/2002): "22/6/2012" in the table. A later date than the consolidated
+        # text's is an act not yet in force, unless it is too far off to be one: 7555 (RG
+        # 24/7/2025) has "24/07/2202" for its 18 inci madde, which the text already carries.
         return Dated(rg_date, f"{e.articles}: {e.effective} (yayımdan çok sonra; yayım "
                               "tarihi alındı)", assumed=True)
     return Dated(d, f"{e.articles}: {e.effective}{note}", assumed=bool(note))

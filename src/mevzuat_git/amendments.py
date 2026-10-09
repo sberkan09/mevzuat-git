@@ -154,8 +154,10 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         r"(?P<ord>" + ORD_RE + r"|son)\s+cümle\w*\s+(?P<pos>sonra|önce)\s+gelmek\s+üzere\s*,?\s*"
         + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:" + PHRASE_NOUN + r"\s+)?eklen"
     )),
+    # "ikinci fıkrasına “...” cümleleri eklenmiştir" (6728/59): at the end of the fıkra.
     ("append_phrase", re.compile(
-        r"(?P<pos>sonuna|başına)\s+" + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*"
+        r"(?:(?P<pos>sonuna|başına)|(?<=fıkrasına)(?=\s+" + Q + QTEXT + Q
+        + r"\s*cümle(?:si|leri)\s+eklen))\s+" + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*"
         r"(?:" + PHRASE_NOUN + r"\s+)?eklen"
     )),
     # “X” ibaresinden sonra gelmek üzere ... ve bu ibareden sonra gelmek üzere “Y”
@@ -195,14 +197,18 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         r"(?P<title>başlığı(?:yla|\s+ile)\s+birlikte\s+)?aşağıdaki\s+şekilde\s*(?:"
         r"değiştiril|yeniden\s+düzenlen|düzenlen"
         # "aynı fıkranın (r) bendi aşağıdaki şekilde; 29 uncu maddesinin ... şeklinde
-        # değiştirilmiştir" (5615/13): the verb comes last.
-        r"|;(?=.*(?:şeklinde|olarak)\s+değiştiril))"
+        # değiştirilmiştir" (5615/13): the verb comes last. Also after a comma: "(a) bendi
+        # aşağıdaki şekilde, (b) bendinde yer alan “X” ibaresi “Y” şeklinde değiştirilmiş"
+        # (6322/39).
+        r"|[;,](?=.*(?:şeklinde|olarak)\s+değiştiril))"
     )),
     ("insert_node", re.compile(
         # "274 üncü maddesinden sonra gelmek üzere 274/A maddesi eklenmiştir" (7524/8)
         r"(?:aşağıdaki\s+|(?<=üzere\s)(?=\d+/[A-ZÇĞİÖŞÜ]\s+madde)"
         # "fıkraya (o) ve (p) bentleri eklenmiştir" (5228/15): the new text is below.
-        r"|(?<=fıkraya\s)(?=\(\w+\)(?:\s*(?:,|ve)\s*\(\w+\))*\s*bentleri\s+eklen))"
+        r"|(?<=fıkraya\s)(?=\(\w+\)(?:\s*(?:,|ve)\s*\(\w+\))*\s*bentleri\s+eklen)"
+        # "bu bentten sonra gelmek üzere (d) bendi eklenmiştir" (6728/59)
+        r"|(?<=üzere\s)(?=\(\w+\)\s+bendi\s+eklen))"
         r"(?:(?P<label>\(\w+\))(?:\s*(?:,|ve)\s*\(\w+\))*\s*(?:numaralı\s+)?)?(?P<kind>(?:alt\s+)?ben[dt](?:ler)?"
         r"|fıkra(?:lar)?"
         # "aşağıdaki geçici madde", "aşağıdaki ek 3 üncü madde", "aşağıdaki 107/A maddesi"
@@ -396,6 +402,12 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
                     and (head or LAW_REF_RE.search(line)):
                 item = it.group("text").rstrip()
                 letter, sub = it.group("label"), None
+                if head:
+                    # Mid-sentence once joined: "13 üncü maddesinin ikinci fıkrasına",
+                    # "... maddesinin mevcut sekizinci fıkrası" (6728/59).
+                    low = item[:1].translate(_TR_LOWER).lower() + item[1:]
+                    if re.match(r"(?:" + ORD_RE + r"|son|mevcut)\s", low):
+                        item = low
                 if item.endswith((";", ":")) and not AMEND_VERB_RE.search(item):
                     sub, number = f"{head} {item.rstrip(';:').rstrip()}".lstrip(), 0
                     continue
@@ -724,6 +736,10 @@ def _check_segment(o: OpMatch, own: str) -> None:
     masked = re.sub(r"^\W*(?:(?:şeklinde|olarak)\s+)?\w+(?:miş|mış)\b", "", masked)
     if _STRAY_VERB_RE.search(masked):
         raise Unparsed(f"unrecognised operation before {o.name}: {own!r}")
+    if o.name == "append_phrase" and re.search(Q, own):
+        # "birinci fıkrasına “Z” cümlesi, ikinci fıkrasına “W” cümlesi eklenmiştir": only the
+        # last one is matched, with both addresses.
+        raise Unparsed(f"more than one appended text: {own!r}")
     if o.name == "repeal_node" and (re.search(Q, own) or "parantez" in own):
         # "“X” ibaresi ile ... yürürlükten kaldırılmıştır", "parantez içi hüküm yürürlükten
         # kaldırılmıştır": not the whole node.
@@ -750,13 +766,27 @@ def _as_bent(m: re.Match) -> str:
     return m.group(1) + (" bentler" if m.group(2) else " bent")
 
 
+TESELSUL_RE = re.compile(r"\bmevcut\s+[^,“”\"]*?\bteselsül\s+ettiril\w*\s*(?:,|\bve\b)?")
+
+
 def parse_instruction(text: str, payload: list[str], target_law: int,
-                      law_ctx: str | None = None, ctx: Path | None = None) -> list[AmendmentOp]:
+                      law_ctx: str | None = None, ctx: Path | None = None,
+                      earlier: list[AmendmentOp] | None = None) -> list[AmendmentOp]:
     """Operations on ``target_law`` in one instruction sentence of an amending act.
-    ``ctx`` is the address that "bu fıkrada" and the like refer to, if any."""
+    ``ctx`` is the address that "bu fıkrada" and the like refer to, if any. ``earlier``
+    are the operations of the items before this one in the same act article, which
+    "mevcut sekizinci fıkrası" counts past (6728/59)."""
     ops: list[AmendmentOp] = []
+    earlier = earlier or []
     sentence, text = text, _letter_fikras(text)
     matches = find_ops(text)
+    # A new text below that no recognised operation claims ("bu bendin sonuna aşağıdaki
+    # hüküm eklenmiştir", 4842/21) would be handed to another operation.
+    # A cetvel attached to the law is skipped on its own ("Kanuna aşağıdaki 2 sayılı cetvel
+    # eklenmiştir", 7524/11).
+    for a in re.finditer(r"\başağıdaki\b(?!\s+(?:\(?\w+\)?\s+sayılı\s+)?cetvel)", text):
+        if not any(o.start <= a.start() < o.end for o in matches):
+            raise Unparsed(f"unrecognised operation with new text: {text[a.start():a.start() + 60]!r}")
     payload_ops = [o for o in matches
                    if o.name in ("replace_node", "insert_node", "paren_replace")]
     chunks = split_payload(payload, len(payload_ops))
@@ -789,6 +819,13 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
             ctx = None
             continue
         own = "".join(seg[a:b] for a, b in mine)
+        # "mevcut (c) bendi (ç) bendi olarak teselsül ettirilmiş ve altıncı fıkrasına" (6322/
+        # 39): the renumbering only describes; the address is what follows it.
+        # Kept when "bu fıkrada" follows: that is the renumbered node (5684 md. 31, RG
+        # 29/6/2012).
+        own = TESELSUL_RE.sub(
+            lambda m: m.group(0) if re.match(r"\s*(?:bu|aynı)\s", m.string[m.end():]) else " ",
+            own)
         if o.name == "title_replace" and re.search(r"bölümünün|kısmının", own):
             continue  # heading of a kısım/bölüm: not addressable yet
         unquoted = re.sub(Q + QTEXT + Q, "", own)
@@ -826,7 +863,8 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         else:
             parts = [raw] * n
         for (t, sub), part in zip(targets, parts, strict=True):
-            made = _make_ops(o, _after_inserts(t, sub, ops), sub, _strip_quotes(part), sentence)
+            made = _make_ops(o, _after_inserts(t, sub, earlier + ops), sub, _strip_quotes(part),
+                             sentence)
             if o.name == "insert_phrase_bu":
                 # "bu ibareden sonra": the new ibare of the operation before.
                 if not (ops and ops[-1].op in (OpType.REPLACE_PHRASE, OpType.INSERT_PHRASE)
@@ -1002,7 +1040,7 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
                             source_sentence=sentence)]
     if o.name == "append_phrase":
         return [AmendmentOp(op=OpType.INSERT_PHRASE, new=g["new"],
-                            position="end" if g["pos"] == "sonuna" else "start", **base)]
+                            position="start" if g["pos"] == "başına" else "end", **base)]
     if o.name == "delete_phrase":
         plural = "ibareleri" in text_after(o.m, "old")
         return [AmendmentOp(op=OpType.DELETE_PHRASE, old=g["old"], all=plural, **base)]
@@ -1134,7 +1172,10 @@ class ParseResult:
 
 
 def mentions(text: str, target_law: int) -> bool:
-    for m in LAW_REF_RE.finditer(text):
+    """Does ``text`` name ``target_law`` outside its quoted ibares? A sentence amending
+    another law can quote one naming it (7341/4: "... 5520 sayılı Kurumlar Vergisi
+    Kanununun 4 üncü maddesinin ..." into the Damga Vergisi Kanunu)."""
+    for m in LAW_REF_RE.finditer(re.sub(Q + QTEXT + Q, "", text)):
         if m.group("no") == str(target_law):
             return True
     return False
@@ -1159,8 +1200,9 @@ def parse_act(html: str, act_no: str, target_law: int, inline: bool = False) -> 
         if not mentions(a.instruction, target_law) or not AMEND_VERB_RE.search(a.instruction):
             continue
         sentences += 1
+        earlier = [op for am in amendments if am.article == a.number for op in am.ops]
         try:
-            ops = parse_instruction(a.instruction, a.payload, target_law)
+            ops = parse_instruction(a.instruction, a.payload, target_law, earlier=earlier)
         except (Unparsed, KeyError, ValueError) as exc:
             unparsed.append((a.number, a.instruction, str(exc)))
             continue
