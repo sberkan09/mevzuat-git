@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 from mevzuat_git import mevzuat_gov as mg
 from mevzuat_git.amendments import OpsFile, UnparsedSentence
-from mevzuat_git.compare import node_lines
+from mevzuat_git.compare import node_lines, strip_editorial
 from mevzuat_git.fetch import Fetcher, NotFound
 from mevzuat_git.model import AmendmentOp, Law, Level, OpType
 from mevzuat_git.replay import (
@@ -121,8 +121,18 @@ def batches(ops: list[OpResult]) -> list[list[OpResult]]:
 
 def unwind(current: Law, groups: list[list[OpResult]]) -> Law:
     """The law before the operations: ``current`` with every batch undone, newest first.
-    Sets each operation's check."""
+    Sets each operation's check.
+
+    mevzuat.gov.tr's own additions are taken out of the text first: they are not the
+    law's words, and an act's ibare does not hold them. 7194/11 inserted "... ulaşım
+    bedelinin 10 Türk lirasını aşmaması ..."; the consolidated text reads "... taşıma
+    giderleri (Ek parantez içi hüküm:5/12/2019-7194/11 md.) (... 10 Türk lirasını (158
+    TL) aşmaması ...". See ``compare.strip_editorial``."""
     state = current.model_copy(deep=True)
+    for top in state.body:
+        for n in top.walk():
+            if n.text:
+                n.text = strip_editorial(n.text)
     for b in reversed(groups):
         for r in b:
             # Footnote ops: their address, as it is at this point of the unwind.

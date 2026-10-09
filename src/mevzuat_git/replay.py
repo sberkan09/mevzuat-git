@@ -72,10 +72,14 @@ def _check_known(n: Node) -> None:
         raise Superseded()
 
 
-def locate(law: Law, path: Path, whole: bool = False) -> Located:
+def locate(law: Law, path: Path, whole: bool = False, live: bool = True) -> Located:
     """The node at ``path``. Raises :class:`Superseded` when the path runs through text
     a later operation replaced (see ``UNKNOWN``); with ``whole``, the node itself may be
-    such a placeholder, since the operation replaces or repeals all of it."""
+    such a placeholder, since the operation replaces or repeals all of it.
+
+    With ``live``, an ordinal that lands on a repealed fıkra counts the fıkras in force
+    instead: 4684/17 calls the fıkra 3946 added to md. 38 its "üçüncü fıkrası", after the
+    "(Mülga üçüncü fıkra: 4/12/1985-3239/138 md.)" one. Undoing a repeal passes ``False``."""
     if not path.madde:
         raise ReplayError("law-level path has no node")
     art = law.article(path.madde)
@@ -83,11 +87,19 @@ def locate(law: Law, path: Path, whole: bool = False) -> Located:
         raise ReplayError(f"article {path.madde} not found")
     node = art
     chain = [art]
+    if art.text == UNKNOWN and not art.children and path.fikra is not None:
+        # The whole article is a placeholder (a repeal undone, 5479 on md. 19): its
+        # fıkras then are not known.
+        raise Superseded()
     if path.fikra is not None:
         fikras = [c for c in art.children if c.level is Level.FIKRA]
         by_label = [f for f in fikras if f.key == str(path.fikra)]
         node = by_label[0] if by_label and path.fikra > 0 else _ord_pick(fikras, path.fikra,
                                                                            "fıkra")
+        if live and node.repealed and not by_label and path.fikra > 0:
+            alive = [f for f in fikras if not f.repealed]
+            if path.fikra <= len(alive):
+                node = alive[path.fikra - 1]
         chain.append(node)
     if path.bent is not None:
         cands = [d for d in node.walk() if d.level is Level.BENT and d.key == path.bent]
@@ -152,12 +164,25 @@ def _span(text: str, sentence: int | None) -> tuple[int, int]:
 
 
 _FLEX = {'"': "[\"“”]", "“": "[\"“”]", "”": "[\"“”]", "'": "['’‘]", "’": "['’‘]",
-         "‘": "['’‘]", "–": "[–—-]", "—": "[–—-]", "-": "[–—-]"}
+         "‘": "['’‘]", "–": r"\s*[–—-]\s*", "—": r"\s*[–—-]\s*", "-": r"\s*[–—-]\s*",
+         # "%15’ini" in 7061/14, "% 15'ini" on mevzuat.gov.tr.
+         "%": r"%\s*",
+         # "Meslekî Eğitim Kanununa tâbi" in 5228/59, "Mesleki ... tabi" in the text.
+         "â": "[âa]", "a": "[âa]", "î": "[îi]", "i": "[îi]", "û": "[ûu]", "u": "[ûu]",
+         "Â": "[ÂA]", "A": "[ÂA]", "Î": "[Îİ]", "İ": "[Îİ]", "Û": "[ÛU]", "U": "[ÛU]"}
 
 
 def _phrase_re(phrase: str) -> re.Pattern:
+    """The pattern of an ibare in the text, whatever its typography. Spacing around a
+    dash between numbers varies: "1.1.1999 - 31.12.2004" in 5035/48,
+    "1.1.1999-31.12.2005" on mevzuat.gov.tr. A quoted ibare may start with a space
+    ("“ 3308 sayılı ...”", 5228/59)."""
+    phrase = re.sub(r"(?<=\d)\s*([–—-])\s*(?=\d)", r"\1", phrase.strip())
     parts = []
-    for ch in phrase:
+    for i, ch in enumerate(phrase):
+        if ch in "–—-" and i in (0, len(phrase) - 1):
+            parts.append("[–—-]")  # the spaces around it are not part of the ibare
+            continue
         if ch.isspace():
             if not parts or parts[-1] != r"\s+":
                 parts.append(r"\s+")
@@ -247,8 +272,22 @@ def _replace_in_slots(slots: list[TextSlot], old: str, new: str, every: bool) ->
     # Replace right to left inside each slot so earlier offsets stay valid.
     for sl, s, e in sorted(occ, key=lambda x: -x[1]):
         t = sl.get()
-        sl.set(t[:s] + new + t[e:])
+        sl.set(t[:s] + _spaced(t, s, e, new) + t[e:])
     return len(occ)
+
+
+def _spaced(text: str, s: int, e: int, new: str) -> str:
+    """``new`` as it replaces ``text[s:e]``, with a space where it would run into a word:
+    “, 86 ve mükerrer 121 inci maddelerinde” → “ve 86 ncı maddeleri ...” turns
+    "82, 86 ve" into "82 ve 86", not "82ve 86" (6663/3 on mükerrer 123)."""
+    # Only where the matched ibare began or ended with a separator: an ibare often ends
+    # inside a word ("Bakanlar Kurulu" in "Bakanlar Kurulunca").
+    if new[:1].isalnum() and s and text[s - 1].isalnum() and not text[s].isalnum():
+        new = " " + new
+    if new[-1:].isalnum() and e < len(text) and text[e].isalnum() \
+            and not text[e - 1].isalnum():
+        new = new + " "
+    return new
 
 
 def _replace_many(slots: list[TextSlot], pairs: list[tuple[str, str, bool]]) -> list[int]:
@@ -526,6 +565,12 @@ def _last_text_slot(slots: list[TextSlot]) -> TextSlot:
     return texts[0]  # the target's own text, not its sub-nodes
 
 
+def _live(op: AmendmentOp) -> bool:
+    """Whether an ordinal fıkra in ``op`` counts the fıkras in force (see ``locate``); not
+    when the act names a repealed one: "mülga ikinci fıkrasından sonra gelmek üzere"."""
+    return not re.search(r"\bmülga\b|kaldırılan", op.source_sentence)
+
+
 def _keep_label(old: Node, new: list[Node]) -> list[Node]:
     """``new`` as it replaces ``old``. A bent's new text given without its number keeps
     the number: "(10) numaralı bendi ile 5520 sayılı Kanunun ... (e) bendi aşağıdaki
@@ -544,7 +589,7 @@ def _apply_replace(law: Law, op: AmendmentOp) -> None:
             raise ReplayError(f"article {t.madde} not found")
         art.title = op.new
         return
-    loc = locate(law, t, whole=True)
+    loc = locate(law, t, whole=True, live=_live(op))
     if op.kind is Level.PARAGRAF or loc.sentence is not None:
         new = op.new or ""
         if loc.sentence is not None:
@@ -591,7 +636,7 @@ def _apply_insert(law: Law, op: AmendmentOp) -> None:
                 raise ReplayError(f"article {n.id} already exists")
         _law_insert_articles(law, new_nodes)
         return
-    loc = locate(law, t)
+    loc = locate(law, t, live=_live(op))
     if op.kind is Level.PARAGRAF and not new_nodes:
         new = op.new or ""
         if _is_sentence_op(op):
@@ -629,7 +674,14 @@ def _apply_insert(law: Law, op: AmendmentOp) -> None:
         for n in new_nodes:
             n.level = Level.ALT_BENT
     h = _end_split(container, new_nodes)
-    container.children.extend(new_nodes[:h])
+    at = len(container.children)
+    if new_nodes and new_nodes[0].level in (Level.BENT, Level.ALT_BENT):
+        # Before the words that close the list ("Bu işleri dolayısiyle serbest meslek
+        # erbabı sayılırlar." after the bents of md. 66/2, 7394/2).
+        while at > 1 and container.children[at - 1].level is Level.PARAGRAF \
+                and any(c.level is new_nodes[0].level for c in container.children[:at - 1]):
+            at -= 1
+    container.children[at:at] = new_nodes[:h]
     if h < len(new_nodes):
         sibs = siblings_of(law, container)
         i = _index(sibs, container) + 1
@@ -707,15 +759,20 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
     if op.op is OpType.DELETE_PHRASE:
         slots = phrase_slots(law, t)
         marks = [(sl, m.start(), m.end()) for sl in slots
-                 for m in re.finditer(r"\(\s*(?:…|\.\.\.)\s*\)", sl.get()[sl.lo:sl.hi])]
+                 # A footnote number may stick to the mark: "bu (…)134 kazanç" (md. 106).
+                 for m in re.finditer(r"\(\s*(?:…|\.\.\.)\s*\)\d*", sl.get()[sl.lo:sl.hi])]
         if len(marks) == 1:
             sl, s, e = marks[0]
             txt = sl.get()
-            sl.set(txt[:sl.lo + s] + (op.old or "") + txt[sl.lo + e:])
+            left, old = txt[:sl.lo + s], op.old or ""
+            if old[:1] in ",.;:)":
+                # "akşamına kadar (…) tam" with “, gelirin ... kadar,” put back (7338/6).
+                left = left.rstrip(" ")
+            sl.set(left + old + txt[sl.lo + e:])
             return Check("ok")
         return Check("lossy", "deleted ibare: its place in the text is not marked")
     if op.op is OpType.REPEAL_NODE:
-        loc = locate(law, t)
+        loc = locate(law, t, live=False)
         if loc.sentence is not None:
             return Check("lossy", "repealed sentence")
         n = loc.node
@@ -782,7 +839,7 @@ def _unapply_replace(law: Law, op: AmendmentOp) -> Check:
             return Check("fail", f"title is {art.title!r}, act says {op.new!r}")
         art.title = UNKNOWN
         return Check("ok")
-    loc = locate(law, t)
+    loc = locate(law, t, live=_live(op))
     if op.kind is Level.PARAGRAF or loc.sentence is not None:
         if loc.sentence is not None:
             s, e = _span(loc.node.text, loc.sentence)
@@ -851,7 +908,7 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
             sibs = siblings_of(law, art)
             del sibs[_index(sibs, art)]
         return Check("fail", diffs[0]) if diffs else Check("ok")
-    loc = locate(law, t)
+    loc = locate(law, t, live=_live(op))
     if op.kind is Level.PARAGRAF and not op.new_nodes:
         new = op.new or ""
         if _is_sentence_op(op):

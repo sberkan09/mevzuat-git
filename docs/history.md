@@ -69,7 +69,7 @@ mevzuat.gov.tr yazımıyla.
 
 ## GVK (2026-10)
 
-96 commit üretiliyor: başlangıç metni, değiştiren kanunlar için 94 commit (2001-07-03 ..
-2026-07-01) ve eşitleme commit'i. Eşitleme commit'inde 13 maddenin içeriği ayrılıyor
+97 commit üretiliyor: başlangıç metni, değiştiren kanunlar için 95 commit (2001-07-03 ..
+2026-07-01) ve eşitleme commit'i. Eşitleme commit'inde 10 maddenin içeriği ayrılıyor
 (bkz. `docs/replay.md`). RG metni taranmış PDF olan KHK 700, 6663 ve 6676'nın commit
 mesajları, işlemlerin konsolide metnin dipnotlarından okunduğunu belirtir.

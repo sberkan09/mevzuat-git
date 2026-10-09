@@ -293,6 +293,26 @@ class _Builder:
         parent.children.append(node)
 
 
+def _promote_numbered(art: Node) -> None:
+    """Items "1.", "2." with no lead text before them are the article's fıkras: GVK md. 22
+    is "1. Sigorta süresi ...", "2. 75 inci maddenin ...", and 6728/11 calls them "(1)
+    numaralı fıkrası", "(2) numaralı fıkra"."""
+    kids = art.children
+    if not kids or kids[0].level is not Level.FIKRA or kids[0].label or kids[0].text \
+            or not kids[0].children:
+        return
+    items = kids[0].children
+    if not all(c.level is Level.BENT and re.fullmatch(r"\(?\d+\s*[.)]?", c.label)
+               for c in items):
+        return
+    for c in items:
+        c.level = Level.FIKRA
+        for d in c.walk():
+            if d is not c and d.level is Level.ALT_BENT:
+                d.level = Level.BENT
+    art.children = items + kids[1:]
+
+
 def _fold_continuations(art: Node) -> None:
     """Unlabelled "fıkras" that are really part of the one before: a fıkra never starts in
     lower case or with "%" ("itibarıyla dağıtılmış kâr payı sayılır", "% 25 vergi
@@ -312,6 +332,13 @@ def _fold_continuations(art: Node) -> None:
 
 def _continues(fikra: Node, text: str) -> bool:
     if text[:1].islower() or text[:1] == "%" or re.match(r"[–-]\s", text):
+        return True
+    # A short line after a list left open closes the fıkra's sentence: md. 109 "Gelir
+    # Vergisi:", "1. ... yedi gün içinde;", ..., "Tarh edilir." (7349/3 repeals its
+    # "ikinci ve üçüncü fıkraları", which come after).
+    live = [c for c in fikra.children if c.level is Level.BENT and c.text]
+    if live and len(text) < 60 and live[-1].text.rstrip().endswith(";") \
+            and fikra.text.rstrip().endswith((":", ";")):
         return True
     last = fikra.children[-1] if fikra.children else None
     return bool(last and last.level is Level.PARAGRAF and re.match(r"[–-]\s", last.text)
@@ -342,7 +369,11 @@ def _is_title(bs: list[Block], i: int) -> bool:
     """Is ``bs[i]`` the title (madde başlığı) of the article that follows it?
 
     Titles usually end with ":"; some do not ("Basit usule tabi olmanın özel şartları"),
-    but they always stand right after a blank line or a heading.
+    but they always stand right after a blank line or a heading. A changed title ends
+    with its marker ("... kazanç istisnası (Değişik Başlık: 27/12/2023-7491/7 md.)",
+    mükerrer 20/B). mevzuat.gov.tr's "MaddeBasl" class is not trusted on a sentence: the
+    last fıkra of geçici 59, "Ticari işletmelere ait olan bu tür gelirler hakkında bu
+    madde hükmü uygulanmaz.", has it.
     """
     b = bs[i]
     j = _next_nonblank(bs, i)
@@ -351,12 +382,14 @@ def _is_title(bs: list[Block], i: int) -> bool:
         return False
     if not ARTICLE_RE.match(nxt.text) or ARTICLE_RE.match(b.text):
         return False
-    if b.text.endswith(":") or "MaddeBasl" in b.html_class:
+    text = re.sub(r"\s*" + mg.MARKER_RE.pattern + r"$", "", b.text)
+    if text.endswith(":") or ("MaddeBasl" in b.html_class
+                              and not text.endswith((".", ";", ","))):
         return True
     prev = bs[i - 1] if i > 0 else None
-    return (prev is None or prev.blank) and len(b.text) < 200 \
-        and not b.text.endswith((".", ";", ",")) \
-        and not LEADING_MARKER_RE.match(b.text) and not ITEM_RE.match(b.text)
+    return (prev is None or prev.blank) and len(text) < 200 \
+        and not text.endswith((".", ";", ",")) \
+        and not LEADING_MARKER_RE.match(text) and not ITEM_RE.match(text)
 
 
 def _is_unnumbered_heading(bs: list[Block], i: int) -> bool:
@@ -373,6 +406,15 @@ def _is_unnumbered_heading(bs: list[Block], i: int) -> bool:
     j = _next_nonblank(bs, i)
     # Directly before an article it would be that article's title instead.
     return j is not None and bs[j].table is None and _is_title(bs, j)
+
+
+def _is_heading_over_title(bs: list[Block], i: int) -> bool:
+    """A short line after a blank line, right above an article's title: "Muhtasar
+    beyanname:", then "b) Muhteviyatı:", then "Madde 99 –"."""
+    t = bs[i].text
+    return (i == 0 or bs[i - 1].blank) and i + 1 < len(bs) and not bs[i + 1].blank \
+        and bs[i + 1].table is None and len(t) <= 60 and not ARTICLE_RE.match(t) \
+        and not ITEM_RE.match(t) and not t.endswith((".", ";", ",")) and _is_title(bs, i + 1)
 
 
 def build_tree(html: str, number: int) -> Law:
@@ -397,6 +439,8 @@ def parse_fragment(texts: list[str], kind: Level) -> list[Node]:
     art = b.open_article("", "", None, [], [])
     for t in texts:
         b.paragraph(t, [])
+    if kind is Level.FIKRA:
+        _promote_numbered(art)  # as in the consolidated text (7491/8 on md. 22)
     _fold_continuations(art)  # as in the consolidated text (7256/17)
     if kind is Level.FIKRA:
         return art.children
@@ -440,6 +484,9 @@ def _build(bs: list[Block], law: Law) -> None:
             lvl = Level.KISIM if m.group("kind") == "KISIM" else Level.BOLUM
             b.heading(lvl, text, title).footnotes = blk.footnotes
             continue
+        if _is_heading_over_title(bs, i - 1):
+            b.heading(Level.BOLUM, "", text).footnotes = blk.footnotes
+            continue
         if _is_unnumbered_heading(bs, i - 1):
             b.heading(Level.BOLUM, "", text).footnotes = blk.footnotes
             continue
@@ -460,6 +507,7 @@ def _build(bs: list[Block], law: Law) -> None:
             continue
         b.paragraph(text, blk.footnotes)
     for a in law.articles():
+        _promote_numbered(a)
         _fold_continuations(a)
         # "Madde 20 – (Mülga: ...)" followed by fıkras in force is not repealed.
         if a.repealed and any(n.text for n in a.walk()):
