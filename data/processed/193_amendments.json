@@ -3427,7 +3427,9 @@
         "marker",
         "footnote"
       ],
-      "notes": []
+      "notes": [
+        "not found in Resmî Gazete index"
+      ]
     },
     {
       "kind": "kanun",
@@ -5157,6 +5159,14 @@
       "kind": "aym",
       "number": "E.2006/119, K.2009/145",
       "kabul_date": "2009-10-15",
+      "title": "Anayasa Mahkemesinin E: 2006/119, K: 2009/145 Sayılı Kararı",
+      "rg": {
+        "date": "2010-01-08",
+        "number": "27456",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2010/01/20100108.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2010/01/20100108-19.htm",
+        "source": "resmigazete.gov.tr"
+      },
       "affected_articles": [
         "gecici-67"
       ],
@@ -5179,6 +5189,14 @@
       "kind": "aym",
       "number": "E.2006/95, K.2009/144",
       "kabul_date": "2009-10-15",
+      "title": "Anayasa Mahkemesinin E: 2006/95, K: 2009/144 Sayılı Kararı",
+      "rg": {
+        "date": "2010-01-08",
+        "number": "27456",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2010/01/20100108.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2010/01/20100108-18.htm",
+        "source": "resmigazete.gov.tr"
+      },
       "affected_articles": [],
       "markers": [],
       "footnotes": [
@@ -5334,6 +5352,14 @@
       "kind": "aym",
       "number": "E.2010/7, K.2011/172",
       "kabul_date": "2011-12-22",
+      "title": "Anayasa Mahkemesinin E: 2010/7, K: 2011/172 Sayılı Kararı (31/12/1960 Tarihli ve 193 Sayılı Kanunda Değişiklik Yapan 4/6/2008 Tarihli ve 5766 Sayılı Kanun ile İlgili)",
+      "rg": {
+        "date": "2012-02-14",
+        "number": "28204",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2012/02/20120214.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2012/02/20120214-20.htm",
+        "source": "resmigazete.gov.tr"
+      },
       "affected_articles": [
         "gecici-73"
       ],
@@ -5355,6 +5381,14 @@
       "kind": "aym",
       "number": "E.2010/93, K.2012/20",
       "kabul_date": "2012-02-09",
+      "title": "Anayasa Mahkemesinin E. 2010/93, K: 2012/20 Sayılı Kararı",
+      "rg": {
+        "date": "2013-07-26",
+        "number": "28719",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2013/07/20130726.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2013/07/20130726-32.htm",
+        "source": "resmigazete.gov.tr"
+      },
       "affected_articles": [],
       "markers": [],
       "footnotes": [
@@ -8323,6 +8357,14 @@
       "kind": "aym",
       "number": "E.2025/219, K.2026/43",
       "kabul_date": "2026-02-12",
+      "title": "Anayasa Mahkemesinin 12/2/2026 Tarihli ve E: 2025/219, K: 2026/43 Sayılı Kararı",
+      "rg": {
+        "date": "2026-06-03",
+        "number": "33269",
+        "index_url": "https://www.resmigazete.gov.tr/eskiler/2026/06/20260603.htm",
+        "text_url": "https://www.resmigazete.gov.tr/eskiler/2026/06/20260603-3.pdf",
+        "source": "resmigazete.gov.tr"
+      },
       "affected_articles": [
         "gecici-72"
       ],

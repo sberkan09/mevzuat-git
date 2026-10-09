@@ -25,7 +25,7 @@
 ## Faz 3: Uygula ve doğrula
 - [x] İşlemleri ağaca uygulayan motor (`mevzuat_git.replay`)
 - [x] Replay sonucu ↔ güncel konsolide metin diff'i; hata raporu (`mevzuat-git replay`)
-- [x] Metrik: madde düzeyinde birebir eşleşme oranı (GVK: %91,3; bkz. `docs/replay.md`)
+- [x] Metrik: madde düzeyinde birebir eşleşme oranı (GVK: %93,3; bkz. `docs/replay.md`)
 
 ## Faz 4: Git deposu üretimi
 - [x] Commit tarihi = yürürlük tarihi (madde bazında farklılık → ayrı commit; `mevzuat-git history`, bkz. `docs/history.md`)
@@ -34,7 +34,10 @@
 
 ## Faz 5: Ölçekleme
 - [ ] Torba kanunlar (tek kanun → çok hedef)
-- [ ] Anayasa Mahkemesi iptal kararları ve iptal yürürlük tarihleri
+- [ ] Anayasa Mahkemesi iptal kararları ve iptal yürürlük tarihleri (ibare/cümle/düğüm
+  iptalleri ve ertelenmiş yürürlük yapıldı, bkz. `docs/replay.md`; "yönünden" iptaller
+  ve yürürlükteki bir hükmü yeniden düzenleyen kanundan sonra yürürlüğe giren iptaller
+  henüz modellenmiyor)
 - [ ] Geçici ve ek maddeler, mülga maddeler
 - [ ] 2000 öncesi (PDF/tarama) RG arşivi
 

@@ -112,3 +112,44 @@ def test_committed_list_loads():
     p = Path(__file__).parent.parent / "data" / "processed" / "193_amendments.json"
     lst = al.AmendmentList.model_validate_json(p.read_text())
     assert lst.target_law == 193 and len(lst.acts) > 100
+
+
+def test_decision_is_looked_up_on_its_table_date_first(monkeypatch):
+    # E.2010/93, K.2012/20 (9/2/2012) was published on 26/7/2013, the date the yürürlük
+    # table gives for geçici 69.
+    from mevzuat_git import resmigazete as rg
+    asked = []
+
+    def fake(fetcher, esas, karar, days):
+        asked.append((esas, karar, days))
+        page = rg.IndexPage(url="https://x/20130726.htm", date=days[0], mukerrer=0,
+                            issue="28719", entries=[], mukerrer_urls=[])
+        return rg.Located(page, rg.IndexEntry(
+            href="https://x/20130726-32.htm",
+            text="— Anayasa Mahkemesinin E. 2010/93, K: 2012/20 Sayılı Kararı"))
+
+    monkeypatch.setattr(rg, "locate_decision", fake)
+    act = al.AmendingAct(kind="aym", number="E.2010/93, K.2012/20", kabul_date=date(2012, 2, 9),
+                         effective=[al.EffectiveEntry(articles="Geçici Madde 69",
+                                                      effective="26/7/2013",
+                                                      effective_date=date(2013, 7, 26))])
+    al.enrich_from_rg(None, act)
+    ((esas, karar, days),) = asked
+    assert (esas, karar) == ("2010/93", "2012/20")
+    assert days[:2] == [date(2013, 7, 26), date(2012, 2, 9)]
+    assert (act.rg.date, act.rg.number, act.rg.text_url) == (
+        date(2013, 7, 26), "28719", "https://x/20130726-32.htm")
+    assert act.title == "Anayasa Mahkemesinin E. 2010/93, K: 2012/20 Sayılı Kararı"
+
+
+def test_decision_lookup_stops_at_today(monkeypatch):
+    # Days not yet published would be cached as missing.
+    from mevzuat_git import resmigazete as rg
+    asked = []
+    monkeypatch.setattr(rg, "locate_decision", lambda f, e, k, days: asked.append(days))
+    today = al.datetime.now(al.ZoneInfo("Europe/Istanbul")).date()
+    act = al.AmendingAct(kind="aym", number="E.2025/219, K.2026/43",
+                         kabul_date=today - al.timedelta(days=10))
+    al.enrich_from_rg(None, act)
+    (days,) = asked
+    assert days[0] == act.kabul_date and days[-1] == today and len(days) == 11

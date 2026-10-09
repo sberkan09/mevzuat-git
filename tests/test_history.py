@@ -9,9 +9,11 @@ import pytest
 
 from mevzuat_git import amendments as am
 from mevzuat_git.amendment_list import AmendingAct, AmendmentList, EffectiveEntry, RGRef
-from mevzuat_git.compare import strip_editorial
+from mevzuat_git.compare import mark_annulled, strip_editorial
 from mevzuat_git.history import (
+    Step,
     _differing_articles,
+    _step_commit,
     build,
     clause_dates,
     op_date,
@@ -130,6 +132,31 @@ def test_table_date_long_after_publication_is_not_taken():
     assert (got.date, got.assumed) == (date(2002, 6, 22), True)
 
 
+def test_annulment_takes_effect_on_its_date():
+    # E.2006/119, K.2009/145 (RG 8/1/2010) put off its annulment by nine months; it has no
+    # row in the yürürlük table.
+    act = AmendingAct(kind="aym", number="E.2006/119, K.2009/145",
+                      rg=RGRef(date=date(2010, 1, 8), source="resmigazete.gov.tr"))
+    r = _r(am.Path(madde="gecici-67", fikra=1, paragraf=1), OpType.DELETE_PHRASE)
+    r.effective = date(2010, 10, 8)
+    got = op_date(r, act, date(2010, 1, 8))
+    assert (got.date, got.assumed) == (date(2010, 10, 8), False)
+    r.effective = date(2010, 1, 8)
+    assert "Anayasa md. 153" in op_date(r, act, date(2010, 1, 8)).source
+
+
+def test_annulment_commit():
+    r = _r(am.Path(madde="gecici-72", fikra=2, cumle=3), OpType.DELETE_PHRASE)
+    r.act, r.article = "E.2025/219, K.2026/43", "?"
+    url = "https://www.resmigazete.gov.tr/eskiler/2026/06/20260603-3.pdf"
+    c = _step_commit(Step("E.2025/219, K.2026/43", date(2026, 6, 3), "33269", url, "footnotes",
+                          "aym", date(2026, 6, 3), [], [[r]]))
+    assert c.subject == "AYM E.2025/219 K.2026/43: md. geçici 72"
+    assert not any(line.startswith(("Değiştiren", "Hüküm")) for line in c.body)
+    assert c.body[-1] == (f"Kaynak: {url} (PDF; işlemler mevzuat.gov.tr konsolide metninin "
+                          "dipnotlarından okundu)")
+
+
 def test_clause_dates():
     assert clause_dates("23 üncü maddesi ve 29 uncu maddesi 1/2/2019 tarihinde, Geçici madde "
                         "76 1/1/2019 tarihinde", date(2019, 1, 18)) == {
@@ -237,6 +264,19 @@ def test_differences_left_after_the_replay():
     # Not mevzuat.gov.tr's: the mark of a removed ibare and the law's own typography.
     ("kurum (…) ve kuruluşlar", "kurum (…) ve kuruluşlar"),
     ("“yemek”  – bedeli", "“yemek”  – bedeli"),
+    # geçici 69: an annulment noted with "kararıyla".
+    (("indirebilirler. (Ek cümleler: 23/7/2010-6009/5 md.; İptal birinci cümle: Anayasa "
+      "Mahkemesinin 9/2/2012 tarihli ve E.2010/93, K.2012/20 sayılı kararıyla) Kalan kazanç"),
+     "indirebilirler. Kalan kazanç"),
 ])
 def test_strip_editorial(raw, out):
     assert strip_editorial(raw) == out
+
+
+def test_marker_of_an_annulled_first_sentence_marks_its_place():
+    text = ("indirebilirler. (Ek cümleler: 23/7/2010-6009/5 md.; İptal birinci cümle: Anayasa "
+            "Mahkemesinin 9/2/2012 tarihli ve E.2010/93, K.2012/20 sayılı kararıyla) Kalan kazanç")
+    assert mark_annulled(text) == "indirebilirler. (…) Kalan kazanç"
+    # Other markers stay for ``strip_editorial``.
+    plain = "tutarlar (Ek ibare: 25/7/2024-7524/1 md.) hariç"
+    assert mark_annulled(plain) == plain

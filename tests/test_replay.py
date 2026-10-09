@@ -8,7 +8,7 @@ import pytest
 from mevzuat_git import amendments as am
 from mevzuat_git.compare import node_lines, norm
 from mevzuat_git.fetch import decode_html
-from mevzuat_git.model import AmendmentOp, Law, Level, Node, OpType
+from mevzuat_git.model import Amendment, AmendmentOp, Law, Level, Node, OpType
 from mevzuat_git.model import Path as Addr
 from mevzuat_git.replay import (
     UNKNOWN,
@@ -25,7 +25,7 @@ from mevzuat_git.replay import (
     unapply_batch,
 )
 from mevzuat_git.tree import build_tree, parse_fragment
-from mevzuat_git.verify import OpResult, batches, mark_replaced, unwind
+from mevzuat_git.verify import OpResult, batches, mark_replaced, run, unwind
 
 FIX = Path(__file__).parent / "fixtures"
 ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="utf-8"))
@@ -320,6 +320,10 @@ def test_find_all_ignores_spacing_and_circumflex(text, phrase):
     # 7061/14 writes "%15", mevzuat.gov.tr "% 15"; 5035/48 "1.1.1999 - 31.12.2004".
     ("hasılatlarından % 15'ini", "hasılatlarından %15'ini"),
     ("1.1.1999 - 31.12.2004 tarihleri", "1.1.1999-31.12.2004 tarihleri"),
+    # An annulment noted with "kararıyla" (geçici 69).
+    (("indirebilirler. (Ek cümleler: 23/7/2010-6009/5 md.; İptal birinci cümle: Anayasa "
+      "Mahkemesinin 9/2/2012 tarihli ve E.2010/93, K.2012/20 sayılı kararıyla) Kalan kazanç"),
+     "indirebilirler. Kalan kazanç"),
 ])
 def test_norm(raw, normal):
     assert norm(raw) == normal
@@ -516,3 +520,90 @@ def test_unwind_ignores_the_current_amounts():
     old = unwind(law, [[r]])
     assert r.check == "ok"
     assert old.article("23").children[0].children[0].text == head + ";"
+
+
+# -- Anayasa Mahkemesi annulments ----------------------------------------------------------
+
+# GVK geçici 72/2 as 7194/21 wrote it, and as on mevzuat.gov.tr after E.2025/219, K.2026/43
+# annulled “tevkifat yapmakla sorumlu olanlarca vergi dairesine ödenmiş olması şartıyla,”.
+G72_F2 = ("Bu ödemeler üzerinden 94 üncü madde kapsamında ayrıca tevkifat yapılmaz. Bu madde "
+          "kapsamındaki gelirler toplamının, 103 üncü maddede yazılı tarifenin dördüncü "
+          "diliminde yer alan tutarı aşması hâlinde, bu gelirler yıllık beyannameyle beyan "
+          "edilir. Yıllık beyanname verilmesi durumunda, beyan edilen bu gelirler üzerinden "
+          "hesaplanan gelir vergisinden, tevkifat yapmakla sorumlu olanlarca vergi dairesine "
+          "ödenmiş olması şartıyla, bu Kanuna göre kesilen vergiler mahsup edilir.")
+G72_F2_NOW = G72_F2.replace("tevkifat yapmakla sorumlu olanlarca vergi dairesine ödenmiş "
+                            "olması şartıyla, ", "(…) ")
+
+
+def test_annulled_ibare_goes_back_into_its_mark():
+    law = Law(number=193, name="", body=[Node(
+        level=Level.MADDE, id="gecici-72", label="Geçici Madde 72 –", children=[
+            Node(level=Level.FIKRA, label="(1)", text="31/12/2028 tarihine kadar ..."),
+            Node(level=Level.FIKRA, label="(2)", text=G72_F2_NOW)])])
+    op = AmendmentOp(op=OpType.DELETE_PHRASE, target=Addr(madde="gecici-72", fikra=2, cumle=3),
+                     old="tevkifat yapmakla sorumlu olanlarca vergi dairesine ödenmiş olması "
+                         "şartıyla,", source_sentence="")
+    assert unapply(law, op).status == "ok"
+    assert law.article("gecici-72").children[1].text == G72_F2
+    apply(law, op)
+    assert norm(law.article("gecici-72").children[1].text) == norm(G72_F2_NOW)
+
+
+# GVK geçici 69 as 5479/3 added it, and its first fıkra's closing paragraph on
+# mevzuat.gov.tr after 6009/5 and two annulments (E.2006/95, K.2009/144: “sadece 2006,
+# 2007 ve 2008 yıllarına ait”; E.2010/93, K.2012/20: the first sentence 6009/5 added).
+G69_BENTS = [("a)", ("24/4/2003 tarihinden önce yapılan müracaatlara istinaden düzenlenen "
+                     "yatırım teşvik belgeleri kapsamında, ...")),
+             ("b)", "193 sayılı Gelir Vergisi Kanununun mülga 19 uncu maddesi kapsamında ...")]
+G69_F1 = ("Gelir ve kurumlar vergisi mükellefleri; 31/12/2005 tarihi itibarıyla mevcut olup, "
+          "2005 yılı kazançlarından indiremedikleri yatırım indirimi istisnası tutarları ile;")
+G69_F2 = "Bu maddenin uygulanmasına ilişkin usûl ve esasları belirlemeye Maliye Bakanlığı yetkilidir."
+G69_5479 = ("nedeniyle, 31/12/2005 tarihinde yürürlükte bulunan mevzuat hükümlerine göre "
+            "hesaplayacakları yatırım indirimi istisnası tutarlarını, yine bu tarihteki mevzuat "
+            "hükümleri (vergi oranına ilişkin hükümler dahil) çerçevesinde sadece 2006, 2007 ve "
+            "2008 yıllarına ait kazançlarından indirebilirler.")
+G69_NOW = ("nedeniyle, 31/12/2005 tarihinde yürürlükte bulunan mevzuat hükümlerine göre "
+           "hesaplayacakları yatırım indirimi istisnası tutarlarını, yine bu tarihteki mevzuat "
+           "hükümleri (bu Kanunun geçici 61 inci maddesinin ikinci fıkrasında yer alan vergi "
+           "oranına ilişkin hüküm dâhil) çerçevesinde kazançlarından indirebilirler. (Ek "
+           "cümleler: 23/7/2010-6009/5 md.; İptal birinci cümle: Anayasa Mahkemesinin 9/2/2012 "
+           "tarihli ve E.2010/93, K.2012/20 sayılı kararıyla) Kalan kazanç üzerinden yürürlükteki "
+           "vergi oranına göre vergi hesaplanır.")
+
+
+def _g69(label: str, closing: str) -> Node:
+    return Node(level=Level.MADDE, id="gecici-69", label=label, children=[
+        Node(level=Level.FIKRA, text=G69_F1, children=[
+            *(Node(level=Level.BENT, label=k, text=t) for k, t in G69_BENTS),
+            Node(level=Level.PARAGRAF, text=closing)]),
+        Node(level=Level.FIKRA, text=G69_F2)])
+
+
+def test_annulments_replayed_with_the_acts_around_them():
+    """The 2009 annulment leaves no mark: its undo is lossy, but the replay deletes the
+    ibare again from 5479's own text. The 2012 one goes back where its marker is."""
+    current = Law(number=193, name="", body=[_g69("Geçici Madde 69 –", G69_NOW)])
+    added = AmendmentOp(op=OpType.INSERT_NODE, target=Addr(madde=""), position="end",
+                        kind=Level.MADDE, new_nodes=[_g69("GEÇİCİ MADDE 69 –", G69_5479)],
+                        source_sentence="193 sayılı Kanuna aşağıdaki geçici maddeler eklenmiştir.")
+    html = decode_html((FIX / "rg_20100108-18_aym_excerpt.htm").read_bytes())
+    (aym2009,) = am.parse_decision(html, "E.2006/95, K.2009/144", 193, None).amendments
+    aym2012 = am.parse_instruction(am.annulment_instruction(
+        "23.7.2010 günlü, 6009 sayılı ... Kanun’un 5. maddesiyle 193 sayılı Kanun’un geçici 69. "
+        "maddesinin birinci fıkrasına eklenen “Şu kadar ki, vergi matrahlarının tespitinde "
+        "yatırım indirimi istisnası olarak indirim konusu yapılacak tutar, ilgili kazancın % "
+        "25’ini aşamaz.” biçimindeki cümlenin, Anayasa’ya aykırı olduğuna ve İPTALİNE,"), [], 193)
+
+    def act(no, art, ops):
+        return am.ActOps(act=no, rg_date=None, rg_number=None, text_url="", sentences=1,
+                         amendments=[Amendment(amending_law=no, article=art, target_law=193,
+                                               ops=ops)])
+    opsfile = am.OpsFile(target_law=193, acts=[
+        act("5479", "3", [added]), act("E.2006/95, K.2009/144", "B/2", aym2009.ops),
+        act("6009", "5", ops_of("6009/5")), act("E.2010/93, K.2012/20", "2", aym2012)])
+    rep = run(current, opsfile)
+    assert [r.check for r in rep.ops] == ["fail", "lossy", "ok", "ok", "ok"]
+    assert not any(r.replay_error for r in rep.ops)
+    (art,) = rep.articles
+    assert art.status == "match"
