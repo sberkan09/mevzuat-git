@@ -402,3 +402,63 @@ def test_title_over_two_lines():
     # A list item under a short line stays an item.
     law = _gvk("", "Diğer istisnalar", "a) ilk bent", "Madde 13 – Metin.")
     assert law.article("13").title != "Diğer istisnalar a) ilk bent"
+
+
+def test_bent_paragraphs_in_a_numbered_fikra():
+    # KVK md. 5/1: "I)" after "h)" is bent (ı), so "i)" is the next bent, not a roman alt
+    # bent; the capitalised paragraphs after a bent are its paragraphs ("(i) bendinin
+    # üçüncü paragrafı", 6009/43), and a lower-case one after alt bents goes on with the
+    # bent (j).
+    law = _gvk(
+        "", "Kurumlar vergisi istisnaları", "MADDE 5- (1) Aşağıda belirtilen kazançlar, ...:",
+        "h) Yurt dışında yapılan inşaat, onarım, montaj işleri ile teknik hizmetlerden ...",
+        "I) Okul öncesi eğitim, ilköğretim, özel eğitim ve orta öğretim özel okulları, ...",
+        ("i) (Değişik birinci cümle: 28/11/2017-7061/89 md.) Kooperatif ortaklarının yönetim "
+         "gideri karşılığı olarak ..."),
+        "Bu risturnların ortaklara dağıtımı, kâr dağıtımı sayılmaz. ...",
+        ("j) (Ek: 15/7/2016-6728/56 md.) Her türlü taşınır ve taşınmaz malların 6361 sayılı "
+         "Kanun kapsamında ..."),
+        "Söz konusu varlıkların,",
+        "i) Kiracı tarafından veya",
+        "ii) Kiralayan kurumlar tarafından finansal kiralama yöntemi dâhil olmak üzere ...",
+        "üçüncü kişi ve kurumlara satılması durumunda, kiralayan kurumlara devrinden önce ...",
+        "(2) Cumhurbaşkanı, bu maddede yer alan; ...")
+    f1, _ = law.article("5").children
+    assert [b.label for b in f1.children] == ["h)", "I)", "i)", "j)"]
+    _, bi, bii, bj = f1.children
+    assert bi.children == [] and shape(bii) == [("paragraf", "")]
+    assert shape(bj) == [("paragraf", ""), ("alt_bent", "i)"), ("alt_bent", "ii)"),
+                         ("paragraf", "")]
+
+
+def test_lower_case_line_after_bents_ends_the_fikra_sentence():
+    # KVK md. 5/B/2: "... gerekmektedir." closes the fıkra's sentence, after its bents.
+    law = _gvk(
+        "", "Patentli veya faydalı model belgeli buluşa ilişkin kazanç istisnası",
+        "MADDE 5/B- (1) Kurumların, ...",
+        "(2) Bu istisnadan yararlanılabilmesi için;",
+        "a) Buluşun Türkiye’de gerçekleştirilen araştırma, ...",
+        "b) Buluş üzerinde ... ",
+        "gerekmektedir.")
+    _, f2 = law.article("5/B").children
+    assert shape(f2) == [("bent", "a)"), ("bent", "b)"), ("paragraf", "")]
+
+
+def test_new_articles_under_a_heading_keep_their_title():
+    # 7524/40: "bölüm başlığı ile birlikte aşağıdaki ek madde": the heading's title is
+    # broken after a comma and the article's title stands right under it.
+    (a,) = parse_fragment([
+        "İKİNCİ BÖLÜM",
+        "Vergi Yükünün Hesaplanması, Asgari Tamamlayıcı Kurumlar Vergisi Matrahı,",
+        "Oranı ve Hesabı",
+        "Vergi yükünün tespitinde düzeltilmiş kapsanan vergilerin hesaplanması",
+        ("EK MADDE 4- (1) Net ülkesel bazlı kazanca sahip bir çok uluslu işletme grubunun "
+         "vergi yükü, her hesap dönemi için ülkesel bazda ayrı ayrı hesaplanır."),
+    ], Level.MADDE)
+    assert a.id == "ek-4"
+    assert a.title == "Vergi yükünün tespitinde düzeltilmiş kapsanan vergilerin hesaplanması"
+    law = _gvk("", "İKİNCİ BÖLÜM",
+               "Vergi Yükünün Hesaplanması, Asgari Tamamlayıcı Kurumlar Vergisi Matrahı,",
+               "Oranı ve Hesabı", "", "Başlık", "Madde 4 – Metin.")
+    assert law.body[0].title == ("Vergi Yükünün Hesaplanması, Asgari Tamamlayıcı Kurumlar "
+                                 "Vergisi Matrahı, Oranı ve Hesabı")

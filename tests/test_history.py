@@ -324,6 +324,15 @@ def test_operations_in_force_later_are_pending():
     assert [r.op for r in op_results(ops)] == [r36.op]
 
 
+def test_yururluk_date_centuries_ahead_is_a_typo():
+    # 7555 (RG 24/7/2025): "24/07/2202" for its 18 inci madde on KVK md. 32/A, which the
+    # consolidated text of 2026 already carries.
+    act = _act("7555", date(2025, 7, 24), [("18", "24/07/2202")])
+    got = op_date(_r(am.Path(madde="32/A", fikra=1)), act, date(2025, 7, 24),
+                  as_of=date(2026, 10, 9))
+    assert got.date == date(2025, 7, 24) and got.assumed
+
+
 def test_ibare_replacements_of_a_sentence_are_one_batch_across_other_parts():
     # 700/90 on KDV md. 38: “Bakanlar Kurulu” in the first and fourth fıkras, then
     # “Bakanlar Kurulunca” in the first; one by one, the first would eat the second.
