@@ -837,6 +837,11 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
             return Check("ok")
         return Check("lossy", "deleted ibare: its place in the text is not marked")
     if op.op is OpType.REPEAL_NODE:
+        if (marked := _marked_path(law, op)) is not None:
+            # Where the node stands now, which is where the annulment found it: later acts
+            # undone before it may have moved it (367's annulled fıkra is the 7th today,
+            # the 6th before 7394/5 added one).
+            op.target = t = marked
         loc = locate(law, t, live=False)
         if loc.sentence is not None:
             return Check("lossy", "repealed sentence")
@@ -857,6 +862,17 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
     if op.op is OpType.INSERT_NODE:
         return _unapply_insert(law, op)
     return Check("fail", f"unsupported op {op.op}")
+
+
+def _marked_path(law: Law, op: AmendmentOp) -> Path | None:
+    """For an annulment read from an "(İptal ...)" marker (``ops_from_markers``), the
+    address of the repealed node that carries the marker in ``law``."""
+    if op.footnote is not None or not re.match(r"\(.*İptal", op.source_sentence):
+        return None
+    from mevzuat_git.amendments import node_paths  # amendments imports tree, not replay
+    hits = [p for n, p, _ in node_paths(law) if p.madde == op.target.madde and n.repealed
+            and " ".join(n.notes) == op.source_sentence]
+    return hits[0] if len(hits) == 1 else None
 
 
 def _numbered(path: Path, label: str) -> Path:
@@ -996,6 +1012,11 @@ def _inserted_differs(have: list[Node], want: list[Node]) -> str | None:
         return None
 
 
+def _from_marker(op: AmendmentOp) -> bool:
+    """An insertion read from a "(Ek: ...)" marker of the consolidated text."""
+    return op.footnote is None and bool(re.match(r"\(Ek\s*:", op.source_sentence))
+
+
 def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
     t = op.target
     k = len(op.new_nodes)
@@ -1055,6 +1076,14 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
                 return Check("fail", "nothing before the anchor")
         got = loc.siblings[i:i + k]
         diff = _inserted_differs(got, op.new_nodes)
+        if diff and _from_marker(op) and len(got) == k \
+                and [(n.level, label_key(n.label)) for n in got] \
+                == [(n.level, label_key(n.label)) for n in op.new_nodes]:
+            # Read from a change marker, the new text is today's (``ops_from_markers``);
+            # what the unwind left there is the better guess for the text at the time:
+            # 7318/4 added md. 359 (ç) with "üç yıldan beş yıla", which 7394/4 made "sekiz".
+            op.new_nodes = [n.model_copy(deep=True) for n in got]
+            diff = None
         if diff:
             return Check("fail", diff)
         del loc.siblings[i:i + k]

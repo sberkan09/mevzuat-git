@@ -545,7 +545,7 @@ FIKRA_LIST_RE = re.compile(
     r"\s+fıkralar"
 )
 BENT_LIST_RE = re.compile(
-    r"(?P<items>(?:\(\w+\)\s*(?:,|\bve\b|\bile\b)\s*(?:değişik\s+)?)+\(\w+\))\s*numaralı\s+"
+    r"(?P<items>(?:\(\w+\)\s*(?:,|\bve\b|\bile\b)\s*(?:değişik\s+)?)+\(\w+\))\s*(?:numaralı\s+)?"
     r"(?P<alt>alt\s+)?bentler"
 )
 
@@ -562,7 +562,9 @@ def expand_targets(seg: str, path: Path) -> list[Path]:
         else:
             nums = [ORDINALS[w.group(0)] for w in re.finditer(ORD_RE, m.group("ords"))]
         return [path.model_copy(update={"fikra": k}) for k in nums]
-    if m := BENT_LIST_RE.search(seg):
+    # Only a list that is the address: not "(ç) ve (e) alt bentleri aşağıdaki şekilde,
+    # (d) alt bendinde yer alan" (7061/12), where the operation is on (d).
+    if (m := BENT_LIST_RE.search(seg)) and not BENT_RE.search(seg, m.end()):
         keys = re.findall(r"\((\w+)\)", m.group("items"))
         field = "alt_bent" if m.group("alt") else "bent"
         return [path.model_copy(update={field: k}) for k in keys]
@@ -704,11 +706,32 @@ def _check_segment(o: OpMatch, own: str) -> None:
         raise Unparsed(f"repeal of part of a node: {own!r}")
 
 
+# VUK md. 359 calls its lettered items fıkras: "(a) fıkrasında", "(b), (c) ve (ç)
+# fıkralarında" (7394/4). The tree reads "a)" items as bents, so the address does too.
+_LETTER_FIKRA_RE = re.compile(r"(\([a-zçğıöşü]\))\s*fıkra(lar)?")
+
+
+def _letter_fikras(text: str) -> str:
+    """``text`` with lettered fıkras named as bents, outside quoted ibareler (7394/4 also
+    replaces the ibare "(ç) ve (d) fıkralarında" in md. 367, which must stay as it is)."""
+    out, pos = [], 0
+    for q in re.finditer(Q + QTEXT + Q, text):
+        out += [_LETTER_FIKRA_RE.sub(_as_bent, text[pos:q.start()]), q.group(0)]
+        pos = q.end()
+    out.append(_LETTER_FIKRA_RE.sub(_as_bent, text[pos:]))
+    return "".join(out)
+
+
+def _as_bent(m: re.Match) -> str:
+    return m.group(1) + (" bentler" if m.group(2) else " bent")
+
+
 def parse_instruction(text: str, payload: list[str], target_law: int,
                       law_ctx: str | None = None, ctx: Path | None = None) -> list[AmendmentOp]:
     """Operations on ``target_law`` in one instruction sentence of an amending act.
     ``ctx`` is the address that "bu fıkrada" and the like refer to, if any."""
     ops: list[AmendmentOp] = []
+    sentence, text = text, _letter_fikras(text)
     matches = find_ops(text)
     payload_ops = [o for o in matches
                    if o.name in ("replace_node", "insert_node", "paren_replace")]
@@ -735,6 +758,16 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         own = "".join(seg[a:b] for a, b in mine)
         if o.name == "title_replace" and re.search(r"bölümünün|kısmının", own):
             continue  # heading of a kısım/bölüm: not addressable yet
+        unquoted = re.sub(Q + QTEXT + Q, "", own)
+        if not ARTICLE_REF_RE.search(own) and (
+                re.search(r"\b(?:Kanuna|Kanunun)\s+(?:ekli|bağlı)\b", unquoted)
+                or (re.search(r"[Cc]etvel", unquoted)
+                    and not re.search(r"madde|fıkra|bent|cümle", unquoted))):
+            # "Kanuna bağlı “Usulsüzlük Cezalarına Ait Cetvel” başlığı", "mevcut Usulsüzlük
+            # Cezalarına Ait Cetveldeki miktarlar aşağıdaki şekilde" (7524/10): a table
+            # attached to the law, not an article; not addressable yet. A table inside an
+            # article ("ikinci fıkrasındaki cetvelde") is addressed by its fıkra.
+            continue
         if raw and len(addressed) > 1 and len(set(addressed)) == len(addressed):
             parts = split_payload(raw, len(addressed))
             if len(parts) == len(addressed):
@@ -760,7 +793,7 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         else:
             parts = [raw] * n
         for (t, sub), part in zip(targets, parts, strict=True):
-            made = _make_ops(o, _after_inserts(t, sub, ops), sub, _strip_quotes(part), text)
+            made = _make_ops(o, _after_inserts(t, sub, ops), sub, _strip_quotes(part), sentence)
             if o.name == "insert_phrase_bu":
                 # "bu ibareden sonra": the new ibare of the operation before.
                 if not (ops and ops[-1].op in (OpType.REPLACE_PHRASE, OpType.INSERT_PHRASE)
@@ -964,6 +997,9 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
             field = "fikra" if kind is Level.FIKRA else "bent"
             prev = int(n) - 1 if kind is Level.FIKRA else str(int(n) - 1)
             target = path.model_copy(update={field: prev})
+        if kind is Level.FIKRA and path.bent is not None and position in ("after", "before"):
+            # "(ç) fıkrasından sonra gelmek üzere aşağıdaki fıkra" (7423/1): a lettered item.
+            kind = Level.BENT
         if g["kind"].startswith("parantez") and (anchor or position == "end"):
             # "“...” ibaresinden sonra gelmek üzere aşağıdaki parantez içi hüküm" (7566/3),
             # "bentlerine sırasıyla aşağıdaki parantez içi hükümler" (7194/13): text inside
@@ -1479,6 +1515,16 @@ def ops_from_footnotes(act: AmendingAct, law: Law) -> tuple[list[Amendment],
 _EK_MARK = re.compile(r"\bEk\s*:\s*[\d/.]+\s*-\s*(?P<act>\d+)\s*/\s*(?P<art>\d+)\s*md\b")
 
 
+_IPTAL_MARK = re.compile(
+    r"İptal(?:\s+(?:fıkra|bent|alt\s+bent))?\s*:\s*Anayasa\s+Mahkemesi[^;)]*?"
+    r"(?P<case>E\s*\.?\s*:?\s*\d{4}\s*/\s*\d+\s*,\s*K\s*\.?\s*:?\s*\d{4}\s*/\s*\d+)")
+
+
+def _decision_key(text: str) -> tuple[str, ...]:
+    """"E.: 2022/81, K.: 2023/153" and "E.2022/81, K.2023/153" -> ("2022/81", "2023/153")."""
+    return tuple(re.sub(r"\s+", "", d) for d in re.findall(r"\d{4}\s*/\s*\d+", text))
+
+
 def ops_from_markers(act: AmendingAct, law: Law) -> list[Amendment]:
     """Nodes that the consolidated text marks as added by ``act`` ("(Ek: 29/1/2016-6663/2
     md.)") when no footnote says so: an insertion after the node before it. The node's
@@ -1489,6 +1535,18 @@ def ops_from_markers(act: AmendingAct, law: Law) -> list[Amendment]:
     footnoted = {fn.footnote for fn in act.footnotes}
     nodes = node_paths(law)
     path_of = {id(n): p for n, p, _ in nodes}
+    for n, path, _ in nodes:
+        # "(İptal fıkra: Anayasa Mahkemesi’nin 13/9/2023 tarihli ve E.: 2022/81, K.: 2023/153
+        # sayılı Kararı ile.)" (VUK md. 359): a decision whose RG text is a PDF annulled the
+        # whole node.
+        if act.kind == "aym" and n.repealed and not footnoted & set(n.footnotes) and any(
+                _decision_key(m.group("case")) == _decision_key(act.number)
+                for note in n.notes for m in _IPTAL_MARK.finditer(note)):
+            by_article.setdefault("?", Amendment(
+                amending_law=act.number, article="?", target_law=law.number,
+                rg_date=act.rg.date if act.rg else None,
+                rg_number=act.rg.number if act.rg else None, ops=[])).ops.append(AmendmentOp(
+                    op=OpType.REPEAL_NODE, target=path, source_sentence=" ".join(n.notes)))
     for n, _, sibs in nodes:
         marks = [m for note in n.notes for m in _EK_MARK.finditer(note)
                  if m.group("act") == act.number]

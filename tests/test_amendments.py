@@ -11,7 +11,7 @@ from mevzuat_git.amendment_list import AmendingAct, FootnoteRef, RGRef
 from mevzuat_git.fetch import decode_html
 from mevzuat_git.model import Law, Level, Node, OpType
 from mevzuat_git.model import Path as Addr
-from mevzuat_git.replay import resolve, unapply
+from mevzuat_git.replay import apply, resolve, unapply
 from mevzuat_git.tree import TABLE_MARK
 
 FIX = Path(__file__).parent / "fixtures"
@@ -899,3 +899,109 @@ def test_capitalised_title():
         "uymayanlar için ceza:” şeklinde değiştirilmiştir.", [], 213)
     assert (op.op, op.target.madde, op.target.baslik) == (
         OpType.REPLACE_NODE, "mukerrer-355", True)
+
+
+def test_lettered_fikras_are_bents():
+    # VUK md. 359 calls its "a)" items fıkras (7394/4); the tree reads them as bents.
+    ops = am.parse_instruction(
+        "213 sayılı Kanunun 359 uncu maddesinin (a) fıkrasında yer alan “üç” ibaresi “beş” "
+        "şeklinde, (b), (c) ve (ç) fıkralarında yer alan “beş” ibareleri “sekiz” şeklinde "
+        "değiştirilmiş ve maddeye son fıkrasından önce gelmek üzere aşağıdaki fıkralar "
+        "eklenmiştir.", ["“X.”"], 213)
+    assert [(o.op, o.target.bent, o.old) for o in ops[:4]] == [
+        (OpType.REPLACE_PHRASE, "a", "üç"), (OpType.REPLACE_PHRASE, "b", "beş"),
+        (OpType.REPLACE_PHRASE, "c", "beş"), (OpType.REPLACE_PHRASE, "ç", "beş")]
+    assert ops[0].source_sentence.startswith("213 sayılı Kanunun 359 uncu maddesinin (a) fıkrası")
+    # 7423/1: a lettered "fıkra" after (ç) is a bent.
+    (op,) = am.parse_instruction(
+        "4/1/1961 tarihli ve 213 sayılı Vergi Usul Kanununun 359 uncu maddesine (ç) "
+        "fıkrasından sonra gelmek üzere aşağıdaki fıkra eklenmiştir.",
+        ["“d) 3/1/2002 tarihli ve 4733 sayılı Kanun ...”"], 213)
+    assert (op.kind, op.target.bent, op.position) == (Level.BENT, "ç", "after")
+    assert [n.label for n in op.new_nodes] == ["d)"]
+
+
+def test_lettered_fikras_inside_an_ibare_stay():
+    (op,) = am.parse_instruction(
+        "213 sayılı Kanunun 367 nci maddesinin dördüncü fıkrasında yer alan “359 uncu maddenin "
+        "(ç) ve (d) fıkralarında” ibaresi “X” şeklinde değiştirilmiştir.", [], 213)
+    assert op.old == "359 uncu maddenin (ç) ve (d) fıkralarında" and op.target.fikra == 4
+
+
+def test_bent_list_before_another_address():
+    # 7061/12 on 7258: the replacement is in (d), not in the (ç) and (e) replaced above.
+    ops = am.parse_instruction(
+        "29/4/1959 tarihli ve 7258 sayılı Kanunun 2 nci maddesinin üçüncü fıkrasının (2) "
+        "numaralı bendinin (ç) ve (e) alt bentleri aşağıdaki şekilde, (d) alt bendinde yer alan "
+        "“Bu fıkranın (b) ve (c) bentlerinde” ibaresi “Bu bendin (b) ve (c) alt bentlerinde” "
+        "şeklinde değiştirilmiştir.", [], 7258)
+    assert [(o.op, o.target.alt_bent) for o in ops] == [(OpType.REPLACE_PHRASE, "d")]
+
+
+def test_table_attached_to_the_law_is_skipped():
+    # 7524/10: the cetvel's title and amounts are not an article; the ibareler are.
+    ops = am.parse_instruction(
+        "213 sayılı Kanunun 352 nci maddesinin birinci fıkrasının birinci cümlesinde yer alan "
+        "“bağlı cetvele” ibaresi “bağlı 1 sayılı cetvele” şeklinde, ikinci cümlesinde yer alan "
+        "“bağlı cetvelde” ibaresi “bağlı 1 sayılı cetvelde” şeklinde ve Kanuna bağlı "
+        "“Usulsüzlük Cezalarına Ait Cetvel” başlığı “1 Sayılı Usulsüzlük Cezalarına Ait "
+        "Cetvel” şeklinde, mevcut Usulsüzlük Cezalarına Ait Cetveldeki miktarlar aşağıdaki "
+        "şekilde değiştirilmiştir.", ["Birinci derece ..."], 213)
+    assert [(o.op, o.target.cumle) for o in ops] == [
+        (OpType.REPLACE_PHRASE, 1), (OpType.REPLACE_PHRASE, 2)]
+    # A table inside an article is addressed by its fıkra and stays.
+    ops = am.parse_instruction(
+        "193 sayılı Kanunun 5 inci maddesinin birinci fıkrasında yer alan “x” ibaresi “y” "
+        "şeklinde, ikinci fıkrasındaki cetvelde yer alan “a” ibaresi “b” şeklinde "
+        "değiştirilmiştir.", [], 193)
+    assert [str(o.target) for o in ops] == ["md.5/f1", "md.5/f2"]
+
+
+def test_annulment_from_a_marker():
+    # E.2019/4, K.2021/78 (RG text a PDF) annulled VUK md. 367's last fıkra; only the
+    # marker is left of it. 7394/5 added a fıkra before it later.
+    def f(text, **kw):
+        return Node(level=Level.FIKRA, text=text, **kw)
+    md367 = Node(level=Level.MADDE, id="367", label="Madde 367 –", children=[
+        f("Yaptıkları inceleme sırasında ..."), f("359 uncu maddede yazılı suçlara ...",
+                                                    notes=["(Ek beşinci fıkra:8/4/2022-7394/5 md.)"]),
+        f("", repealed=True, notes=[
+            ("(İptal fıkra: Anayasa Mahkemesi’nin 4/11/2021 tarihli ve E.: 2019/4, K.: 2021/78 "
+             "sayılı Kararı ile.)")])])
+    law = Law(number=213, name="", body=[md367])
+    act = AmendingAct(kind="aym", number="E.2019/4, K.2021/78")
+    (a,) = am.ops_from_markers(act, law)
+    (op,) = a.ops
+    assert (op.op, str(op.target)) == (OpType.REPEAL_NODE, "md.367/f3")
+    assert am.ops_from_markers(AmendingAct(kind="aym", number="E.2019/5, K.2021/78"), law) == []
+    # Undone after 7394/5's fıkra is: the node is found by its marker, not its number.
+    del md367.children[1]
+    assert unapply(law, op).status == "ok" and str(op.target) == "md.367/f2"
+    apply(law, op)
+    assert md367.children[1].repealed
+
+
+def test_marker_insertion_keeps_the_unwound_text():
+    # 7318/4 added VUK md. 359 (ç) with "üç yıldan beş yıla"; 7394/4 made it "üç yıldan
+    # sekiz yıla" later. Read from the "(Ek: ...)" marker, the op carries today's text;
+    # undone after 7394/4, it takes the text the unwind left.
+    def b(label, text, **kw):
+        return Node(level=Level.BENT, label=label, text=text, **kw)
+    c = b("c)", "Vergi kanunları uyarınca ... (c) bendinde yazılı fiilleri işleyenler")
+    cc = b("ç)", "... üç yıldan beş yıla kadar hapis ...", notes=["(Ek:3/6/2021-7318/4 md.)"])
+    md359 = Node(level=Level.MADDE, id="359", label="Madde 359 –", children=[
+        Node(level=Level.FIKRA, text="Vergi kanunlarına göre ...", children=[c, cc])])
+    law = Law(number=213, name="", body=[md359])
+    op = am.AmendmentOp(op=OpType.INSERT_NODE, target=Addr(madde="359", fikra=1, bent="c"),
+                        position="after", source_sentence="(Ek:3/6/2021-7318/4 md.)",
+                        new_nodes=[b("ç)", "... üç yıldan sekiz yıla kadar hapis ...")])
+    assert unapply(law, op).status == "ok"
+    assert md359.children[0].children == [c]
+    assert op.new_nodes[0].text == "... üç yıldan beş yıla kadar hapis ..."
+    # A footnoted op still has to match.
+    md359.children[0].children.append(cc)
+    op.footnote, op.new_nodes = 4, [b("ç)", "... sekiz ...")]
+    assert unapply(law, op).status == "fail"
+    # So does one whose node is not the one there.
+    op.footnote, op.new_nodes = None, [b("d)", "... sekiz ...")]
+    assert unapply(law, op).status == "fail"

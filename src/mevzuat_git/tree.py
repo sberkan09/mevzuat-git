@@ -82,7 +82,9 @@ def blocks(html: str) -> list[Block]:
     for br in tree.css("br"):
         br.replace_with(" ")  # lexbor would glue the words on both sides together
     for node in tree.body.traverse():
-        if node.tag not in ("p", "table"):
+        # VUK md. 215's title is an <h3> ("Türkçe tutma ve Türk Parası kullanma
+        # zorunluluğu"), between empty ones.
+        if node.tag not in ("p", "table", "h1", "h2", "h3", "h4", "h5", "h6"):
             continue
         if mg._is_footnote_area(node) or mg._inside(node, "table"):
             continue
@@ -337,9 +339,16 @@ def _continues(fikra: Node, text: str) -> bool:
     # A short line after a list left open closes the fıkra's sentence: md. 109 "Gelir
     # Vergisi:", "1. ... yedi gün içinde;", ..., "Tarh edilir." (7349/3 repeals its
     # "ikinci ve üçüncü fıkraları", which come after).
+    # So does VUK mükerrer 227: "Maliye Bakanlığı:", "1. ... uygulatmaya,", ..., "Bu
+    # uygulamalara ilişkin usul ve esasları belirlemeye yetkilidir." (7338/22 counts the
+    # fıkras after it). A line that goes on with the list is not one: GVK md. 54's "2 nci
+    # grup: ... 20 (20) metre;" after "1 inci grup: ...;" and its "... 600 (900) m2,".
     live = [c for c in fikra.children if c.level is Level.BENT and c.text]
-    if live and len(text) < 60 and live[-1].text.rstrip().endswith(";") \
-            and fikra.text.rstrip().endswith((":", ";")):
+    last_bent = live[-1].text.rstrip() if live else ""
+    if (live and fikra.children[-1].level is Level.BENT and fikra.text.rstrip().endswith((":", ";"))
+            and ((len(text) < 60 and last_bent.endswith(";"))
+                 or (len(text) < 100 and last_bent.endswith(",")
+                     and text.rstrip().endswith(".")))):
         return True
     last = fikra.children[-1] if fikra.children else None
     return bool(last and last.level is Level.PARAGRAF and re.match(r"[–-]\s", last.text)
