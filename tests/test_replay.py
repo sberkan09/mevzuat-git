@@ -329,6 +329,14 @@ def test_find_all_ignores_spacing_and_circumflex(text, phrase):
     ("% 1,5 oranında", "%1,5 oranında"),
     # md. 75/2 bent 16 (c): 6327/6 "dahil.).", mevzuat.gov.tr "dahil.)".
     ("isabet eden irat tutarı dahil.).", "isabet eden irat tutarı dahil.)"),
+    # VUK md. 104, 257, 413: a range, "ve üzeri", and a bare number before the unit; GVK
+    # md. 52's "300 (1000) dönüm" is the law's own.
+    ("arasındaki (30.000-3.000.000 TL) tutarlarda", "arasındaki tutarlarda"),
+    ("yüzmilyar lirayı (3.000.000 TL ve üzeri) aşması", "yüzmilyar lirayı aşması"),
+    ("olmak üzere 3.600 (30.000) Türk lirasından fazla", "olmak üzere 3.600 Türk lirasından fazla"),
+    ("kayıt başına 25 (0,43) kuruştan az", "kayıt başına 25 kuruştan az"),
+    ("toplamı 300 (1000) dönüm", "toplamı 300 (1000) dönüm"),
+    ("beş milyon (5.000.000,00) Türk Lirası", "beş milyon (5.000.000,00) Türk Lirası"),
 ])
 def test_norm(raw, normal):
     assert norm(raw) == normal
@@ -648,3 +656,59 @@ def test_renumbered_bent_without_numbered_siblings_stays():
     law = _md75_f2(("", "Giriş"), ("16.", "x"))
     apply(law, op)
     assert [b.label for b in law.article("75").children[1].children] == ["", "17."]
+
+
+def test_title_colon_is_typography():
+    # mevzuat.gov.tr "... bilgi değişimi:", 6487/9 "... bilgi değişimi".
+    a, b = (Node(level=Level.MADDE, id="152/A", title=t, children=[
+        Node(level=Level.FIKRA, text="x")]) for t in (
+        "Uluslararası anlaşmalar gereğince bilgi değişimi:",
+        "Uluslararası anlaşmalar gereğince bilgi değişimi"))
+    assert node_lines(a) == node_lines(b)
+
+
+def test_numbered_list_article_items_as_bents():
+    # VUK md. 353 is a list "1. ...", "2. ..." (read as fıkras); 7338/40 calls the items
+    # "birinci fıkrasının (1) numaralı bendi".
+    law = _article_law("353", "x")
+    law.article("353").children = [
+        Node(level=Level.FIKRA, label="1.", text="Kesilmesi gereken faturanın kesilmemesi"),
+        Node(level=Level.FIKRA, label="2.", text="Perakende satış fişi verilmemesi")]
+    op = AmendmentOp(op=OpType.REPLACE_PHRASE, target=Addr(madde="353", fikra=1, bent="2"),
+                     old="Perakende", new="Toptan", source_sentence="")
+    apply(law, op)
+    assert law.article("353").children[1].text == "Toptan satış fişi verilmemesi"
+    # 7103/12 rewrites bent 1, then 7338/40 changes an ibare in it: it stays an item of
+    # the list, under the same address.
+    apply(law, AmendmentOp(op=OpType.REPLACE_NODE, kind=Level.BENT,
+                           target=Addr(madde="353", fikra=1, bent="1"), new_nodes=[
+                               Node(level=Level.BENT, label="1.", text="Fatura kesilmemesi")],
+                           source_sentence=""))
+    apply(law, AmendmentOp(op=OpType.REPLACE_PHRASE, target=Addr(madde="353", fikra=1, bent="1"),
+                           old="Fatura", new="Belge", source_sentence=""))
+    assert [(f.level, f.label, f.text) for f in law.article("353").children] == [
+        (Level.FIKRA, "1.", "Belge kesilmemesi"),
+        (Level.FIKRA, "2.", "Toptan satış fişi verilmemesi")]
+
+
+def test_sentence_of_an_article_with_one_fikra():
+    # "256 ncı maddesinin son cümlesinde yer alan; “tasdike” ibaresinden sonra" (7104/20).
+    law = _article_law("256", "Defterler ibraz edilir. Kayıtlar tasdike tabidir.")
+    op = AmendmentOp(op=OpType.INSERT_PHRASE, target=Addr(madde="256", cumle=-1),
+                     anchor="tasdike", new="ve rapora", position="after", source_sentence="")
+    apply(law, op)
+    assert law.article("256").children[0].text == (
+        "Defterler ibraz edilir. Kayıtlar tasdike ve rapora tabidir.")
+
+
+def test_ek_articles_added_after_the_same_one_keep_their_order():
+    # 7338/46-50 add ek 14 to ek 18 to VUK, each "ek 13 üncü maddesinden sonra".
+    def art(i):
+        return Node(level=Level.MADDE, id=i, label=f"Ek Madde {i[3:]} –", children=[
+            Node(level=Level.FIKRA, text=f"text of {i}")])
+    law = Law(number=213, name="", body=[art("ek-13"), art("gecici-1")])
+    for new in ("ek-14", "ek-15", "ek-16"):
+        apply(law, AmendmentOp(op=OpType.INSERT_NODE, kind=Level.MADDE, position="after",
+                               target=Addr(madde="ek-13"), new_nodes=[art(new)],
+                               source_sentence=""))
+    assert [a.id for a in law.articles()] == ["ek-13", "ek-14", "ek-15", "ek-16", "gecici-1"]

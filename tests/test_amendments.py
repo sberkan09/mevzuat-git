@@ -863,3 +863,39 @@ def test_footnote_of_another_decision():
 def test_add_months():
     assert am.add_months(date(2010, 1, 8), 9) == date(2010, 10, 8)
     assert am.add_months(date(2011, 8, 31), 6) == date(2012, 2, 29)
+
+
+def test_ibare_ile_then_a_sentence():
+    # "... ibaresinden sonra gelmek üzere “...” ibaresi ile fıkraya aşağıdaki cümle
+    # eklenmiştir" (7394/3 on VUK md. 4): an ibare and a sentence.
+    a = ARTICLES["7394/3"]
+    (ib, sent) = am.parse_instruction(a["instruction"], a["payload"], 213)
+    assert (ib.op, ib.anchor, ib.position) == (
+        OpType.INSERT_PHRASE, "usul ve esasları belirlemeye", "after")
+    assert ib.new.startswith(", vergi dairesince bu Kanun ile")
+    assert (sent.op, sent.anchor, sent.position) == (OpType.INSERT_NODE, None, "end")
+    assert sent.new.startswith("Vergi daireleri tarafından düzenlenen")
+
+
+@pytest.mark.parametrize(("instruction", "after", "new_id"), [
+    (("4/1/1961 tarihli ve 213 sayılı Vergi Usul Kanununa 107 nci maddeden sonra gelmek üzere "
+      "aşağıdaki 107/A maddesi eklenmiştir."), "107", "107/A"),  # 6009/7
+    # without "aşağıdaki" (7524/8)
+    ("213 sayılı Kanunun 274 üncü maddesinden sonra gelmek üzere 274/A maddesi eklenmiştir.",
+     "274", "274/A"),
+])
+def test_lettered_article_added(instruction, after, new_id):
+    (op,) = am.parse_instruction(instruction, [
+        "“Başlık:", f"Madde {new_id}- Metin.”"], 213)
+    assert (op.op, op.target.madde, op.position) == (OpType.INSERT_NODE, after, "after")
+    assert [n.id for n in op.new_nodes] == [new_id]
+
+
+def test_capitalised_title():
+    # 6728/21: "mükerrer 355 inci maddesinin Başlığı “...” şeklinde değiştirilmiştir."
+    (op,) = am.parse_instruction(
+        "213 sayılı Kanunun mükerrer 355 inci maddesinin Başlığı “Bilgi vermekten çekinenler "
+        "ile 256, 257, mükerrer 257 nci madde ve Gelir Vergisi Kanununun 98/A maddesi hükmüne "
+        "uymayanlar için ceza:” şeklinde değiştirilmiştir.", [], 213)
+    assert (op.op, op.target.madde, op.target.baslik) == (
+        OpType.REPLACE_NODE, "mukerrer-355", True)

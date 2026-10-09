@@ -64,6 +64,12 @@ metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 6'sı farklı,
 5'i doğrulanamıyor. **Oran: %94,2.**
 
+VUK (213) için (2026-10): 115 maddeye işlem uygulandı. Bunların 95'i eşleşiyor, 19'u
+farklı, 6'sı doğrulanamıyor. **Oran: %83,3.** Farkların çoğu tek tek ele alınması gereken
+durumlardır: büyük harfli (A)/(B) gruplarına bölünmüş maddeler (mükerrer 298), tek
+cümlede birçok işlem yapan 7524/13 (mükerrer 355), ayrıştırılamayan 4962/17 ("ibaresinin,
+... şeklinde") ve ödeme yükü kesik 7587/11 (geçici 38).
+
 Yeri işaretlenmemiş bir ibare çıkarma geri sarmada `lossy` olur, ama ileri oynatmada
 ibare yeniden bulunup çıkarıldıysa (onu daha eski bir kanunun metni geri getirmişse)
 madde yine karşılaştırılır (`verify._redone`). 5479/3 geçici 69'u "... sadece 2006, 2007
