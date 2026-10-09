@@ -533,6 +533,9 @@ def apply(law: Law, op: AmendmentOp) -> None:
         loc.node.text = ""
         loc.node.children = []
         return
+    if op.op is OpType.RELABEL_NODE:
+        _relabel(law, t, op.old or "", op.new or "")
+        return
     if op.op is OpType.REPLACE_NODE:
         _apply_replace(law, op)
         return
@@ -574,9 +577,10 @@ def _live(op: AmendmentOp) -> bool:
 def _keep_label(old: Node, new: list[Node]) -> list[Node]:
     """``new`` as it replaces ``old``. A bent's new text given without its number keeps
     the number: "(10) numaralı bendi ile 5520 sayılı Kanunun ... (e) bendi aşağıdaki
-    şekilde değiştirilmiştir. “Başbakanlıkça ...”" (6552/92)."""
+    şekilde değiştirilmiştir. “Başbakanlıkça ...”" (6552/92). So does a fıkra: "(4) numaralı
+    fıkrası "Bankalar arası mevduat ..." şeklinde değiştirilmiştir" (5436/14)."""
     if (len(new) == 1 and not new[0].label and old.label and not new[0].children
-            and old.level in (Level.BENT, Level.ALT_BENT)):
+            and old.level in (Level.FIKRA, Level.BENT, Level.ALT_BENT)):
         return [new[0].model_copy(update={"level": old.level, "label": old.label})]
     return new
 
@@ -781,11 +785,49 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
         _blank(n)
         n.repealed = False
         return Check("ok")
+    if op.op is OpType.RELABEL_NODE:
+        try:
+            _relabel(law, _numbered(t, op.new or ""), op.new or "", op.old or "")
+        except ReplayError as exc:
+            return Check("fail", str(exc))
+        return Check("ok")
     if op.op is OpType.REPLACE_NODE:
         return _unapply_replace(law, op)
     if op.op is OpType.INSERT_NODE:
         return _unapply_insert(law, op)
     return Check("fail", f"unsupported op {op.op}")
+
+
+def _numbered(path: Path, label: str) -> Path:
+    """``path`` with its last bent or fıkra numbered ``label``."""
+    key = label_key(label)
+    if path.bent is not None:
+        return path.model_copy(update={"bent": key})
+    return path.model_copy(update={"fikra": int(key)})
+
+
+def _relabel(law: Law, path: Path, old: str, new: str) -> None:
+    """Number the node at ``path`` ``new`` instead of ``old`` ("16." -> "17.") and move it
+    to its number's place among its siblings. 6322 and 6327 each added a bent "16." to
+    md. 75/2; 6353/65 renumbered the first to 17, and it now stands after the other. Going
+    back, a node goes before a sibling with its number (it was there first)."""
+    loc = locate(law, path, whole=True, live=False)
+    n, sibs = loc.node, loc.siblings
+    if label_key(n.label or "") != label_key(old):
+        raise ReplayError(f"{path} is numbered {n.label!r}, not {old!r}")
+    n.label = new
+    key = label_key(new)
+    if not key.isdigit():
+        return
+    sibs.remove(n)
+    numbered = [(i, int(k)) for i, s in enumerate(sibs)
+                if s.level is n.level and (k := label_key(s.label or "")).isdigit()]
+    later = int(key) > int(label_key(old))
+    if later:
+        i = max((i + 1 for i, k in numbered if k <= int(key)), default=0)
+    else:
+        i = min((i for i, k in numbered if k >= int(key)), default=len(sibs))
+    sibs.insert(i, n)
 
 
 def _next_to(o: tuple[TextSlot, int, int], anchors: list[tuple[TextSlot, int, int]],

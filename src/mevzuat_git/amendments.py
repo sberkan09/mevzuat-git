@@ -94,6 +94,26 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         r"(?P<olds>" + _QLIST + r")\s*" + PHRASE_NOUN + r",?\s+sırasıyla\s+(?P<news>" + _QLIST
         + r")\s*(?:(?:şeklinde|olarak)\b|,(?=.*(?:şeklinde|olarak)\s+değiştiril))"
     )),
+    # The new text inline, quotes and all (5436/14): "... (4) numaralı fıkrası "Bankalar arası
+    # ... ayrıca tevkifat yapılmaz." şeklinde değiştirilmiştir", "... (10) numaralı
+    # fıkrasından sonra gelmek üzere "11) Dar mükellefler ..." şeklinde bir fıkra eklenmiş".
+    ("replace_node_inline", re.compile(
+        r"(?:" + "|".join(rf"(?<={w}\s)" for w in ("fıkrası", "paragrafı", "bendi", "cümlesi"))
+        + r")" + Q + r"(?P<new>.+?)" + Q
+        # in a series: “c) ...” şeklinde, (f) bendinde yer alan ... şeklinde değiştirilmiş
+        + r"\s*şeklinde(?:\s+değiştiril|\s*[,;](?=.*şeklinde\s+değiştiril))"
+    )),
+    ("insert_node_inline", re.compile(
+        r"(?<=üzere\s)" + Q + r"(?P<new>.+?)" + Q
+        + r"\s*şeklinde\s+bir\s+(?P<kind>fıkra|bent|paragraf|cümle)\s+eklen"
+    )),
+    # 6322 sayılı Kanunun 8 inci maddesi ile eklenen bendin “16.” olan numarası “17.” olarak
+    # değiştirilmiştir (6353/65)
+    ("relabel_node", re.compile(
+        r"(?P<kind>ben[dt]|fıkra)\w*\s+" + Q + r"(?P<old>" + QTEXT + r")" + Q
+        + r"\s+olan\s+numarası\s*,?\s+" + Q + r"(?P<new>" + QTEXT + r")" + Q
+        + r"\s*(?:(?:şeklinde|olarak)\b|,(?=.*(?:şeklinde|olarak)\s+değiştiril))"
+    )),
     ("replace_phrase", re.compile(
         # "“X” ibaresi “Y” ve “Z” ibaresi ise “W” olarak" (5281/43)
         Q + r"(?P<old>" + QTEXT + r")" + Q + r"\s*" + PHRASE_NOUN + r",?\s+(?:sırasıyla\s+|ise\s+)?"
@@ -428,13 +448,18 @@ def _article_id(m: re.Match) -> str:
     return mg.article_id(m.group("pre"), m.group("num"))
 
 
+# "6322 sayılı Kanunun 10 uncu maddesi ile eklenen bendin": who added it, not a target.
+_PROVENANCE_RE = re.compile(r"\s+\d+\s*\w*\s+maddes(?:i\s+ile|iyle)\s+(?:eklenen|değiştirilen)\b")
+
+
 def law_segments(text: str, default: str | None) -> list[tuple[str | None, int, int]]:
     """Split ``text`` by law references: ``(law_no, start, end)`` of each piece."""
     pieces: list[tuple[str | None, int, int]] = []
     cur, pos = default, 0
     for m in LAW_REF_RE.finditer(text):
         # "4842 sayılı Kanunla yürürlükten kaldırılan" names who repealed it, not a target.
-        if m.group(0).endswith(("la", "le")) or text[m.end():].startswith(" ile "):
+        if m.group(0).endswith(("la", "le")) or text[m.end():].startswith(" ile ") \
+                or _PROVENANCE_RE.match(text, m.end()):
             continue
         pieces.append((cur, pos, m.start()))
         cur = cur if m.group("same") else m.group("no")
@@ -737,7 +762,20 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
                 for op in made:
                     op.anchor, op.target = ops[-1].new, ops[-1].target
             ops.extend(made)
+            if o.name == "relabel_node":
+                # "..., bu bendin içerisinde": the node under its new number.
+                ctx = _relabelled(t, o.m.group("kind"), o.m.group("new"))
     return ops
+
+
+def _relabelled(path: Path, kind: str, label: str) -> Path:
+    """The node numbered ``label`` in ``path``: "bendin “16.” olan numarası"."""
+    key = label_key(label)
+    if kind.startswith("ben"):
+        return path.model_copy(update={"bent": key, "alt_bent": None})
+    if not key.isdigit():
+        raise Unparsed(f"fıkra number {label!r}")
+    return path.model_copy(update={"fikra": int(key), "bent": None, "alt_bent": None})
 
 
 def _after_inserts(path: Path, sub: str, ops: list[AmendmentOp]) -> Path:
@@ -826,6 +864,8 @@ def split_by_labels(raw: list[str], targets: list[Path]) -> list[list[str]]:
 def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
               sentence: str) -> list[AmendmentOp]:
     g = o.m.groupdict()
+    if o.name in ("replace_node_inline", "insert_node_inline"):
+        o, new_text = OpMatch(o.name.removesuffix("_inline"), o.m), [g["new"].strip()]
     base = {"target": path, "source_sentence": sentence}
     teselsul = "teselsül" in sentence
     if o.name in ("replace_phrase", "replace_phrase_yerine"):
@@ -872,6 +912,10 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
         return [AmendmentOp(op=OpType.REPLACE_PHRASE, paren=True, new=g["new"], **base)]
     if o.name == "repeal_node":
         return [AmendmentOp(op=OpType.REPEAL_NODE, **base)]
+    if o.name == "relabel_node":
+        return [AmendmentOp(op=OpType.RELABEL_NODE, old=g["old"], new=g["new"],
+                            target=_relabelled(path, g["kind"], g["old"]),
+                            source_sentence=sentence)]
     if o.name == "replace_node":
         if not new_text:
             raise Unparsed("replace_node without new text")

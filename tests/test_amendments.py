@@ -464,6 +464,53 @@ def test_list_items_sharing_one_verb():
     assert all(it.instruction.endswith("değiştirilmiştir") for it in items)
 
 
+def test_renumbered_bent():
+    # 6353/65: "... 6322 sayılı Kanunun 8 inci maddesi ile eklenen bendin “16.” olan numarası
+    # “17.” olarak değiştirilmiştir"; the act that added the bent is not a target, and "bu
+    # bendin" is the bent under its new number.
+    a, b = _ops(_items("6353/65"))[:1], _ops(_items("6353/65"))[1:]
+    assert [(o.op, str(o.target), o.old, o.new) for o in a] == [
+        (OpType.RELABEL_NODE, "md.75/f2/b16", "16.", "17.")]
+    assert [(o.op, str(o.target), o.old, o.new) for o in b] == [
+        (OpType.RELABEL_NODE, "md.94/f1/b16", "16.", "17."),
+        (OpType.REPLACE_PHRASE, "md.94/f1/b17", "(16)", "(17)"),
+        (OpType.REPLACE_PHRASE, "md.94/f6", "6, 7, 8, 9 ve 16 numaralı",
+         "6, 7, 8, 9 ve 17 numaralı")]
+
+
+def test_new_text_inline():
+    # 5436/14 d): "1) (1) numaralı fıkrasının ikinci paragrafı "Aynı menkul ..." şeklinde
+    # değiştirilmiştir.", "6) (10) numaralı fıkrasından sonra gelmek üzere "11) Dar
+    # mükellefler ..." şeklinde bir fıkra eklenmiş ve takip eden fıkra numaraları teselsül
+    # ettirilmiştir."
+    ops = {str(o.target): o for o in _ops(_items("5436/14")[3:])}
+    p2 = ops["md.gecici-67/f1/p2"]
+    assert p2.op is OpType.REPLACE_NODE and p2.new.startswith("Aynı menkul kıymet")
+    assert p2.new.endswith("tevkifat matrahının tespitinde dikkate alınır.")
+    f4 = ops["md.gecici-67/f4"]
+    assert f4.op is OpType.REPLACE_NODE and f4.new_nodes[0].text.startswith("Bankalar arası")
+    f10 = ops["md.gecici-67/f10"]
+    assert (f10.op, f10.position, f10.renumber) == (OpType.INSERT_NODE, "after", True)
+    assert [n.label for n in f10.new_nodes] == ["11)"]
+    assert ops["md.gecici-67/f13"].new_nodes[0].text.startswith("Türkiye'de kurulu vadeli")
+
+
+def test_new_text_inline_in_a_series():
+    # 6009/39 on law 5345: the bent's new text, then ibare changes in other bents.
+    text = ("5345 sayılı Kanunun 13 üncü maddesinin birinci fıkrasının (c) bendi “c) Vergi "
+            "İnceleme ve Denetim Koordinasyon Kurulunun sekreterya hizmetlerini yürütmek.” "
+            "şeklinde, (f) bendinde yer alan “Başkanlığın vergi inceleme ve denetim yıllık "
+            "planına uygun olarak” ibaresi “Yıllık vergi inceleme ve denetim planına uygun "
+            "olarak” şeklinde, (j) bendinde yer alan “Mükelleflerin” ibaresi “Risk Analiz "
+            "Sistemi üzerinden mükelleflerin” şeklinde değiştirilmiş ve (d) bendi yürürlükten "
+            "kaldırılmıştır.")
+    ops = am.parse_instruction(text, [], 5345)
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.REPLACE_NODE, "md.13/f1/bc"), (OpType.REPLACE_PHRASE, "md.13/f1/bf"),
+        (OpType.REPLACE_PHRASE, "md.13/f1/bj"), (OpType.REPEAL_NODE, "md.13/f1/bd")]
+    assert [n.label for n in ops[0].new_nodes] == ["c)"]
+
+
 def test_article_heading_with_figure_dash():
     # 6525/5 writes "MADDE 5 ‒" with U+2012.
     (a,) = am.act_articles([(
