@@ -326,3 +326,36 @@ def test_book_heading():
     assert len(law.article("152/A").children) == 1
     assert [(n.label, n.title) for n in law.body if n.level is Level.KISIM][-2:] == [
         ("İKİNCİ KİTAP", "Mükellefin Ödevleri"), ("BİRİNCİ KISIM", "Bildirmeler")]
+
+
+def test_comma_list_closed_by_a_short_line():
+    # VUK mükerrer 227: "Bu uygulamalara ilişkin usul ve esasları belirlemeye
+    # yetkilidir." ends fıkra 1; 7338/22 counts the fıkras after it.
+    law = _gvk(
+        "", "Vergi Beyannamelerinin İmzalanması ve Yeminli Mali Müşavir Tasdik Raporları:",
+        "Mükerrer Madde 227 – (Ek: 23/10/1988 - 3505/4 md.)",
+        "Maliye Bakanlığı:",
+        ("1. Vergi beyannamelerinin 3568 sayılı Kanuna göre yetki almış serbest muhasebeci, "
+         "serbest muhasebeci mali müşavir veya yeminli mali müşavirler tarafından imzalanması "
+         "mecburiyetini getirmeye, bu mecburiyeti beyanname çeşitleri, mükellef grupları ve "
+         "faaliyet konuları itibariyle ayrı ayrı uygulatmaya,"),
+        ("2. Vergi kanunlarında yer alan muafiyet, istisna, yeniden değerleme, zarar mahsubu ve "
+         "benzeri hükümlerden yararlanılmasını Maliye Bakanlığınca belirlenen şartlara uygun "
+         "olarak yeminli mali müşavirlerce düzenlenmiş tasdik raporu ibraz edilmesi şartına "
+         "bağlamaya,"),
+        "Bu uygulamalara ilişkin usul ve esasları belirlemeye yetkilidir.",
+        ("Yukarıdaki fıkra hükümlerine göre beyannameyi imzalayan veya tasdik raporunu "
+         "düzenleyen meslek mensupları, ..."))
+    f1, f2 = law.article("mukerrer-227").children
+    assert shape(f1) == [("bent", "1."), ("bent", "2."), ("paragraf", "")]
+    assert f2.text.startswith("Yukarıdaki fıkra")
+
+
+def test_title_in_a_heading_tag():
+    # VUK md. 215's title is an <h3> between empty ones.
+    html = ("<html><body><p>Kayıt Nizamı</p><h3>&nbsp;</h3>"
+            "<h3>Türkçe tutma ve Türk Parası kullanma zorunluluğu</h3>"
+            "<p>Madde 215 – (Değişik: 4/12/2003-5024/5 md.)</p>"
+            "<p>Kayıtlar Türkçe tutulur.</p></body></html>")
+    law = build_tree(html, 213)
+    assert law.article("215").title == "Türkçe tutma ve Türk Parası kullanma zorunluluğu"

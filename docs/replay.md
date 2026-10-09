@@ -64,11 +64,14 @@ metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 6'sı farklı,
 5'i doğrulanamıyor. **Oran: %94,2.**
 
-VUK (213) için (2026-10): 115 maddeye işlem uygulandı. Bunların 95'i eşleşiyor, 19'u
-farklı, 6'sı doğrulanamıyor. **Oran: %83,3.** Farkların çoğu tek tek ele alınması gereken
-durumlardır: büyük harfli (A)/(B) gruplarına bölünmüş maddeler (mükerrer 298), tek
-cümlede birçok işlem yapan 7524/13 (mükerrer 355), ayrıştırılamayan 4962/17 ("ibaresinin,
-... şeklinde") ve ödeme yükü kesik 7587/11 (geçici 38).
+VUK (213) için (2026-10): 120 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 15'i
+farklı, 7'si doğrulanamıyor. **Oran: %86,7** (ilk ölçümde %83,3). Kapatılan ucuz farklar:
+harfli fıkralar ("(a) fıkrası", 7394/4, 7423/1) bent olarak okunur; kanuna ekli cetveli
+değiştiren cümleler atlanır (7524/10); RG metni PDF olan Anayasa Mahkemesi kararlarının
+iptalleri "(İptal ...)" işaretinden okunur (367); işaretten okunan bir eklemenin metni,
+geri sarmanın orada bıraktığı metin olur (359 (ç), sonradan 7394/4 değiştirmiştir);
+`<h3>` içindeki madde başlıkları (215) ve virgülle biten bent listesini kapatan kısa
+satır (mükerrer 227) ağaçta doğru yere oturur.
 
 Yeri işaretlenmemiş bir ibare çıkarma geri sarmada `lossy` olur, ama ileri oynatmada
 ibare yeniden bulunup çıkarıldıysa (onu daha eski bir kanunun metni geri getirmişse)
@@ -77,6 +80,25 @@ ve 2008 yıllarına ait kazançlarından ..." diye ekler; Anayasa Mahkemesinin i
 ibarenin konsolide metinde izi yoktur. 7420/3'ün geçici 82'den çıkardığı "Bilim," da
 böyle doğrulanır (6327'nin eklediği metinde vardır). Karşılaştırma tutmazsa madde
 doğrulanamaz sayılmaya devam eder.
+
+### Bilinen açıklar
+
+VUK'ta kalan farklar tek tek ele alınması gereken durumlardır:
+
+- **379**: konsolide metnin başında "(… mülgadır.) (Yeniden Düzenleme …)" diye editoryal
+  bir satır vardır; 7194/27'nin metninde yoktur.
+- **geçici 33**: Anayasa Mahkemesi (E.2023/105) "2021" ibaresini iptal etmiştir; kararın
+  RG metni okunamaz, işaret de ibareyi göstermez.
+- **mükerrer 298**: büyük harfli (A)/(B) gruplarına bölünmüş madde; alt bent adresleri
+  ağaçta yoktur.
+- **mükerrer 355**: 7524/13 tek cümlede birçok işlem yapar.
+- **geçici 38**: 7587/11'in ödeme yükü kesiktir (32 satırın 1'i okunur).
+- **140, mükerrer 49, mükerrer 242, mükerrer 257, 153/A, 344, 353, ek-1, ek-11,
+  geçici 25**: bir işlemin (çoğu 5228, 6009, 7338, 7524) geri sarmada izi bulunamaz;
+  ayrıntılar `mevzuat-git replay 213` raporundadır.
+
+Doğrulanamayanlar arasında **352** (kanuna ekli cetvel) ve **160** (5228/6'nın tırnaksız
+ödeme yükü iki işleme bölünemez) vardır.
 
 ## RG metni taranmış PDF olan değişiklikler
 
