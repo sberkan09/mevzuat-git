@@ -9,9 +9,9 @@
 - [ ] 4605 sayılı Kanunun RG metni (30/11/2000 mükerrer HTML sayfası boş; PDF'ten alınmalı)
 
 ## Faz 1: Kanun ağacı modeli
-- [ ] `Kanun > Kısım > Bölüm > Madde > Fıkra > Bent > Alt bent` veri modeli
-- [ ] Konsolide metin → ağaç ayrıştırıcı; dipnotları (değişiklik notları) ayrı tut
-- [ ] Ağaç → kanonik Markdown serileştirici (deterministik, diff dostu)
+- [x] `Kanun > Kısım > Bölüm > Madde > Fıkra > Bent > Alt bent` veri modeli
+- [x] Konsolide metin → ağaç ayrıştırıcı; dipnotları (değişiklik notları) ayrı tut
+- [x] Ağaç → kanonik Markdown serileştirici (deterministik, diff dostu)
 
 ## Faz 2: Değişiklik ayrıştırıcı
 - [ ] Değişiklik formülleri taksonomisi (`docs/amendment-taxonomy.md`)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+from collections.abc import Iterator
 from datetime import date
 from enum import Enum
 from typing import Literal
@@ -10,25 +12,63 @@ from pydantic import BaseModel, Field
 
 
 class Level(str, Enum):
+    KISIM = "kisim"
+    BOLUM = "bolum"
     MADDE = "madde"
     FIKRA = "fikra"
     BENT = "bent"
-    ALT_BENT = "alt_bent"
+    ALT_BENT = "alt_bent"  # nests: alt bentlerin alt bentleri are ALT_BENT too
+    PARAGRAF = "paragraf"  # unlabelled paragraph inside a fıkra or bent
+    TABLO = "tablo"
 
 
 class Node(BaseModel):
+    """One node of a law.
+
+    ``label`` and ``text`` are verbatim from the source (whitespace collapsed). Leading
+    editorial markers of mevzuat.gov.tr such as ``(Değişik: 7/1/2003-4783/1 md.)`` are
+    kept apart in ``notes`` and footnote reference numbers in ``footnotes``: neither is
+    part of the legal text.
+    """
+
     level: Level
-    label: str  # e.g. "23", "(2)", "a)", "1."
-    title: str | None = None  # madde başlığı
+    label: str = ""  # as written: "Madde 23", "Mükerrer Madde 20/A", "(2)", "a)", "1."
+    id: str | None = None  # madde only: "23", "mukerrer-20/A", "gecici-67", "ek-1"
+    title: str | None = None  # madde başlığı; kısım/bölüm adı
     text: str = ""
+    notes: list[str] = Field(default_factory=list)
+    footnotes: list[int] = Field(default_factory=list)
     children: list[Node] = Field(default_factory=list)
     repealed: bool = False  # mülga
+
+    def walk(self) -> Iterator[Node]:
+        yield self
+        for c in self.children:
+            yield from c.walk()
+
+    @property
+    def key(self) -> str:
+        """Label without punctuation, for addressing: "(4)" / "4." / "4)" -> "4"."""
+        return label_key(self.label)
+
+
+def label_key(label: str) -> str:
+    return re.sub(r"[\s().\-–]", "", label).casefold()
 
 
 class Law(BaseModel):
     number: int  # kanun numarası, e.g. 193
     name: str
-    articles: list[Node] = Field(default_factory=list)
+    body: list[Node] = Field(default_factory=list)  # kısım/bölüm headings and maddeler
+
+    def articles(self) -> Iterator[Node]:
+        for top in self.body:
+            for n in top.walk():
+                if n.level is Level.MADDE:
+                    yield n
+
+    def article(self, article_id: str) -> Node | None:
+        return next((a for a in self.articles() if a.id == article_id), None)
 
 
 class Path(BaseModel):
