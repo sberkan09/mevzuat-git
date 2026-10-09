@@ -140,3 +140,16 @@ def test_decision_is_looked_up_on_its_table_date_first(monkeypatch):
     assert (act.rg.date, act.rg.number, act.rg.text_url) == (
         date(2013, 7, 26), "28719", "https://x/20130726-32.htm")
     assert act.title == "Anayasa Mahkemesinin E. 2010/93, K: 2012/20 Sayılı Kararı"
+
+
+def test_decision_lookup_stops_at_today(monkeypatch):
+    # Days not yet published would be cached as missing.
+    from mevzuat_git import resmigazete as rg
+    asked = []
+    monkeypatch.setattr(rg, "locate_decision", lambda f, e, k, days: asked.append(days))
+    today = al.datetime.now(al.ZoneInfo("Europe/Istanbul")).date()
+    act = al.AmendingAct(kind="aym", number="E.2025/219, K.2026/43",
+                         kabul_date=today - al.timedelta(days=10))
+    al.enrich_from_rg(None, act)
+    (days,) = asked
+    assert days[0] == act.kabul_date and days[-1] == today and len(days) == 11

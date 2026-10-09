@@ -16,8 +16,9 @@ from __future__ import annotations
 import hashlib
 import re
 from collections import Counter
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
 
@@ -285,7 +286,10 @@ def enrich_decision_from_rg(fetcher: Fetcher, act: AmendingAct, max_days: int = 
     days = sorted({e.effective_date for e in act.effective
                    if e.effective_date and e.effective_date >= act.kabul_date})
     days += [act.kabul_date + timedelta(days=i) for i in range(max_days + 1)]
-    found = rg.locate_decision(fetcher, m.group(1), m.group(2), list(dict.fromkeys(days)))
+    # A day not yet published would be cached as missing and never looked at again.
+    days = [d for d in dict.fromkeys(days) 
+            if d <= datetime.now(ZoneInfo("Europe/Istanbul")).date()]
+    found = rg.locate_decision(fetcher, m.group(1), m.group(2), days)
     if found is None:
         act.notes.append("not found in Resmî Gazete index")
         return

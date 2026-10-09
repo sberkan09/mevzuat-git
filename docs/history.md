@@ -80,4 +80,9 @@ kararın yayım sırasına girer. Mesajda değiştiren maddeler yerine hüküm f
 maddeleri ("Hüküm fıkrası: B/2") yazar. Tarih, yürürlük tablosunda kararın satırı varsa
 oradan, yoksa iptal hükmünün yürürlük tarihidir: kararın yayım günü (Anayasa md. 153) ya
 da kararın belirlediği daha geç tarih (E.2006/119, K.2009/145: yayımdan dokuz ay sonra,
-8/10/2010).
+8/10/2010). Bu commit yayım sırasında, 8/1/2010 tarihli commit'ten önce durur; tarihi
+sıradan çıkan commit sayısı böylece 9 olur. İşlemi metinde bulunamadığı için (bkz.
+`docs/replay.md`) commit boştur.
+
+"(İptal: ... Kararıyla)" notları da "(Mülga: ... md.)" gibi metinden çıkarılır. İlk
+commit'te iptal edilmiş geçici 32 yalnız başlığıyla, bent "3." boş görünür.

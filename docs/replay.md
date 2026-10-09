@@ -120,7 +120,11 @@ tarihinden itibaren. E.2010/93, K.2012/20 (9/2/2012) 26/7/2013'te yayımlanmış
 İptal hükmü kararın yayımlandığı gün yürürlüğe girer (Anayasa md. 153), karar daha geç
 bir tarih belirlemediyse: "İPTAL HÜKMÜNÜN, KARARIN RESMÎ GAZETE’DE YAYIMLANMASINDAN
 BAŞLAYARAK DOKUZ AY SONRA YÜRÜRLÜĞE GİRMESİNE" (E.2006/119, K.2009/145). Bu tarih
-`Amendment.effective_date`'tir; işlemler yine yayım sırasıyla uygulanır.
+`Amendment.effective_date`'tir; işlemler yine yayım sırasıyla uygulanır. Erteleme
+belirli bir tarih de olabilir ("1/1/2027 TARİHİNDE"). Ayrı bir erteleme maddesi, tırnak
+içinde andığı ibarelerin iptallerine uygulanır; ibare anmıyorsa aynı başlık altındaki tek
+iptale ya da "İPTAL HÜKÜMLERİNİN" diyorsa hepsine. Birden çok iptal arasında hangisine
+uygulandığı belli değilse bu iptaller ayrıştırılmamış sayılır.
 
 mevzuat.gov.tr iptal edilen ibarenin yerine `(…)` koyar (geçici 72: "gelir vergisinden,
 (…) bu Kanuna göre"); geri sarma ibareyi oraya geri yazar. Bir dizi eklenen cümlenin
@@ -129,8 +133,9 @@ ilki iptal edildiyse yer işareti değişiklik notunun kendisidir: "(Ek cümlele
 bu not `(…)` sayılır (`compare.mark_annulled`). GVK'da 4 karar 4 işlem verir (geçici 67,
 69 (iki karar), 72); geçici 69 ve 72 artık eşleşiyor.
 
-Kapsam dışı: RG fihristinde bulunamayan E.2001/36, K.2003/3 (geçici 58, "gelir"
-ibaresi); yalnız "yönünden" iptal edilen geçici 73; başka kanunların yürürlük
+Kapsam dışı: E.2001/36, K.2003/3 (geçici 58, "gelir" ibaresi); RG fihristinde
+21/11/2003'te yer alır ama karardan 309 gün sonra, 180 günlük taramanın dışında. Yalnız
+"yönünden" iptal edilen geçici 73 ("bakımından", "ile sınırlı olarak" da kısmi sayılır); başka kanunların yürürlük
 hükümlerini iptal eden kararlar (5479/15, 6009/62). E.2006/119, K.2009/145'in ertelenmiş
 iptali, 6009/4 aynı cümleyi daha önce yeniden düzenlediği için metinde bulunamaz
 (geçici 67 zaten farklı).

@@ -94,3 +94,7 @@ def test_decision_matches():
     assert rg.decision_matches(rg.IndexEntry(href="u", text=(
         "–– Anayasa Mahkemesinin 12/2/2026 Tarihli ve E: 2025/219, K: 2026/43 Sayılı Kararı")),
         "2025/219", "2026/43")
+    # RG 21/11/2003: the laws it concerns stand between E and K.
+    assert rg.decision_matches(rg.IndexEntry(href="u", text=(
+        "— Anayasa Mahkemesinin E: 2001/36 (193, 197 ve 1318 Sayılı Kanunlarda Değişiklik "
+        "Yapan 4605 Sayılı Kanun ile İlgili), K: 2003/3 Sayılı Kararı")), "2001/36", "2003/3")

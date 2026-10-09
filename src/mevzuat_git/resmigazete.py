@@ -176,8 +176,10 @@ def locate(fetcher: Fetcher, number: str, rg_date: date | None = None,
     return None
 
 
-# "— Anayasa Mahkemesinin E: 2025/219, K: 2026/43 Sayılı Kararı", "E. 2010/93, K: 2012/20"
-_DECISION_RE = re.compile(r"\bE\s*[.:]*\s*(\d{4}/\d+)\s*[,;]?\s*K\s*[.:]*\s*(\d{4}/\d+)")
+# "— Anayasa Mahkemesinin E: 2025/219, K: 2026/43 Sayılı Kararı", "E. 2010/93, K: 2012/20",
+# "E: 2001/36 (193, 197 ve 1318 Sayılı Kanunlarla İlgili), K: 2003/3"
+_DECISION_RE = re.compile(r"\bE\s*[.:]*\s*(\d{4}/\d+)\s*(?:\([^)]*\)\s*)?[,;]?\s*K\s*[.:]*\s*"
+                          r"(\d{4}/\d+)")
 
 
 def decision_matches(entry: IndexEntry, esas: str, karar: str) -> bool:

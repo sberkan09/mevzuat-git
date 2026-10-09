@@ -685,6 +685,120 @@ def test_annulled_sentence_as_an_instruction():
     assert op.old.startswith("Şu kadar ki,") and op.old.endswith("% 25’ini aşamaz.")
 
 
+# E.2006/119, K.2009/145 (RG 8/1/2010), items A and B of the operative part.
+_ITEM_67 = ("31.12.1960 günlü, 193 sayılı Gelir Vergisi Kanunu’nun geçici 67. maddesinin (1) "
+            "numaralı fıkrasının birinci paragrafının sonuna 27.6.2006 günlü, 5527 sayılı "
+            "Yasa’nın 1. maddesinin (a) bendi ile eklenen “Dar mükellef gerçek kişi ve kurumlar "
+            "için bu oran % 0 olarak uygulanır.” biçimindeki cümlenin Anayasa’ya aykırı "
+            "olduğuna ve İPTALİNE")
+_DEFER_67 = ("İPTAL HÜKMÜNÜN, KARARIN RESMÎ GAZETE’DE YAYIMLANMASINDAN BAŞLAYARAK DOKUZ AY "
+             "SONRA YÜRÜRLÜĞE GİRMESİNE, OYBİRLİĞİYLE,")
+_DONE = "15.10.2009 gününde karar verildi."
+
+
+def test_annulment_with_its_own_deferral():
+    # One item both annuls and defers: the annulment is kept, with its date.
+    (a,) = am.annulments(["VIII- SONUÇ", f"A- {_ITEM_67}, {_DEFER_67}", _DONE])
+    assert a.label == "A" and a.deferred
+    assert am.annulment_instruction(a.text).endswith("uygulanır.” cümlesi iptal edilmiştir.")
+
+
+def test_deferral_names_whole_ibareler():
+    # “% 0” is in the text of A but is not its ibare: the deferral is B's only.
+    other = _ITEM_67.replace("“Dar mükellef gerçek kişi ve kurumlar için bu oran % 0 olarak "
+                             "uygulanır.” biçimindeki cümlenin", "“% 0” ibaresinin")
+    a, b = am.annulments(["VIII- SONUÇ", f"A- {_ITEM_67},", f"B- {other},",
+                          f"C- (B) bendinde yer alan “% 0” ibaresine ilişkin {_DEFER_67}", _DONE])
+    assert (a.deferred, bool(b.deferred)) == (None, True)
+
+
+def test_deferral_without_an_ibare_among_several_annulments():
+    other = _ITEM_67.replace("birinci paragrafının", "ikinci paragrafının")
+    paras = ["VIII- SONUÇ", f"A- {_ITEM_67},", f"B- {other},", f"C- {_DEFER_67}", _DONE]
+    assert all(a.ambiguous and not a.deferred for a in am.annulments(paras))
+    res = am.parse_decision("".join(f"<p>{p}</p>" for p in paras), "E.2006/119, K.2009/145",
+                            193, date(2010, 1, 8))
+    assert not res.amendments and [u[2] for u in res.unparsed] == [
+        "a deferral names no ibare and the decision annuls more than one"] * 2
+    # "İPTAL HÜKÜMLERİNİN" speaks of them all.
+    paras[3] = "C- " + _DEFER_67.replace("HÜKMÜNÜN", "HÜKÜMLERİNİN")
+    assert all(a.deferred for a in am.annulments(paras))
+
+
+def test_deferral_to_a_date():
+    assert am.deferred_date("İPTAL HÜKMÜNÜN 1/1/2027 TARİHİNDE YÜRÜRLÜĞE GİRMESİNE",
+                            date(2026, 6, 3)) == date(2027, 1, 1)
+    assert am.deferred_date(_DEFER_67, date(2010, 1, 8)) == date(2010, 10, 8)
+    assert am.deferred_date("İPTAL HÜKMÜNÜN BİRAZ SONRA YÜRÜRLÜĞE GİRMESİNE",
+                            date(2010, 1, 8)) is None
+
+
+def test_decision_words_tumce_and_sozcuk():
+    # E.2001/36, K.2003/3 (RG 21/11/2003), item C/a.
+    item = ("23.11.2000 günlü, 4605 sayılı Kanun’un 5. maddesiyle 31.12 1960 günlü, 193 sayılı "
+            "Gelir Vergisi Kanunu’na eklenen geçici 58. maddenin Birinci tümcesinde, “... "
+            "üzerinden ...” sözcüğünden sonra yer alan “... gelir...” sözcüğünün Anayasa’ya "
+            "aykırı olduğuna ve İPTALİNE, Fulya KANTARCIOĞLU’nun karşıoyu ve OYÇOKLUĞUYLA,")
+    text = am.annulment_instruction(item)
+    assert text.endswith("“gelir” ibaresi iptal edilmiştir.")
+    (op,) = am.parse_instruction(text, [], 193)
+    assert (op.op, str(op.target), op.old) == (OpType.DELETE_PHRASE, "md.gecici-58", "gelir")
+    # RG 8/11/2003 (law 6831): "... üçüncü fıkrasının birinci tümcesinin ... İPTALİNE".
+    item = ("6831 sayılı Orman Kanunu’nun 17. maddesinin 3373 sayılı Yasa ile değiştirilen "
+            "üçüncü fıkrasının birinci tümcesinin Anayasa’ya aykırı olduğuna ve İPTALİNE,")
+    (op,) = am.parse_instruction(am.annulment_instruction(item), [], 6831)
+    assert (op.op, str(op.target)) == (OpType.REPEAL_NODE, "md.17/f3/c1")
+
+
+def test_decision_item_not_read_is_unparsed():
+    # A part of the text _NOUN_RE does not know stays a genitive: not the whole fıkra.
+    item = ("193 sayılı Kanun’un 40. maddesinin birinci fıkrasının ikinci satırının Anayasa’ya "
+            "aykırı olduğuna ve İPTALİNE,")
+    paras = ["SONUÇ", f"A- {item}", _DONE]
+    res = am.parse_decision("".join(f"<p>{p}</p>" for p in paras), "x", 193, date(2010, 1, 8))
+    assert not res.amendments and res.unparsed[0][2] == "annulled thing not read"
+
+
+def test_annulment_limited_to_some_cases():
+    item = ("193 sayılı Kanun’un 40. maddesinin (5) numaralı bendinin, gerçek kişiler bakımından "
+            "Anayasa’ya aykırı olduğuna ve İPTALİNE,")
+    assert am.annulments(["SONUÇ", f"A- {item}", _DONE]) == []
+
+
+def test_iptal_edilmis_only_as_a_verb():
+    # Not an annulment: the bent "iptal edilmiş bulunan" is rewritten.
+    ops = am.parse_instruction(
+        "193 sayılı Kanunun 40 ıncı maddesinin Anayasa Mahkemesince iptal edilmiş bulunan (5) "
+        "numaralı bendi aşağıdaki şekilde yeniden düzenlenmiştir.", ["5. z"], 193)
+    assert [(o.op, str(o.target)) for o in ops] == [(OpType.REPLACE_NODE, "md.40/b5")]
+    # "... birinci fıkrası iptal edilmiş ve maddeye aşağıdaki fıkralar eklenmiştir." (RG
+    # 10/3/2003, a regulation's article 50).
+    ops = am.parse_instruction(
+        "193 sayılı Kanunun 141 inci maddesinin birinci fıkrası iptal edilmiş ve maddeye "
+        "aşağıdaki fıkralar eklenmiştir.", ["(2) x", "(3) y"], 193)
+    assert [o.op for o in ops] == [OpType.REPEAL_NODE, OpType.INSERT_NODE]
+
+
+def test_bu_ibare_after_an_insert():
+    (a, b) = am.parse_instruction(
+        "193 sayılı Kanunun 40 ıncı maddesinin birinci fıkrasında yer alan “A” ibaresinden "
+        "sonra gelmek üzere “B” ibaresi ve bu ibareden sonra gelmek üzere “C” ibaresi "
+        "eklenmiştir.", [], 193)
+    assert [(o.op, o.anchor, o.new) for o in (a, b)] == [
+        (OpType.INSERT_PHRASE, "A", "B"), (OpType.INSERT_PHRASE, "B", "C")]
+
+
+def test_footnote_of_another_decision():
+    act = _aym("E.2010/7, K.2011/172", [])
+    assert am.footnote_instruction(act, AYM_2003_3) is None
+    act = _aym("E.2001/36, K.2003/3", [])
+    assert am.footnote_instruction(act, AYM_2003_3) == "Bu arada yer alan “gelir” ibaresi iptal edilmiştir."
+    both = AYM_2003_3.replace(" sayılı Kararı ile iptal", " sayılı Kararı ile ve Anayasa "
+                              "Mahkemesinin 1/1/2004 tarihli ve E.:2003/1, K.:2004/1 sayılı "
+                              "Kararı ile iptal")
+    assert am.footnote_instruction(act, both) is None
+
+
 def test_add_months():
     assert am.add_months(date(2010, 1, 8), 9) == date(2010, 10, 8)
     assert am.add_months(date(2011, 8, 31), 6) == date(2012, 2, 29)
