@@ -202,9 +202,11 @@ def parse_marker(text: str) -> list[MarkerEvent]:
 
 # -- articles, footnotes, the yürürlük table --------------------------------------------
 
+# "Madde 12 –", "Mükerrer Madde 20/A-", and in RG texts "Madde 19. —". ``label`` is the
+# heading as written, separator included.
 ARTICLE_RE = re.compile(
-    r"^(?P<prefix>(?:Mükerrer|Mükerer|Geçici|Ek)\s+)?Madde\s+(?P<num>\d+(?:\s*/\s*[A-ZÇĞİÖŞÜ])?)"
-    r"\s*[–-]",
+    r"^(?P<label>(?P<prefix>(?:Mükerrer|Mükerer|Geçici|Ek)\s+)?Madde\s+"
+    r"(?P<num>\d+(?:\s*/\s*[A-ZÇĞİÖŞÜ])?)\s*\.?\s*[–—-])\s*",
     re.IGNORECASE,
 )
 
@@ -214,8 +216,8 @@ def article_id(prefix: str | None, num: str) -> str:
     num = num.replace(" ", "")
     if not prefix:
         return num
-    p = prefix.strip().casefold()
-    p = {"mükerrer": "mukerrer", "mükerer": "mukerrer", "geçici": "gecici", "ek": "ek"}[p]
+    # By first letter: "GEÇİCİ".casefold() is not "geçici" (dotted İ).
+    p = {"m": "mukerrer", "g": "gecici", "e": "ek"}[prefix.strip()[0].lower()]
     return f"{p}-{num}"
 
 

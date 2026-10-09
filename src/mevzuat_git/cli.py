@@ -47,6 +47,30 @@ def fetch(
 
 
 @app.command()
+def parse(
+    law: int = typer.Argument(..., help="Kanun numarası, ör. 193"),
+    cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, help="Raw response cache"),
+    out_dir: Path = typer.Option(PROCESSED_DIR, help="Where <law>.json and <law>.md go"),
+    offline: bool = typer.Option(False, help="Use only the cache, never the network"),
+) -> None:
+    """Parse the consolidated text into a tree; write JSON and Markdown (Faz 1)."""
+    from mevzuat_git import mevzuat_gov as mg
+    from mevzuat_git.render import to_markdown
+    from mevzuat_git.tree import build_tree
+
+    with Fetcher(cache_dir=cache_dir, offline=offline) as f:
+        got = mg.fetch_text_html(f, law)
+    if got is None:
+        raise typer.BadParameter(f"law {law} not on mevzuat.gov.tr")
+    tree = build_tree(got[1], law)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / f"{law}.json").write_text(tree.model_dump_json(indent=1, exclude_defaults=True))
+    (out_dir / f"{law}.md").write_text(to_markdown(tree))
+    n = sum(1 for _ in tree.articles())
+    typer.echo(f"{out_dir}/{law}.md: {n} articles")
+
+
+@app.command()
 def replay(law: int) -> None:
     """Apply parsed amendments in order and diff against consolidated text (Faz 3)."""
     raise NotImplementedError("Faz 3: see docs/ROADMAP.md")
