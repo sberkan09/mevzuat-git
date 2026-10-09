@@ -78,11 +78,14 @@ def amendments(
     offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
 ) -> None:
     """Parse the amending acts' RG texts into operations (Faz 2)."""
-    from mevzuat_git.amendments import load_list, parse_all
+    from mevzuat_git.amendments import add_footnote_ops, load_list, parse_all
+    from mevzuat_git.verify import current_tree
 
     alist = load_list(out_dir / f"{law}_amendments.json")
     with Fetcher(cache_dir=cache_dir, offline=offline) as f:
         ops = parse_all(f, alist)
+        # Acts whose RG text is a scanned PDF: from the consolidated text's footnotes.
+        add_footnote_ops(ops, alist, current_tree(f, law))
     out = out_dir / f"{law}_ops.json"
     out.write_text(ops.model_dump_json(indent=1, exclude_defaults=True) + "\n")
     sentences = sum(a.sentences for a in ops.acts)
@@ -92,7 +95,8 @@ def amendments(
                f"{sentences - unparsed} parsed into {n_ops} operations")
     for a in ops.acts:
         if a.error:
-            typer.echo(f"  {a.act}: {a.error}")
+            how = f"; {len(a.ops())} operations from footnotes" if a.source == "footnotes" else ""
+            typer.echo(f"  {a.act}: {a.error}{how}")
 
 
 @app.command()

@@ -69,7 +69,7 @@ mevzuat.gov.tr yazımıyla.
 
 ## GVK (2026-10)
 
-88 commit üretiliyor: başlangıç metni, değiştiren kanunlar için 86 commit (2001-07-10 ..
-2026-07-01) ve eşitleme commit'i. Eşitleme commit'inde 18 maddenin içeriği ayrılıyor;
-başlıca neden KHK 700'ün "Bakanlar Kurulu" → "Cumhurbaşkanı" değişikliğidir (bkz.
-`docs/replay.md`).
+91 commit üretiliyor: başlangıç metni, değiştiren kanunlar için 89 commit (2001-07-10 ..
+2026-07-01) ve eşitleme commit'i. Eşitleme commit'inde 14 maddenin içeriği ayrılıyor
+(bkz. `docs/replay.md`). RG metni taranmış PDF olan KHK 700, 6663 ve 6676'nın commit
+mesajları, işlemlerin konsolide metnin dipnotlarından okunduğunu belirtir.

@@ -6,9 +6,11 @@ from pathlib import Path
 import pytest
 
 from mevzuat_git import amendments as am
+from mevzuat_git.amendment_list import AmendingAct, FootnoteRef
 from mevzuat_git.fetch import decode_html
-from mevzuat_git.model import Level, OpType
+from mevzuat_git.model import Law, Level, Node, OpType
 from mevzuat_git.model import Path as Addr
+from mevzuat_git.replay import resolve, unapply
 
 FIX = Path(__file__).parent / "fixtures"
 ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="utf-8"))
@@ -315,3 +317,63 @@ def test_quote_balance_ascii():
     assert am._quote_balance('"Asgarî geçim indirimi') == 1
     assert am._quote_balance('hükmü uygulanır."') == -1
     assert am._quote_balance('"dört yıl içinde" ibaresi') == 0
+
+
+# -- operations from the consolidated text's footnotes (acts whose RG text is a PDF) ------
+
+# GVK md. 94/9 on mevzuat.gov.tr (footnote 129).
+MD94_F9 = ("Cumhurbaşkanı, bu maddede yer alan tevkifat nispetini, kara, deniz ve hava "
+           "ulaştırması işiyle iştigal eden dar mükellefler için, ülkeler itibariyle ve "
+           "karşılıklı olmak şartıyla sıfıra kadar indirmeye yetkilidir.")
+
+
+def _footnote_law():
+    def fikra(text, fn=(), children=()):
+        return Node(level=Level.FIKRA, text=text, footnotes=list(fn), children=list(children))
+    md41 = Node(level=Level.MADDE, id="41", label="Madde 41 –", footnotes=[43], children=[
+        fikra("Aşağıdaki giderler ...", children=[
+            Node(level=Level.BENT, label="7.", text="Bakanlar Kurulu kararı ile ..."),
+            Node(level=Level.BENT, label="9.", text="Bakanlar Kurulunca belirlenen ...",
+                 children=[Node(level=Level.PARAGRAF, text="Bakanlar Kurulu ...")])])])
+    md94 = Node(level=Level.MADDE, id="94", label="Madde 94 –", children=[
+        fikra(f"fıkra {i}") for i in range(1, 9)] + [fikra(MD94_F9, fn=[129])])
+    return Law(number=193, name="", body=[md41, md94])
+
+
+FOOTNOTES_700 = [
+    (43, "41", ("2/7/2018 tarihli ve 700 sayılı KHK’nin 45 inci maddesiyle, bu fıkranın (7) "
+                "numaralı bendinde yer alan “Bakanlar Kurulu” ibaresi “Cumhurbaşkanı” şeklinde, "
+                "(9) numaralı bendinde yer alan “Bakanlar Kurulunca” ibaresi “Cumhurbaşkanınca” "
+                "şeklinde, aynı bendin ikinci paragrafında yer alan “Bakanlar Kurulu” ibaresi "
+                "“Cumhurbaşkanı” şeklinde değiştirilmiştir.")),
+    (129, "94", ("2/7/2018 tarihli ve 700 sayılı KHK’nin 45 inci maddesiyle, bu fıkrada yer "
+                 "alan “Bakanlar Kurulu” ibaresi “Cumhurbaşkanı” şeklinde değiştirilmiştir.")),
+]
+
+
+def test_operations_from_footnotes():
+    act = AmendingAct(kind="khk", number="700", footnotes=[
+        FootnoteRef(footnote=n, article=a, law_article="45", text=t) for n, a, t in FOOTNOTES_700])
+    ams, unparsed = am.ops_from_footnotes(act, _footnote_law())
+    assert not unparsed
+    (a,) = ams
+    assert a.article == "45"
+    assert [(str(o.target), o.old, o.new) for o in a.ops] == [
+        ("md.41/b7", "Bakanlar Kurulu", "Cumhurbaşkanı"),
+        ("md.41/b9", "Bakanlar Kurulunca", "Cumhurbaşkanınca"),
+        ("md.41/b9/p2", "Bakanlar Kurulu", "Cumhurbaşkanı"),
+        ("md.94/f9", "Bakanlar Kurulu", "Cumhurbaşkanı")]
+
+
+def test_footnote_operation_follows_its_node():
+    # "bu fıkrada" is md. 94's ninth fıkra today. Before a later act added a fıkra in
+    # front of it, it was the eighth: the operation goes where the footnote's node is.
+    act = AmendingAct(kind="khk", number="700", footnotes=[
+        FootnoteRef(footnote=129, article="94", law_article="45", text=FOOTNOTES_700[1][2])])
+    law = _footnote_law()
+    (a,), _ = am.ops_from_footnotes(act, law)
+    (op,) = a.ops
+    del law.article("94").children[2]
+    assert unapply(law, op).status == "ok"
+    assert law.article("94").children[7].text.startswith("Bakanlar Kurulu, bu maddede")
+    assert str(resolve(law, op).target) == "md.94/f8"

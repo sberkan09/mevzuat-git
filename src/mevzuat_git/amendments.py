@@ -27,9 +27,9 @@ from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser
 
 from mevzuat_git import mevzuat_gov as mg
-from mevzuat_git.amendment_list import AmendmentList
+from mevzuat_git.amendment_list import AmendingAct, AmendmentList
 from mevzuat_git.fetch import Fetcher, NotFound, decode_html
-from mevzuat_git.model import Amendment, AmendmentOp, Level, OpType, Path, label_key
+from mevzuat_git.model import Amendment, AmendmentOp, Law, Level, Node, OpType, Path, label_key
 from mevzuat_git.tree import ITEM_RE as LABEL_RE
 from mevzuat_git.tree import TABLE_MARK, _follows, item_style, parse_fragment
 
@@ -376,9 +376,13 @@ def parse_address(seg: str, ctx: Path | None) -> Path | None:
         path = Path(madde=_article_id(arts[0]))
     elif ctx is None:
         return None
+    elif not (fik or bents or alt_ord or bent_ord or cum or par or title) \
+            and re.match(r"\s*bu\s+(?:alt\s+)?(?:madde|fıkra|bent|paragraf)\w*\s", seg):
+        # "bu fıkrada yer alan" (a footnote of the consolidated text): the node itself.
+        return ctx
     elif fik or SAME_ARTICLE_RE.search(seg):
         path = Path(madde=ctx.madde)
-    elif (bents and ctx.fikra is not None) or re.search(
+    elif any(not b.group("alt") for b in bents) or re.search(
         r"\bfıkra(?:ya|nın|sına|da)\b|aynı\s+fıkra", seg
     ):
         path = Path(madde=ctx.madde, fikra=ctx.fikra)
@@ -584,15 +588,15 @@ def _check_segment(o: OpMatch, own: str) -> None:
 
 
 def parse_instruction(text: str, payload: list[str], target_law: int,
-                      law_ctx: str | None = None) -> list[AmendmentOp]:
-    """Operations on ``target_law`` in one instruction sentence of an amending act."""
+                      law_ctx: str | None = None, ctx: Path | None = None) -> list[AmendmentOp]:
+    """Operations on ``target_law`` in one instruction sentence of an amending act.
+    ``ctx`` is the address that "bu fıkrada" and the like refer to, if any."""
     ops: list[AmendmentOp] = []
     matches = find_ops(text)
     payload_ops = [o for o in matches
                    if o.name in ("replace_node", "insert_node", "paren_replace")]
     chunks = split_payload(payload, len(payload_ops))
     target = str(target_law)
-    ctx: Path | None = None
     cur_law = law_ctx
     prev_end = 0
     for o in matches:
@@ -922,10 +926,16 @@ class ActOps(BaseModel):
     rg_date: date | None
     rg_number: str | None
     text_url: str
+    # "rg": parsed from the RG text; "footnotes": from the consolidated text's footnotes,
+    # for acts whose RG text we cannot read (see ``ops_from_footnotes``).
+    source: str = "rg"
     sentences: int  # instructions naming the target law
     amendments: list[Amendment] = Field(default_factory=list)
     unparsed: list[UnparsedSentence] = Field(default_factory=list)
     error: str | None = None
+
+    def ops(self) -> list[AmendmentOp]:
+        return [op for am in self.amendments for op in am.ops]
 
 
 class OpsFile(BaseModel):
@@ -970,6 +980,93 @@ def parse_all(fetcher: Fetcher, alist: AmendmentList) -> OpsFile:
         rec.unparsed = [UnparsedSentence(act=act.number, article=a, sentence=s, reason=r)
                         for a, s, r in res.unparsed]
     return OpsFile(target_law=alist.target_law, acts=acts)
+
+
+# -- operations from the consolidated text's footnotes -----------------------------------
+
+# "2/7/2018 tarihli ve 700 sayılı KHK’nin 45 inci maddesiyle, bu bentte yer alan ..."
+_FOOTNOTE_ACT = re.compile(r"^.*?\b\d+\s+sayılı\s+\S+\s+\d+\s*\S*\s+maddes[iı]yle,\s*")
+
+
+def footnote_paths(law: Law) -> dict[int, Path]:
+    """The address of the node each footnote number is attached to."""
+    out: dict[int, Path] = {}
+
+    def visit(n: Node, path: Path) -> None:
+        for fn in n.footnotes:
+            out.setdefault(fn, path)
+        fikras = [c for c in n.children if c.level is Level.FIKRA]
+        paras = [c for c in n.children if c.level is Level.PARAGRAF]
+        for c in n.children:
+            if c.level is Level.FIKRA:
+                k = c.key
+                p = path.model_copy(update={"fikra": int(k) if k and k.isdigit()
+                                            else fikras.index(c) + 1})
+            elif c.level is Level.BENT:
+                p = path.model_copy(update={"bent": c.key})
+            elif c.level is Level.ALT_BENT:
+                p = path.model_copy(update={"alt_bent": c.key})
+            elif c.level is Level.PARAGRAF:
+                # Paragraph 1 is the node's own text.
+                p = path.model_copy(update={"paragraf": paras.index(c) + 2})
+            else:
+                p = path
+            visit(c, p)
+
+    for art in law.articles():
+        if art.id:
+            visit(art, Path(madde=art.id))
+    return out
+
+
+def ops_from_footnotes(act: AmendingAct, law: Law) -> tuple[list[Amendment],
+                                                             list[UnparsedSentence]]:
+    """Operations of ``act`` as the consolidated text's footnotes describe them: "700
+    sayılı KHK’nin 45 inci maddesiyle, bu bentte yer alan “Bakanlar Kurulu” ibaresi
+    “Cumhurbaşkanı” şeklinde değiştirilmiştir." For acts whose RG text is a scanned PDF.
+    "bu bentte", "bu fıkrada" refer to the node the footnote is attached to."""
+    paths = footnote_paths(law)
+    by_article: dict[str, Amendment] = {}
+    unparsed: list[UnparsedSentence] = []
+    for fn in act.footnotes:
+        article = fn.law_article or "?"
+        m = _FOOTNOTE_ACT.match(fn.text)
+        ctx = paths.get(fn.footnote)
+        if not m or ctx is None:
+            reason = "not an amendment sentence" if not m else "footnote not in the text"
+            unparsed.append(UnparsedSentence(act=act.number, article=article,
+                                             sentence=fn.text, reason=reason))
+            continue
+        try:
+            ops = parse_instruction(fn.text[m.end():], [], law.number,
+                                    law_ctx=str(law.number), ctx=ctx)
+            if not ops:
+                raise Unparsed("no operation")
+        except Unparsed as exc:
+            unparsed.append(UnparsedSentence(act=act.number, article=article,
+                                             sentence=fn.text, reason=str(exc)))
+            continue
+        for op in ops:
+            op.source_sentence = fn.text
+            op.footnote, op.footnote_path = fn.footnote, ctx
+        am = by_article.setdefault(article, Amendment(
+            amending_law=act.number, article=article, target_law=law.number,
+            rg_date=act.rg.date if act.rg else None,
+            rg_number=act.rg.number if act.rg else None, ops=[]))
+        am.ops.extend(ops)
+    return list(by_article.values()), unparsed
+
+
+def add_footnote_ops(opsfile: OpsFile, alist: AmendmentList, law: Law) -> None:
+    """Fill in acts whose RG text could not be read from the footnotes of ``law``."""
+    acts = {a.number: a for a in alist.acts}
+    for rec in opsfile.acts:
+        act = acts.get(rec.act)
+        if rec.error is None or act is None or not act.footnotes:
+            continue
+        rec.amendments, rec.unparsed = ops_from_footnotes(act, law)
+        rec.sentences = len(act.footnotes)
+        rec.source = "footnotes"
 
 
 def load_list(path: FsPath) -> AmendmentList:

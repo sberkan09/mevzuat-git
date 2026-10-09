@@ -411,8 +411,43 @@ def _is_sentence_op(op: AmendmentOp) -> bool:
         re.search(r"aşağıdaki\s+cümle", op.source_sentence))
 
 
+_REBASED = ("fikra", "bent", "alt_bent", "paragraf")
+
+
+def rebase(law: Law, op: AmendmentOp) -> AmendmentOp:
+    """``op`` with its target where the footnote's node is in ``law`` now. A footnote op's
+    address was read on today's text: "bu fıkrada" is the 9th fıkra today, but was the 8th
+    before a later act added one. The parts of the target that came from the footnote's
+    node are taken from that node's present position."""
+    if op.footnote is None or op.footnote_path is None:
+        return op
+    here = _footnote_path(law, op.footnote)
+    if here is None:
+        raise Superseded()  # the node carrying the footnote was replaced later
+    then, t = op.footnote_path, op.target
+    update = {f: getattr(here, f) for f in _REBASED
+              if getattr(t, f) is not None and getattr(t, f) == getattr(then, f)}
+    return op.model_copy(update={"target": t.model_copy(update=update)})
+
+
+def resolve(law: Law, op: AmendmentOp) -> AmendmentOp:
+    """``op`` rebased (see :func:`rebase`) on ``law`` with its footnote anchor dropped, for
+    a replay that rebuilds nodes from the acts' texts, which carry no footnote numbers.
+    Unchanged if the footnote's node is gone (the undo then reports it superseded)."""
+    try:
+        return rebase(law, op).model_copy(update={"footnote": None, "footnote_path": None})
+    except Superseded:
+        return op
+
+
+def _footnote_path(law: Law, n: int) -> Path | None:
+    from mevzuat_git.amendments import footnote_paths  # amendments imports tree, not replay
+    return footnote_paths(law).get(n)
+
+
 def apply(law: Law, op: AmendmentOp) -> None:
     """Apply one operation in place. Raises :class:`ReplayError` if it does not fit."""
+    op = rebase(law, op)
     t = op.target
     if op.op is OpType.REPLACE_PHRASE and op.paren:
         sl, s, e = _paren_group(phrase_slots(law, t))
@@ -610,6 +645,7 @@ def unapply(law: Law, op: AmendmentOp) -> Check:
 
 
 def _unapply(law: Law, op: AmendmentOp) -> Check:
+    op = rebase(law, op)
     t = op.target
     if op.op is OpType.REPLACE_PHRASE and op.paren:
         if not op.new:

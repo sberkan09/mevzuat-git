@@ -49,17 +49,34 @@ Bir madde, replay sonucu konsolide metinle normalizasyondan sonra birebir aynıy
 **eşleşir**. Geri getirilemeyen bir metne dayanıyorsa **doğrulanamaz** sayılır ve
 metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 
-GVK için (2026-10): 104 maddeye işlem uygulandı. Bunların 65'i eşleşiyor, 36'sı farklı,
-3'ü doğrulanamıyor. **Oran: %64,4.**
+GVK için (2026-10): 104 maddeye işlem uygulandı. Bunların 74'ü eşleşiyor, 30'u farklı,
+3'ü doğrulanamıyor. **Oran: %71,2.**
+
+## RG metni taranmış PDF olan değişiklikler
+
+KHK 700 ile 6655, 6663 ve 6676 sayılı Kanunların RG metinleri taranmış PDF'tir; metin
+olarak okunamaz. mevzuat.gov.tr'de de bu hükümler için yalnızca "ilgili olup yerine
+işlenmiştir" yazar. Bu işlemler konsolide metnin dipnotlarından okunur
+(`amendments.ops_from_footnotes`):
+
+> 2/7/2018 tarihli ve 700 sayılı KHK’nin 45 inci maddesiyle, bu bentte yer alan “Bakanlar
+> Kurulu” ibaresi “Cumhurbaşkanı” şeklinde değiştirilmiştir.
+
+Değiştiren kanunun adı atılır, kalan cümle Faz 2 ayrıştırıcısıyla okunur. "Bu bentte",
+"bu fıkranın (7) numaralı bendinde" gibi ifadeler dipnotun bağlı olduğu düğüme göredir.
+Bu adres bugünkü metinden alınır, ama işlem 2018'deki metne uygulanır. Arada başka bir
+kanun önüne fıkra eklemişse sıra değişmiştir; bu yüzden işlem dipnotun bağlı olduğu
+düğüme bağlanır ve adresi, geri sarmada o düğümün o anki yerinden çözülür
+(`replay.rebase`). GVK'da 35 işlem böyle bulunur (KHK 700: 32, 6663: 1, 6676: 2).
+6663'ün başlık değişikliği ("… iken … metne işlendiği şekilde yeniden düzenlenmiştir")
+ve hiç dipnotu olmayan 6655 kapsam dışıdır.
 
 ## Farkların başlıca nedenleri
 
-- **RG metni okunamayan değişiklikler.** KHK 700 ile "Bakanlar Kurulu" ifadesi
-  "Cumhurbaşkanı" olarak değiştirildi; 6655, 6663 ve 6676'nın metinleri PDF. Bu
-  değişikliklerin işlemi olmadığından, değiştirdikleri maddeler eski ifadeyle kalıyor
-  (md. 33, 89, geçici 80 …). Sonraki adım, bu işlemleri konsolide metnin dipnotlarından
-  türetmek.
 - **Konsolide metnin kendi yapısı.** Örneğin geçici 60'ta bir cümle madde başlığı olarak
-  okunuyor (Faz 1).
+  okunuyor; geçici 67'nin numaralı fıkraları bent olarak okunuyor (Faz 1).
+- **Geri sarmada izi bulunamayan işlemler.** İşlemin etkisi bugünkü metinde yok: ya
+  ayrıştırma yanlış, ya da RG metni olmayan (2000 öncesi ya da dipnotsuz) bir değişiklik
+  aynı yeri sonradan değiştirmiş.
 - **Henüz desteklenmeyen işlemler.** Kısım/bölüm başlığı değişiklikleri ve tek tek
   işlem gerektiren bazı eski yazılışlar bunlar arasında.
