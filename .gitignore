@@ -8,4 +8,6 @@ dist/
 data/raw/*
 data/processed/*
 !data/**/.gitkeep
+# Small derived data that is worth versioning (see docs/sources.md)
+!data/processed/*_amendments.json
 .env

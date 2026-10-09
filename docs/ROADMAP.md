@@ -1,10 +1,12 @@
 # Yol haritası
 
 ## Faz 0: Veri toplama (pilot: 193 sayılı Gelir Vergisi Kanunu)
-- [ ] mevzuat.gov.tr'den güncel konsolide metni çek (`MevzuatNo=193&MevzuatTur=1&MevzuatTertip=5`)
-- [ ] Konsolide metnin başındaki/sonundaki "değiştiren mevzuat" listesini çıkar
-- [ ] Her değiştiren kanun için Resmî Gazete sayısını ve tarihini bul, metni indir (`data/raw/`)
-- [ ] Ham veriyi önbellekle; tüm istekler nazik (rate limit + User-Agent)
+- [x] mevzuat.gov.tr'den güncel konsolide metni çek (`MevzuatNo=193&MevzuatTur=1&MevzuatTertip=4`; GVK tertip 4'te, bkz. `docs/sources.md`)
+- [x] Konsolide metnin başındaki/sonundaki "değiştiren mevzuat" listesini çıkar (satır içi işaretler + dipnotlar + yürürlük tablosu → `data/processed/193_amendments.json`)
+- [x] Her değiştiren kanun için Resmî Gazete sayısını ve tarihini bul, metni indir (`data/raw/`; 2000 sonrası)
+- [x] Ham veriyi önbellekle; tüm istekler nazik (rate limit + User-Agent)
+- [ ] 2000 öncesi değiştiren kanunların RG bilgisi ve metni (HTML arşivi yok, PDF taramaları; Faz 5 ile birlikte)
+- [ ] 4605 sayılı Kanunun RG metni (30/11/2000 mükerrer HTML sayfası boş; PDF'ten alınmalı)
 
 ## Faz 1: Kanun ağacı modeli
 - [ ] `Kanun > Kısım > Bölüm > Madde > Fıkra > Bent > Alt bent` veri modeli
