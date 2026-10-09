@@ -121,6 +121,11 @@ class AmendmentOp(BaseModel):
     with_title: bool = False  # "başlığıyla birlikte"
     renumber: bool = False  # teselsül
     source_sentence: str  # RG'deki ham cümle, izlenebilirlik için
+    # Operations read from a footnote of the consolidated text: the footnote's number and
+    # the address of the node it is attached to today. ``target`` is resolved from where
+    # that node is at the time the operation applies (see ``replay.rebase``).
+    footnote: int | None = None
+    footnote_path: Path | None = None
 
 
 class Amendment(BaseModel):

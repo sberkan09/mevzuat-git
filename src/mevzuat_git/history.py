@@ -335,6 +335,8 @@ class Step:
     rg_date: date
     rg_number: str | None
     text_url: str
+    source: str  # ActOps.source: "rg" or "footnotes"
+    kind: str  # AmendingAct.kind: kanun, khk, cbk
     date: date
     sources: list[Dated]  # one per distinct table row or fallback note
     batches: list[list[OpResult]]
@@ -368,8 +370,9 @@ def plan(groups: list[list[OpResult]], opsfile: OpsFile, alist: AmendmentList) -
                 sources.append(d)
             bs.append(b)
         for day, (sources, bs) in sorted(dated.items()):
-            steps.append(Step(rec.act, rec.rg_date, rec.rg_number, rec.text_url, day,
-                              sources, bs))
+            kind = acts[rec.act].kind if rec.act in acts else "kanun"
+            steps.append(Step(rec.act, rec.rg_date, rec.rg_number, rec.text_url, rec.source,
+                              kind, day, sources, bs))
     return steps
 
 
@@ -455,11 +458,14 @@ def _step_commit(s: Step) -> Commit:
         + (" (varsayılan)" if all(d.assumed for d in s.sources) else ""),
         *(f"Yürürlük tablosu: {d.source}" for d in s.sources),
         f"Değiştiren maddeler: {', '.join(f'{s.act}/{a}' for a in acts_articles)}",
-        f"Kaynak: {s.text_url}",
+        f"Kaynak: {s.text_url}" + (" (taranmış PDF; işlemler mevzuat.gov.tr konsolide "
+                                   "metninin dipnotlarından okundu)"
+                                   if s.source == "footnotes" else ""),
     ]
     errors = [r for b in s.batches for r in b if r.replay_error]
     if errors:
         body += ["", "Uygulanamayan işlemler:"]
         body += [f"- {r.act}/{r.article} {r.op.op.value} {r.op.target}: {r.replay_error}"
                  for r in errors]
-    return Commit(s.date, f"{s.act} sayılı Kanun: md. {_art_list(arts)}", body)
+    name = {"khk": "KHK", "cbk": "Cumhurbaşkanlığı Kararnamesi"}.get(s.kind, "Kanun")
+    return Commit(s.date, f"{s.act} sayılı {name}: md. {_art_list(arts)}", body)

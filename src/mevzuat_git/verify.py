@@ -31,6 +31,7 @@ from mevzuat_git.replay import (
     ReplayError,
     Superseded,
     apply_batch,
+    resolve,
     unapply_batch,
 )
 from mevzuat_git.tree import build_tree
@@ -123,6 +124,9 @@ def unwind(current: Law, groups: list[list[OpResult]]) -> Law:
     Sets each operation's check."""
     state = current.model_copy(deep=True)
     for b in reversed(groups):
+        for r in b:
+            # Footnote ops: their address, as it is at this point of the unwind.
+            r.op = resolve(state, r.op)
         for r, chk in zip(b, unapply_batch(state, [r.op for r in b]), strict=True):
             r.check, r.check_message = chk.status, chk.message
     return state
