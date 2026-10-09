@@ -819,9 +819,13 @@ def _relabel(law: Law, path: Path, old: str, new: str) -> None:
     key = label_key(new)
     if not key.isdigit():
         return
+    others = [s for s in sibs if s is not n and s.level is n.level
+              and label_key(s.label or "").isdigit()]
+    if not others:
+        return  # no number to place it by
     sibs.remove(n)
-    numbered = [(i, int(k)) for i, s in enumerate(sibs)
-                if s.level is n.level and (k := label_key(s.label or "")).isdigit()]
+    ids = {id(s) for s in others}
+    numbered = [(i, int(label_key(s.label or ""))) for i, s in enumerate(sibs) if id(s) in ids]
     later = int(key) > int(label_key(old))
     if later:
         i = max((i + 1 for i, k in numbered if k <= int(key)), default=0)

@@ -640,3 +640,11 @@ def test_renumbered_bent_moves_to_its_place():
     with pytest.raises(ReplayError):
         apply(_md75_f2(("16.", "x"), ("18.", "y")), op.model_copy(
             update={"target": Addr(madde="75", fikra=2, bent="18")}))
+
+
+def test_renumbered_bent_without_numbered_siblings_stays():
+    op = AmendmentOp(op=OpType.RELABEL_NODE, target=Addr(madde="75", fikra=2, bent="16"),
+                     old="16.", new="17.", source_sentence="")
+    law = _md75_f2(("", "Giriş"), ("16.", "x"))
+    apply(law, op)
+    assert [b.label for b in law.article("75").children[1].children] == ["", "17."]

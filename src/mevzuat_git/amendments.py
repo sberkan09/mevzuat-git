@@ -88,6 +88,9 @@ TITLE_TARGET_RE = re.compile(r"madde(?:sinin)?\s+başlığı(?!\s*(?:yla|\s+ile)
 PHRASE_NOUN = r"(?:ibare(?:si|leri)|cümle(?:si|leri)|rakam(?:ı|ları)|tarih(?:i|leri))"
 _QQ = Q + QTEXT + Q
 _QLIST = r"(?:" + _QQ + r"\s*(?:,|\bve\b)\s*)+" + _QQ
+# Inline new text: anything, quotes included, but not the end of a quoted ibare ("“A”
+# ibaresinden sonra gelmek üzere “B” ...", which is another operation).
+_INLINE = r"(?P<new>(?:(?![”\"]\s*(?:ibare|cümle|rakam|tarih|kelime)\w*\s).)+?)"
 OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     # “a” ve “b” ibareleri sırasıyla “x” ve “y” şeklinde
     ("replace_phrase_seq", re.compile(
@@ -99,18 +102,18 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     # fıkrasından sonra gelmek üzere "11) Dar mükellefler ..." şeklinde bir fıkra eklenmiş".
     ("replace_node_inline", re.compile(
         r"(?:" + "|".join(rf"(?<={w}\s)" for w in ("fıkrası", "paragrafı", "bendi", "cümlesi"))
-        + r")" + Q + r"(?P<new>.+?)" + Q
+        + r")" + Q + _INLINE + Q
         # in a series: “c) ...” şeklinde, (f) bendinde yer alan ... şeklinde değiştirilmiş
         + r"\s*şeklinde(?:\s+değiştiril|\s*[,;](?=.*şeklinde\s+değiştiril))"
     )),
     ("insert_node_inline", re.compile(
-        r"(?<=üzere\s)" + Q + r"(?P<new>.+?)" + Q
+        r"(?<=üzere\s)" + Q + _INLINE + Q
         + r"\s*şeklinde\s+bir\s+(?P<kind>fıkra|bent|paragraf|cümle)\s+eklen"
     )),
     # 6322 sayılı Kanunun 8 inci maddesi ile eklenen bendin “16.” olan numarası “17.” olarak
     # değiştirilmiştir (6353/65)
     ("relabel_node", re.compile(
-        r"(?P<kind>ben[dt]|fıkra)\w*\s+" + Q + r"(?P<old>" + QTEXT + r")" + Q
+        r"(?<!alt\s)(?P<kind>bendin|fıkranın)\s+" + Q + r"(?P<old>" + QTEXT + r")" + Q
         + r"\s+olan\s+numarası\s*,?\s+" + Q + r"(?P<new>" + QTEXT + r")" + Q
         + r"\s*(?:(?:şeklinde|olarak)\b|,(?=.*(?:şeklinde|olarak)\s+değiştiril))"
     )),

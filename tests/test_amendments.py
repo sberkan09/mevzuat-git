@@ -511,6 +511,20 @@ def test_new_text_inline_in_a_series():
     assert [n.label for n in ops[0].new_nodes] == ["c)"]
 
 
+def test_inline_new_text_stops_at_a_quoted_ibare():
+    # The shape of 5436/14 d) 6) after an ibare insert: the inline fıkra does not start at
+    # the inserted ibare's quote.
+    ops = am.parse_instruction(
+        "193 sayılı Kanunun 40 ıncı maddesinin birinci fıkrasında yer alan “Gelir” ibaresinden "
+        "sonra gelmek üzere “ve kurumlar” ibaresi eklenmiş, (5) numaralı fıkrasından sonra "
+        "gelmek üzere “6) Yeni fıkra metni.” şeklinde bir fıkra eklenmiştir.", [], 193)
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.INSERT_PHRASE, "md.40/f1"), (OpType.INSERT_NODE, "md.40/f5")]
+    # Only a bent or fıkra "olan numarası", not a fıkra's own bent or an alt bent.
+    assert am.parse_instruction("193 sayılı Kanunun 40 ıncı maddesinin ikinci fıkrasının "
+                                "“16.” olan numarası “17.” olarak değiştirilmiştir.", [], 193) == []
+
+
 def test_article_heading_with_figure_dash():
     # 6525/5 writes "MADDE 5 ‒" with U+2012.
     (a,) = am.act_articles([(

@@ -18,4 +18,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[dev]" "ruff==0.16.8"
       - run: ruff check src tests
+      # test_full_gvk_when_cached needs the data/raw cache (not in git) and skips here.
       - run: pytest -q
