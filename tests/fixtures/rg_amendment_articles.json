@@ -1,0 +1,194 @@
+{
+ "4697/4": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2001/07/20010710.htm",
+  "instruction": "193 sayılı Kanunun 40 ıncı maddesinin birinci fıkrasına aşağıdaki (9) numaralı bent eklenmiş, 63 üncü maddesinin (2) ve değişik (3) numaralı bentleri aşağıdaki şekilde değiştirilmiştir.",
+  "payload": [
+   "9. İşverenler tarafından ücretliler adına bireysel emeklilik sistemine ödenen katkı payları. (Gerek işverenler gerekse ücretliler tarafından bireysel emeklilik sistemine ödenen ve vergi matrahının tespitinde dikkate alınan katkı paylarının toplamı bu Kanunun 63 üncü maddesinin birinci fıkrasının (3) numaralı bendinde belirlenen oran ve haddi aşamaz.)",
+   "2. Kanunla kurulan emekli sandıkları ile 506 sayılı Sosyal Sigortalar Kanununun geçici 20 nci maddesinde belirtilen sandıklara ödenen aidat ve primler;",
+   "3. Sigortanın veya emeklilik sözleşmesinin Türkiye’de kâin ve merkezi Türkiye’de bulunan bir sigorta veya emeklilik şirketi nezdinde akdedilmiş olması şartıyla; ücretlinin şahsına, eşine ve küçük çocuklarına ait hayat, ölüm, kaza, hastalık, sakatlık, işsizlik, analık, doğum ve tahsil gibi şahıs sigorta poliçeleri için hizmet erbabı tarafından ödenen primler ile bireysel emeklilik sistemine ödenen katkı payları,",
+   "İndirim konusu yapılacak prim, aidat ve katkıların toplamı, ödendiği ayda elde edilen ücretin % 10’unu (bireysel emeklilik sistemi dışındaki şahıs sigorta poliçeleri için ödenen primlerde, ödendiği ayda elde edilen ücretin % 5’ini) ve yıllık olarak asgari ücretin yıllık tutarını aşamaz. Bakanlar Kurulu bu oranı % 20 oranına kadar (bireysel emeklilik sistemi dışındaki şahıs sigorta poliçeleri için % 10 oranına kadar) artırmaya ve belirtilen haddi asgari ücretin yıllık tutarının iki katını geçmemek üzere yeniden belirlemeye yetkilidir."
+  ]
+ },
+ "4697/8": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2001/07/20010710.htm",
+  "instruction": "193 sayılı Gelir Vergisi Kanununun 94 üncü maddesinin birinci fıkrasının (11) numaralı bendine aşağıdaki (d) alt bendi ve fıkraya aşağıdaki (15) numaralı bent eklenmiştir.",
+  "payload": [
+   "d) Çiftçilere yapılan doğrudan gelir desteği ve alternatif ürün ödemeleri için,",
+   "15. a) 75 inci maddenin ikinci fıkrasının (15) numaralı bendinin (a) alt bendinde yer alan menkul sermaye iratlarından,",
+   "b) 75 inci maddenin ikinci fıkrasının (15) numaralı bendinin (b) alt bendinde yer alan menkul sermaye iratlarından,",
+   "c) 75 inci maddenin ikinci fıkrasının (15) numaralı bendinin (c) alt bendinde yer alan menkul sermaye iratlarından,"
+  ]
+ },
+ "5024/6": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2003/12/20031230.htm",
+  "instruction": "31.12.1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 19 uncu maddesinin (2) ve (3) numaralı fıkraları aşağıdaki şekilde değiştirilmiştir.",
+  "payload": [
+   "2. Yatırım indirimi istisnası uygulamasına, istisnaya konu iktisadî kıymete ilişkin harcamaların yapıldığı yılda başlanır ve indirilecek tutara ulaşılıncaya kadar devam olunur.",
+   "Yatırım harcamalarının yapıldığı yıla ilişkin vergi matrahının tespitinde, kazancın yetersiz olması nedeniyle dikkate alınamayan istisna tutarı, izleyen dönemlerde, bu dönemlerde Devlet İstatistik Enstitüsü Toptan Eşya Fiyatları Genel Endeksinde meydana gelen artış oranında artırılarak dikkate alınır.",
+   "3. Enflasyon düzeltmesi uygulanan dönemlerde, yatırım indirimi istisnası tutarının hesaplanmasında amortismana tâbi iktisadî kıymetin aktife alındığı hesap dönemi sonundaki düzeltilmiş değeri esas alınır.",
+   "Ancak iktisadî kıymetin aktife alındığı hesap döneminden önceki hesap dönemlerinde gerçekleşen harcamalar, gerçekleştirildikleri dönem sonundaki düzeltilmiş değerleri ile dikkate alınır. İzleyen dönemlerde enflasyon düzeltmesi nedeniyle bu harcamalardan kaynaklanan farklar üzerinden yatırım indirimi istisnası hesaplanmaz."
+  ]
+ },
+ "4842/12": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2003/04/20030424.htm",
+  "instruction": "193 sayılı Kanunun 94 üncü maddesinin birinci fıkrasının (6) numaralı bendinin (b) alt bendi ile dördüncü fıkrası aşağıdaki şekilde değiştirilmiştir.",
+  "payload": [
+   "b) i) Tam mükellef kurumlar tarafından; tam mükellef gerçek kişilere, gelir ve kurumlar vergisi mükellefi olmayanlara ve bu vergilerden muaf olanlara dağıtılan, 75 inci maddenin ikinci fıkrasının (1), (2) ve (3) numaralı bentlerinde yazılı kâr paylarından (kârın sermayeye eklenmesi kâr dağıtımı sayılmaz.),",
+   "ii) Tam mükellef kurumlar tarafından; dar mükellef gerçek kişilere, dar mükellef kurumlara (Türkiye'de bir işyeri veya daimi temsilci aracılığıyla kâr payı elde edenler hariç) ve gelir ve kurumlar vergisinden muaf olan dar mükelleflere dağıtılan, 75 inci maddenin ikinci fıkrasının (1), (2) ve (3) numaralı bentlerinde yazılı kâr paylarından (Kârın sermayeye eklenmesi kâr dağıtımı sayılmaz.),",
+   "iii) 75 inci maddenin ikinci fıkrasının (4) numaralı bendinde yazılı menkul sermaye iradının ana merkeze aktarılan tutarı üzerinden,",
+   "Bu maddenin (6) numaralı bendinin (a) alt bendine göre üzerinden vergi tevkifatı yapılan kurum kazancından kâr payı alanlara, tevkif suretiyle alınan vergi red ve iade olunmaz."
+  ]
+ },
+ "5527/1": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2006/07/20060707-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun geçici 67 nci maddesinin;",
+  "payload": [
+   "a) (1) numaralı fıkrasının birinci paragrafının sonuna aşağıdaki cümle eklenmiştir.",
+   "\"Dar mükellef gerçek kişi ve kurumlar için bu oran % 0 olarak uygulanır.\"",
+   "b) (1) numaralı fıkrasının altıncı paragrafı aşağıdaki şekilde değiştirilmiştir.",
+   "\"Hazine tarafından yurt dışında ihraç edilen menkul kıymetlerin alım satımı, itfası sırasında elde edilen getirileri ile bunların dönemsel getirilerinin tahsilinde, tam mükellef kurumlara ait olup, İstanbul Menkul Kıymetler Borsasında işlem gören ve bir yıldan fazla süreyle elde tutulan hisse senetleri ile sürekli olarak portföyünün en az % 51'i İstanbul Menkul Kıymetler Borsasında işlem gören hisse senetlerinden oluşan yatırım fonlarının bir yıldan fazla süreyle elde tutulan katılma belgelerinin elden çıkarılmasında ve hisse senetleri kâr paylarının hisse sahipleri adına tahsilinde bu fıkra hükümleri uygulanmaz. Tam mükellef kurumlara ait olup, İstanbul Menkul Kıymetler Borsasında işlem gören ve bir yıldan fazla süreyle elde tutulan hisse senetlerinin elden çıkarılmasından elde edilen gelirler için, Gelir Vergisi Kanununun Mükerrer 80 inci madde hükümleri uygulanmaz.\"",
+   "c) (7) numaralı fıkrasının ikinci cümlesinden sonra gelmek üzere aşağıdaki cümle eklenmiştir.",
+   "\"Söz konusu fıkra hükümleri uyarınca tevkifata tâbi tutulsun tutulmasın dar mükellef gerçek kişi veya kurumlarca Hazine tarafından yurt dışında ihraç edilen menkul kıymetlerden sağlanan kazanç ve iratlar için münferit veya özel beyanname verilmez.\"",
+   "ç) (8) numaralı fıkrasında yer alan parantez içi hükmü \"(borsa yatırım fonları ile konut finansman fonları ve varlık finansman fonları dahil)\" olarak değiştirilmiştir.",
+   "d) (14) numaralı fıkrasının ikinci cümlesinde yer alan \"2006 yılında\" ibaresi fıkra metninden çıkarılmıştır.",
+   "e) (16) numaralı fıkrasından sonra gelmek üzere aşağıdaki (17) numaralı fıkra eklenmiş ve müteakip fıkra numaraları buna göre teselsül ettirilmiştir.",
+   "\"17) Bakanlar Kurulu bu maddede yer alan oranları her bir kazanç ve irat türü ile bunları elde edenler itibarıyla, yatırım fonlarının katılma belgelerinin fona iade edilmesinden elde edilen kazançlar için fonun portföy yapısına göre, ayrı ayrı sıfıra kadar indirmeye veya % 15’e kadar artırmaya yetkilidir.\""
+  ]
+ },
+ "5615/10": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2007/04/20070404-2.htm",
+  "instruction": "193 sayılı Kanunun 92 nci maddesinde yer alan \"Mart ayının onbeşinci günü akşamına kadar,\" ibaresi \"Mart ayının başından yirmibeşinci günü akşamına kadar,\" olarak, \"Şubat ayının onbeşinci günü akşamına kadar,\" ibaresi \"Şubat ayının başından yirmibeşinci günü akşamına kadar,\" olarak, 98 inci maddesinde yer alan \"ertesi ayın yirminci günü akşamına kadar,\" ibaresi \"ertesi ayın yirmiüçüncü günü akşamına kadar,\" olarak, \"Ocak, Nisan, Temmuz ve Ekim aylarının yirminci günü akşamına kadar\" ibaresi \"Ocak, Nisan, Temmuz ve Ekim aylarının yirmiüçüncü günü akşamına kadar\" olarak, mükerrer 120 nci maddesinin ikinci fıkrasında yer alan \"geçici verginin beyan süresini üç aylık dönemi izleyen ikinci ayın onuncu,\" ibaresi \"geçici verginin beyan süresini üç aylık dönemi izleyen ikinci ayın ondördüncü,\" ve üçüncü fıkrasında yer alan \"dönemi izleyen ikinci ayın onuncu günü akşamına kadar\" ibaresi \"dönemi izleyen ikinci ayın ondördüncü günü akşamına kadar\" olarak, geçici 67 nci maddesinin (1) numaralı fıkrasının yedinci paragrafındaki \"dönemini izleyen ayın yirminci günü akşamına kadar\" ibaresi \"dönemini izleyen ayın yirmiüçüncü günü akşamına kadar\", (14) numaralı fıkrasında yer alan \"2006 yılında\" ibaresi \"31/12/2008 tarihine kadar\" olarak; ayrıca, 25/10/1984 tarihli ve 3065 sayılı Katma Değer Vergisi Kanununun 41 inci maddesinde yer alan \"yirminci günü\" ibaresi \"yirmidördüncü günü\" olarak değiştirilmiştir.",
+  "payload": []
+ },
+ "5766/8": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2008/06/20080606M1-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun;",
+  "payload": [
+   "a) 9 uncu maddesinin birinci fıkrasına (6) numaralı bentten sonra gelmek üzere aşağıdaki bent eklenmiş ve sonraki bentte yer alan \"1-6 numaralı\" ibaresi \"1-7 numaralı\" şeklinde değiştirilerek bent numarası buna göre teselsül ettirilmiştir.",
+   "7. Ticari işletmelere ait atıkları mutat olarak veya belli aralıklarla satın alanlar hariç olmak üzere, bir işyeri açmaksızın kendi nam ve hesabına münhasıran kapı kapı dolaşmak suretiyle her türlü hurda maddeyi toplayarak veya satın alarak bu malların ticaretini yapanlara veya tekrar işleyenlere satanlar;",
+   "b) 29 uncu maddesinin birinci fıkrasının (2) numaralı bendinde yer alan \"kanuni ve iş merkezi Türkiye’de bulunan müesseselerde uçuş maksadıyla görevlendirilenlere; uçuş hizmetleri, deniz altına dalış yapanlara dalış hizmetleri dolayısıyla yapılan aynı mahiyetteki ödemeler;\" ibaresi \"kanuni veya iş merkezi Türkiye’de bulunan müesseselerde uçuş maksadıyla görevlendirilen, hava aracının sevk ve idaresiyle görevli pilotlar ile uçuş esnasında uçak içinde hizmet veren yetkili sivil havacılık otoritesince sertifikalandırılmış personele; fiilen uçuş hizmeti, denizaltına dalış yapanlara fiilen dalış hizmetleri dolayısıyla yapılan aynı mahiyetteki ödemeler;\" şeklinde değiştirilmiştir.",
+   "c) 42 nci maddesinin ikinci fıkrasında yer alan \"Mart ayının onbeşinci günü akşamına kadar\" ibaresi \"Mart ayının başından yirmibeşinci günü akşamına kadar\" şeklinde değiştirilmiştir.",
+   "ç) Geçici 71 inci maddesinden sonra gelmek üzere aşağıdaki geçici maddeler eklenmiştir.",
+   "\"GEÇİCİ MADDE 72 – (1) 31/12/2017 tarihine kadar sporculara yapılan ücret ve ücret sayılan ödemelerden aşağıdaki oranlarda gelir vergisi tevkifatı yapılır.",
+   "a) Lig usulüne tabi spor dallarında;",
+   "1) En üst ligdekiler için % 15,",
+   "2) En üst altı ligdekiler için % 10,",
+   "3) Diğer liglerdekiler için % 5,",
+   "b) Lig usulüne tabi olmayan spor dallarındaki sporculara yapılan ödemeler ile milli sporculara uluslararası müsabakalara katılmaları karşılığında yapılan ödemelerden % 5.",
+   "(2) Bu ödemeler üzerinden 94 üncü madde kapsamında ayrıca tevkifat yapılmaz. Bu gelirler için yıllık beyanname verilmez, diğer gelirler dolayısıyla beyanname verilmesi halinde de bu gelirler beyannameye dahil edilmez.",
+   "(3) Bu maddenin yürürlüğe girdiği tarihten önce yapılmış olan ücret ve ücret sayılan ödemelerin vergilendirilmesinde 31/12/2007 tarihinde yürürlükte olan hükümler uygulanır.",
+   "(4) Bu maddenin uygulanmasına ilişkin usul ve esasları belirlemeye Maliye Bakanlığı yetkilidir.\""
+  ]
+ },
+ "6322/4": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2012/06/20120615-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 9 uncu maddesinin birinci fıkrasının (8) numaralı bendi aşağıdaki şekilde değiştirilmiş, fıkraya aşağıdaki bent ve maddeye son fıkrasından önce gelmek üzere aşağıdaki fıkra eklenmiştir.",
+  "payload": [
+   "“8. Bu Kanunun 47 nci maddesinde yazılı şartları haiz olanlardan kendi ürettikleri ürünleri satanlara münhasır olmak üzere el dokuma işleri, bakır işlemeciliği, çini ve çömlek yapımı, sedef kakma ve ahşap oyma işleri, kaşıkçılık, bastonculuk, semercilik, yazmacılık, yorgancılık, keçecilik, lüle ve oltu taşı işçiliği, çarıkçılık, yemenicilik, oyacılık ve bunlar gibi geleneksel, kültürel, sanatsal değeri olan ve kaybolmaya yüz tutan meslek kollarında faaliyette bulunanlar;”",
+   "“9. Yukarıdaki bentlerde sözü edilen işlere benzerlik gösterdikleri Maliye Bakanlığınca kabul edilen ticaret ve sanat işleri ile iştigal edenler.”",
+   "“Esnaf muaflığına ilişkin şartları taşıyanlara talepleri halinde vergi dairesince Esnaf Vergi Muafiyeti Belgesi verilir. Bu belgenin şekil ve muhtevasının tayin ve tespiti ile iptali ve uygulamaya ilişkin usul ve esasları belirlemeye Maliye Bakanlığı yetkilidir.”"
+  ]
+ },
+ "6322/11": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2012/06/20120615-1.htm",
+  "instruction": "193 sayılı Kanunun geçici 67 nci maddesinin (1) numaralı fıkrasının altıncı paragrafı ile (2) numaralı fıkrasında yer alan “Hazine” ibareleri “Hazine ve 4749 sayılı Kanuna göre kurulan varlık kiralama şirketleri”, (7) numaralı fıkrasında yer alan “Hazine ve tam mükellef kurumlar” ibaresi “Hazine, 4749 sayılı Kanuna göre kurulan varlık kiralama şirketleri ve tam mükellef kurumlar” şeklinde değiştirilmiş, (17) numaralı fıkrasında yer alan “bunları elde edenler” ibaresinden önce gelmek üzere “bunların vadesi ve”, “yatırım fonlarının katılma belgelerinin fona iade edilmesinden” ibaresinden sonra gelmek üzere “veya diğer şekillerde elden çıkarılmasından” ibareleri eklenmiştir.",
+  "payload": []
+ },
+ "7338/5": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2021/10/20211026-1.htm",
+  "instruction": "193 sayılı Kanunun 89 uncu maddesinin birinci fıkrasının (3) numaralı bendinde yer alan “veya basit usulde vergilendirilen” ibaresi madde metninden çıkarılmış ve (15) numaralı bendi yürürlükten kaldırılmıştır.",
+  "payload": []
+ },
+ "7491/11": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2023/12/20231228-10.htm",
+  "instruction": "193 sayılı Kanunun 94 üncü maddesinin sekizinci fıkrasına “– Tam ve dar mükellefler ile gerçek ve tüzel kişiler itibariyle,” paragrafından sonra gelmek üzere aşağıdaki paragraf eklenmiştir.",
+  "payload": [
+   "“– 3 numaralı bent kapsamında ödenen istihkak bedellerinden, işin; kamu kurum ve kuruluşları ile bunlara bağlı, ilgili ve ilişkili kurumlara taahhüt edilip edilmemesine ve bunların genel veya özel bütçeli idare kapsamında olup olmamasına, süresine, nevine ve yüklenicinin; ana yüklenici, alt yüklenici ya da tam ve dar mükellef olmasına göre ayrı ayrı veya birlikte,”"
+  ]
+ },
+ "6645/8": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2015/04/20150423-3.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 32 nci maddesinin ikinci fıkrasında yer alan “ilk iki çocuk için %7,5” ibaresinden sonra gelmek üzere “, üçüncü çocuk için %10,” ibaresi eklenmiştir.",
+  "payload": []
+ },
+ "5035/14": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2004/01/20040102M1.htm",
+  "instruction": "193 sayılı Kanunun 89 uncu maddesinin birinci fıkrasının (2) numaralı bendinin ikinci alt bendinden sonra gelmek üzere aşağıdaki alt bentler eklenmiştir.",
+  "payload": [
+   "Vakıflar Genel Müdürlüğünün idaresinde ve denetiminde bulunan mazbut vakıflar ile belediyeler dahil diğer kamu kurum ve kuruluşları adına kayıtlı olan, Kültür ve Tabiat Varlıklarını Koruma Kurulu nezdinde eski eser tescilli abide eserlerin; bakımı, onarımı, restore edilmesi ve yaşatılması amacıyla abide eserin kayıtlı olduğu kurum ve kuruluşlara yapılan bağış ve yardımların tamamı yıllık beyanname ile bildirilen gelirden indirilir.",
+   "Fakirlere yardım amacıyla gıda bankacılığı faaliyetinde bulunan dernek ve vakıflara Maliye Bakanlığınca belirlenen usul ve esaslar çerçevesinde bağışlanan gıda maddelerinin maliyet bedelinin tamamı, yıllık beyanname ile bildirilen gelirden indirilir."
+  ]
+ },
+ "5661/3": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2007/05/20070525-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 53 üncü maddesinin son fıkrasında yer alan \"ve Ziraat Odasından, bulunmayan yerlerde Tarım İl veya İlçe Müdürlüklerinden çiftçi belgesini almayan\" ibaresi ile 15/5/1957 tarihli ve 6964 sayılı Ziraat Odaları ve Ziraat Odaları Birliği Kanununun ek 2 nci maddesi yürürlükten kaldırılmıştır.",
+  "payload": [
+   "Yürürlük"
+  ]
+ },
+ "7491/9": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2023/12/20231228-10.htm",
+  "instruction": "193 sayılı Kanunun 40 ıncı maddesinin birinci fıkrasının (1) numaralı bendinde yer alan birinci parantez içi hüküm yürürlükten kaldırılmıştır.",
+  "payload": []
+ },
+ "7349/3/32": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2021/12/20211225-2.htm",
+  "instruction": "193 sayılı Kanunun 32 nci maddesi, 64 üncü maddesi, 108 inci maddesinin birinci fıkrasının (3) numaralı bendi, 109 uncu maddesinin birinci fıkrasının (2) numaralı bendi ile ikinci ve üçüncü fıkraları, 110 uncu maddesi, 118 inci maddesi ve 122 nci maddesi yürürlükten kaldırılmıştır.",
+  "payload": []
+ },
+ "7194/18": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2019/12/20191207-1.htm",
+  "instruction": "193 sayılı Kanunun mükerrer 121 inci maddesinin ikinci fıkrasının (1) ve (3) numaralı bentleri ile beşinci fıkrası aşağıdaki şekilde değiştirilmiştir.",
+  "payload": [
+   "“1. İndirimin hesaplanacağı beyannamenin ait olduğu yıl ile bu yıldan önceki son iki yıla ait vergi beyannamelerinin kanuni süresinde verilmiş (Kanuni süresinde verilen bir beyannameye ilişkin olarak kanuni süresinden sonra düzeltme amacıyla veya pişmanlıkla verilen beyannameler bu şartın ihlali sayılmaz.) olması,”",
+   "“3. İndirimin hesaplanacağı beyannamenin verildiği tarih itibarıyla, (1) numaralı bent kapsamındaki vergi beyannameleri üzerine tahakkuk eden vergilerin ödenmiş olması (Ödemenin, ilgili mevzuatı gereği istenilen bilgi ve belgelerin tam ve eksiksiz olarak ibraz edilmiş olması koşuluyla, vergi kanunları gereği doğan iade alacaklarından mahsuben yapılmış olması ve indirimden yararlanıldıktan sonra söz konusu iade alacağı tutarının mahsuben ödemesi talep edilen vergi borcu tutarının altına düşmesi hâlinde, eksik ödenmiş duruma gelen vergilerin mahsuben ödenmek istenilen tutarın %10’unu aşmaması kaydıyla, eksik ödenmiş vergiler dolayısıyla veya vergi kanunları gereğince, tecil edilerek belirlenen şartların gerçekleşmesine bağlı olarak terkin edilecek vergilerin, şartların sağlanamaması hâlinde kanunlarında belirlenen tecil süresinin sonunu takip eden onbeşinci günün bitimine kadar ödenmesi şartıyla, bu şart ihlal edilmiş sayılmaz.), ayrıca, vergi aslı (vergi cezaları ile fer’i alacaklar dâhil) 1.000 Türk lirasının üzerinde vadesi geçmiş borcunun bulunmaması,”",
+   "“Bu maddede geçen vergi beyannameleri ibaresi, yıllık gelir vergisi ve kurumlar vergisi beyannameleri, geçici vergi beyannameleri, muhtasar, muhtasar ve prim hizmet beyannameleri ile Hazine ve Maliye Bakanlığına bağlı vergi dairelerine verilmesi gereken katma değer vergisi ve özel tüketim vergisi beyannamelerini; vergi ibaresi, anılan Bakanlığa bağlı vergi dairelerine verilmesi gereken beyannameler üzerine tahakkuk eden vergileri ifade eder.”"
+  ]
+ },
+ "7566/3": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2025/12/20251219-1.htm",
+  "instruction": "193 sayılı Kanunun geçici 67 nci maddesinin (1) numaralı fıkrasının altıncı paragrafı ile (8) ve (17) numaralı fıkralarında yer alan “katılma belgelerinin” ibareleri “katılma paylarının” şeklinde, (1) numaralı fıkrasının altıncı paragrafında yer alan “İstanbul Menkul Kıymetler Borsasında” ibareleri “Borsa İstanbul’da” şeklinde değiştirilmiş ve aynı paragrafta yer alan mevcut “sürekli olarak portföyünün en az %51’i İstanbul Menkul Kıymetler Borsasında işlem gören hisse senetlerinden oluşan yatırım fonlarının” ibaresinden sonra gelmek üzere aşağıdaki parantez içi hüküm eklenmiştir.",
+  "payload": [
+   "“(Katılma payları sadece nitelikli yatırımcılara satılabilen, Türkiye Elektronik Fon Alım Satım Platformu’nda işlem görmeyen ve fon portföyüne alınacak varlık ve işlemlere ilişkin herhangi bir oransal sınırlamaya tabi olmayan yatırım fonları hariç)”"
+  ]
+ },
+ "7578/1/89": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2026/05/20260501-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 89 uncu maddesinin birinci fıkrasının (6) numaralı bendine “faaliyetinde bulunan” ibaresinden sonra gelmek üzere “Darülacezeye,” ibaresi ve (11) numaralı bendine “işletmeleri hariç,” ibaresinden sonra gelmek üzere “Darülacezeye,” ibaresi eklenmiştir.",
+  "payload": []
+ },
+ "5838/8": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2009/02/20090228M1-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun; 119 uncu maddesine aşağıdaki fıkra, geçici 74 üncü maddesinden sonra gelmek üzere aşağıdaki geçici madde eklenmiştir.",
+  "payload": [
+   "“Maliye Bakanlığı, 94 üncü maddeye göre tevkifat yapacaklardan on ve daha az hizmet erbabı çalıştıranlar ile hizmet erbabı çalıştırmayanlara ilişkin olarak beyanname verme süresinden itibaren üç ayı geçmeyecek şekilde, ödeme zamanı belirlemeye yetkilidir.”",
+   "“GEÇİCİ MADDE 75 – 31/12/2013 tarihine kadar, 28/2/2008 tarihli ve 5746 sayılı Araştırma ve Geliştirme Faaliyetlerinin Desteklenmesi Hakkında Kanunun 3 üncü maddesinin ikinci fıkrasında belirtilen Ar-Ge ve destek personelinin, bu çalışmaları karşılığında elde ettikleri ücretleri üzerinden asgari geçim indirimi uygulandıktan sonra hesaplanan gelir vergisinin; doktoralı olanlar için yüzde 90’ı, diğerleri için yüzde 80’i verilecek muhtasar beyanname üzerinden tahakkuk eden vergiden indirilmek suretiyle terkin edilir. Bu süre içerisinde, anılan maddenin bu maddeye aykırı olan hükmü uygulanmaz.”"
+  ]
+ },
+ "7491/7": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2023/12/20231228-10.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun mükerrer 20/B maddesinin başlığı ile birinci fıkrası aşağıdaki şekilde değiştirilmiştir.",
+  "payload": [
+   "“Sosyal içerik üreticiliği, internet ve benzeri elektronik ortamlar üzerinden sunulan hizmetler ile mobil cihazlar için uygulama geliştiriciliğinde kazanç istisnası”",
+   "“İnternet ve benzeri elektronik ortamlar üzerinden metin, görüntü, ses, video gibi içerikler paylaşan sosyal içerik üreticilerinin bu faaliyetlerinden elde ettikleri kazançlar ve bu ortamlar üzerinden verilen bireysel kurs, eğitim, veri işleme ve geliştirme, ürün tanıtımı gibi hizmetlerden sağlanan kazançlar ile akıllı telefon veya tablet gibi mobil cihazlar için uygulama geliştirenlerin elektronik uygulama paylaşım ve satış platformları üzerinden elde ettikleri kazançlar gelir vergisinden müstesnadır.”"
+  ]
+ },
+ "6728/11": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2016/08/20160809-22.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 22 nci maddesinin (1) numaralı fıkrası aşağıdaki şekilde değiştirilmiş, maddeye aşağıdaki (2) numaralı fıkra eklenmiş ve mevcut (2) numaralı fıkra (3) numaralı fıkra olarak teselsül ettirilmiştir.",
+  "payload": [
+   "“1. Sigorta süresi en az on yıl veya ömür boyu olan tek primli yıllık gelir sigortalarından yapılan ödemelerin tamamı gelir vergisinden müstesnadır. Şu kadar ki; bu istisnadan yararlananların (bu maddenin (2) numaralı fıkrası kapsamında sigorta yaptıranlar dâhil) vefat, maluliyet veya tasfiye gibi zorunlu nedenler hariç olmak üzere, on yıl tamamlanmadan tek primli yıllık gelir sigortalarından ayrılmaları hâlinde, ayrılma tarihinde yapılan ödemelerin içerdiği irat tutarı üzerinden, 94 üncü maddenin birinci fıkrasının (15) numaralı bendinin (a) alt bendine göre tevkifat yapılır. İrat tutarlarının tespitinde 75 inci maddede yer alan hükümlere uyulur.”",
+   "“2. 75 inci maddenin ikinci fıkrasının (15) numaralı bendinin (b) alt bendi ile aynı fıkranın (16) numaralı bendinin (c) alt bendi kapsamında yapılan ödemeleri, sigorta süresi on yıl ve üzeri veya ömür boyu olan tek primli yıllık gelir sigortalarına yatıranların, bu sigorta için yatırdıkları kısma tekabül eden ödemelerin içerdiği irat tutarları (4632 sayılı Kanun kapsamında bireysel emeklilik hesabına yapılan Devlet katkılarının ödemeye konu olan kısımlarına isabet eden irat tutarı dâhil) gelir vergisinden müstesnadır. İstisna edilen tutarlar üzerinden 94 üncü maddenin birinci fıkrasının (15) ve (16) numaralı bentlerine göre tevkifat yapılmaz. Şu kadar ki; bu istisnadan yararlananların vefat, maluliyet veya tasfiye gibi zorunlu nedenler hariç olmak üzere, ödeme alarak on yıl tamamlanmadan tek primli yıllık gelir sigortalarından ayrılmaları hâlinde, bu fıkraya göre istisna edilen tutarlar üzerinden, ödemenin kaynağına göre 94 üncü maddenin birinci fıkrasının (15) numaralı bendinin (a) alt bendi veya aynı fıkranın (16) numaralı bendinin (b) alt bendi için belirlenen oranlar dikkate alınarak tevkifat yapılır. İrat tutarlarının tespitinde 75 inci maddede yer alan hükümlere uyulur.”"
+  ]
+ },
+ "5035/48/Geçici": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2004/01/20040102M1.htm",
+  "instruction": "193 sayılı Gelir Vergisi Kanununun Geçici 55 inci maddesinde yer alan \"1.1.1999 - 31.12.2003 tarihleri arasında\" ibaresi \"1.1.1999 - 31.12.2004 tarihleri arasında\" şeklinde değiştirilmiştir",
+  "payload": []
+ },
+ "5228/59/üçüncü": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2004/07/20040731.htm",
+  "instruction": "193 sayılı Kanunun 19 uncu maddesinin (4) numaralı fıkrasının üçüncü bendinde yer alan \"Gayri maddi haklar\" ibaresi \"Gayri maddi haklar ile ekonomik ömrü 5 yıldan daha kısa olan özel maliyet bedelleri\" şeklinde değiştirilmiştir",
+  "payload": []
+ }
+}

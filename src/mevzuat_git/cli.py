@@ -71,6 +71,31 @@ def parse(
 
 
 @app.command()
+def amendments(
+    law: int = typer.Argument(..., help="Kanun numarası, ör. 193"),
+    cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, help="Raw response cache"),
+    out_dir: Path = typer.Option(PROCESSED_DIR, help="Where <law>_ops.json goes"),
+    offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
+) -> None:
+    """Parse the amending acts' RG texts into operations (Faz 2)."""
+    from mevzuat_git.amendments import load_list, parse_all
+
+    alist = load_list(out_dir / f"{law}_amendments.json")
+    with Fetcher(cache_dir=cache_dir, offline=offline) as f:
+        ops = parse_all(f, alist)
+    out = out_dir / f"{law}_ops.json"
+    out.write_text(ops.model_dump_json(indent=1, exclude_defaults=True) + "\n")
+    sentences = sum(a.sentences for a in ops.acts)
+    unparsed = sum(len(a.unparsed) for a in ops.acts)
+    n_ops = len(ops.ops())
+    typer.echo(f"{out}: {len(ops.acts)} acts, {sentences} sentences naming law {law}, "
+               f"{sentences - unparsed} parsed into {n_ops} operations")
+    for a in ops.acts:
+        if a.error:
+            typer.echo(f"  {a.act}: {a.error}")
+
+
+@app.command()
 def replay(law: int) -> None:
     """Apply parsed amendments in order and diff against consolidated text (Faz 3)."""
     raise NotImplementedError("Faz 3: see docs/ROADMAP.md")
