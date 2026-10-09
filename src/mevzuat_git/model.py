@@ -105,6 +105,7 @@ class OpType(str, Enum):
     REPLACE_NODE = "replace_node"  # ... aşağıdaki şekilde değiştirilmiştir
     INSERT_NODE = "insert_node"  # ... sonra gelmek üzere aşağıdaki fıkra eklenmiştir
     REPEAL_NODE = "repeal_node"  # ... yürürlükten kaldırılmıştır
+    RELABEL_NODE = "relabel_node"  # ... eklenen bendin “16.” olan numarası “17.” olarak
 
 
 class AmendmentOp(BaseModel):

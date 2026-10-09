@@ -92,6 +92,10 @@ olabilir. Faz 2'de bu sınırın doğru bulunması kritik.
 - **Parantez içi hüküm**: `(8) numaralı bendinin parantez içi hükmü aşağıdaki şekilde
   değiştirilmiş` (7420 MADDE 2). **Model notu:** parantez içi hüküm, düğüm değil metin
   aralığıdır.
+- **Yeni metin cümlenin içinde**: `(4) numaralı fıkrası "Bankalar arası ... yapılmaz."
+  şeklinde değiştirilmiştir`, `(10) numaralı fıkrasından sonra gelmek üzere "11) Dar
+  mükellefler ..." şeklinde bir fıkra eklenmiş` (5436 MADDE 14). Numarasız verilen yeni
+  fıkra eskisinin numarasını alır.
 
 ### 3.2 Mülga düğümü yeniden düzenleme → `replace_node` (+ `repealed=False`)
 
@@ -147,6 +151,17 @@ Açık biçim doğrulama için kullanılabilir: hesaplanan yeni etiket yazılanl
 
 Cümle düzeyinde: `ikinci fıkrasının üçüncü cümlesi yürürlükten kaldırılmış` (7338 MADDE 4).
 Mülga madde konsolide metinde numarasıyla kalır (`Madde 19 – (Mülga: …)`); teselsül yapılmaz.
+
+### 3.6 Numara değiştirme → `relabel_node`
+
+> 6353 | MADDE 65 – ... 75 inci maddesinin ikinci fıkrasına 31/5/2012 tarihli ve 6322
+> sayılı Kanunun 8 inci maddesi ile eklenen bendin “16.” olan numarası “17.” olarak
+> değiştirilmiştir.
+
+6322 ve 6327 aynı fıkraya ayrı ayrı "16." bendini eklemişti. Numarası değişen düğüm,
+kardeşleri arasında yeni numarasının yerine geçer. "6322 sayılı Kanunun 8 inci maddesi ile
+eklenen" kimin eklediğini söyler, hedef değildir. Aynı cümledeki "bu bendin" yeni numaralı
+bendi gösterir.
 
 ## 4. Bileşik cümleler
 

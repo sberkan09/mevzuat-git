@@ -324,6 +324,11 @@ def test_find_all_ignores_spacing_and_circumflex(text, phrase):
     (("indirebilirler. (Ek cümleler: 23/7/2010-6009/5 md.; İptal birinci cümle: Anayasa "
       "Mahkemesinin 9/2/2012 tarihli ve E.2010/93, K.2012/20 sayılı kararıyla) Kalan kazanç"),
      "indirebilirler. Kalan kazanç"),
+    # mükerrer 123: mevzuat.gov.tr "9/10,19, 21", 4842/16 "9/10, 19, 21"; not "1,5".
+    ("Bu Kanunun 9/10,19, 21, 23/8", "Bu Kanunun 9/10, 19, 21, 23/8"),
+    ("% 1,5 oranında", "%1,5 oranında"),
+    # md. 75/2 bent 16 (c): 6327/6 "dahil.).", mevzuat.gov.tr "dahil.)".
+    ("isabet eden irat tutarı dahil.).", "isabet eden irat tutarı dahil.)"),
 ])
 def test_norm(raw, normal):
     assert norm(raw) == normal
@@ -607,3 +612,39 @@ def test_annulments_replayed_with_the_acts_around_them():
     assert not any(r.replay_error for r in rep.ops)
     (art,) = rep.articles
     assert art.status == "match"
+
+
+def _md75_f2(*bents: tuple[str, str]) -> Law:
+    f2 = Node(level=Level.FIKRA, children=[Node(level=Level.BENT, label=lb, text=t)
+                                           for lb, t in bents])
+    return Law(number=193, name="", body=[Node(level=Level.MADDE, id="75", children=[
+        Node(level=Level.FIKRA, text="..."), f2])])
+
+
+def test_renumbered_bent_moves_to_its_place():
+    # 6322/8 and 6327/6 each added a bent "16." to md. 75/2; 6353/65 numbered the first
+    # 17, and mevzuat.gov.tr lists it after the other.
+    (op,) = am.parse_instruction(
+        "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 75 inci maddesinin ikinci "
+        "fıkrasına 31/5/2012 tarihli ve 6322 sayılı Kanunun 8 inci maddesi ile eklenen bendin "
+        "“16.” olan numarası “17.” olarak değiştirilmiştir", [], 193)
+    law = _md75_f2(("15.", "Tüzel kişiliği haiz ..."), ("16.", "Yukarıdaki bentlerde ..."),
+                   ("16.", "Bireysel emeklilik sisteminden;"))
+    apply(law, op)
+    bents = law.article("75").children[1].children
+    assert [(b.label, b.text[:9]) for b in bents] == [
+        ("15.", "Tüzel kiş"), ("16.", "Bireysel "), ("17.", "Yukarıdak")]
+    assert unapply(law, op).status == "ok"
+    assert [(b.label, b.text[:9]) for b in bents] == [
+        ("15.", "Tüzel kiş"), ("16.", "Yukarıdak"), ("16.", "Bireysel ")]
+    with pytest.raises(ReplayError):
+        apply(_md75_f2(("16.", "x"), ("18.", "y")), op.model_copy(
+            update={"target": Addr(madde="75", fikra=2, bent="18")}))
+
+
+def test_renumbered_bent_without_numbered_siblings_stays():
+    op = AmendmentOp(op=OpType.RELABEL_NODE, target=Addr(madde="75", fikra=2, bent="16"),
+                     old="16.", new="17.", source_sentence="")
+    law = _md75_f2(("", "Giriş"), ("16.", "x"))
+    apply(law, op)
+    assert [b.label for b in law.article("75").children[1].children] == ["", "17."]

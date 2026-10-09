@@ -71,7 +71,7 @@ mevzuat.gov.tr yazımıyla.
 
 101 commit üretiliyor: başlangıç metni, değiştiren kanunlar için 95 ve Anayasa
 Mahkemesi iptal kararları için 4 commit (2001-07-03 .. 2026-07-01) ve eşitleme commit'i.
-Eşitleme commit'inde 8 maddenin içeriği ayrılıyor (bkz. `docs/replay.md`). RG metni
+Eşitleme commit'inde 6 maddenin içeriği ayrılıyor (bkz. `docs/replay.md`). RG metni
 taranmış PDF olan KHK 700, 6663 ve 6676'nın commit mesajları, işlemlerin konsolide
 metnin dipnotlarından okunduğunu belirtir.
 

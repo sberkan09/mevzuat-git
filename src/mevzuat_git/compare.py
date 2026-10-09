@@ -68,6 +68,12 @@ def norm(text: str) -> str:
     t = re.sub(r"\(\s+", "(", t)
     t = re.sub(r"%\s+(?=\d)", "%", t)  # "% 15'ini" and "%15’ini" (7061/14)
     t = re.sub(r"(?<=\d)\s*-\s*(?=\d)", "-", t)  # "1.1.1999 - 31.12.2004" (5035/48)
+    # Article lists: "9/10,19, 21" (mükerrer 123) and "9/10, 19, 21" (4842/16); a decimal
+    # comma ("1,5") is left alone.
+    t = re.sub(r"(?<=\d/\d)(\d*),(?=\d)", r"\1, ", t)
+    # A parenthesis that ends a sentence: 6327/6 "... irat tutarı dahil.).", mevzuat.gov.tr
+    # "... dahil.)".
+    t = re.sub(r"\.\)\.(?=\s|$)", ".)", t)
     # Unlinked footnote numbers glued to the end of a sentence: "yararlanılır.218".
     t = _FOOTNOTE.sub("", t)
     return t

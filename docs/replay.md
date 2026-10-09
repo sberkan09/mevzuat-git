@@ -61,8 +61,8 @@ Bir madde, replay sonucu konsolide metinle normalizasyondan sonra birebir aynıy
 **eşleşir**. Geri getirilemeyen bir metne dayanıyorsa **doğrulanamaz** sayılır ve
 metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 
-GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 97'si eşleşiyor, 7'si farklı,
-5'i doğrulanamıyor. **Oran: %93,3.**
+GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 6'sı farklı,
+5'i doğrulanamıyor. **Oran: %94,2.**
 
 Yeri işaretlenmemiş bir ibare çıkarma geri sarmada `lossy` olur, ama ileri oynatmada
 ibare yeniden bulunup çıkarıldıysa (onu daha eski bir kanunun metni geri getirmişse)
@@ -142,8 +142,15 @@ iptali, 6009/4 aynı cümleyi daha önce yeniden düzenlediği için metinde bul
 
 ## Farkların başlıca nedenleri
 
-- **Konsolide metnin kendi yazımı.** Örneğin mükerrer 123'te "9/10,19" virgülden sonra
-  boşluksuz yazılmış; karşılaştırma virgül çevresindeki boşluğu henüz birleştirmiyor.
+- **Konsolide metnin kendisi.** md. 31'de 6462/1 "sakatlık" ibaresini "engellilik"
+  yapar, metin "engelli dereceleri" der. md. 94/4'te mevzuat.gov.tr 4842/12'nin
+  "tevkifatı" kelimesini "tevfikatı" yazmış. md. 75/2 (7)'de 4761/1'in parantez içi
+  hükmü metne hiç işlenmemiş. Bunlar kaynağın hatasıdır; düzeltilmez.
+- **Metni resim olan kanunlar.** md. 103'ün tarifesi yalnız GIF olarak var; geçici 59'u
+  değiştiren 4783'ün RG metni taranmış GIF'lerden ibaret. Bunlar bilinen boşluklardır.
+- **Karışık numaralama.** 5436/14 geçici 67'ye teselsüllü bir fıkra ekler; sonraki
+  bentlerinden ikisi ((11) ve (13)) eski numaraları, diğer ikisi ((14)'ten sonra, (17))
+  yeni numaraları kullanır. Sırayla uygulandığında ilk ikisi yanlış fıkraya düşer.
 - **Geri sarmada izi bulunamayan işlemler.** İşlemin etkisi bugünkü metinde yok: ya
   ayrıştırma yanlış, ya da RG metni olmayan (2000 öncesi ya da dipnotsuz) bir değişiklik
   aynı yeri sonradan değiştirmiş.
