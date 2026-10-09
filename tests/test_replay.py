@@ -14,6 +14,7 @@ from mevzuat_git.replay import (
     UNKNOWN,
     ReplayError,
     _bump,
+    _live,
     _remove_span,
     _renumber,
     apply,
@@ -421,8 +422,16 @@ def test_fikra_ordinal_skips_repealed_fikras():
     fikras[2].repealed = True
     at = Addr(madde="38", fikra=3)
     assert locate(law, at).node is fikras[3]
-    # Undoing a repeal ("Mülga üçüncü fıkra") means the repealed one.
+    # Undoing a repeal ("Mülga üçüncü fıkra") means the repealed one, and so does an act
+    # that says so: "mülga ikinci fıkrasından sonra gelmek üzere" (6552/34 on 5502).
     assert locate(law, at, live=False).node is fikras[2]
+    op = AmendmentOp(op=OpType.INSERT_NODE, target=at, position="after",
+                     source_sentence="38 inci maddesinin mülga üçüncü fıkrasından sonra")
+    assert not _live(op)
+
+
+def test_dash_at_the_edge_of_an_ibare_keeps_the_spaces_around_it():
+    assert find_all("gelir – Tam mükellef", "– Tam") == [(6, 11)]
 
 
 def test_replacement_does_not_run_into_the_next_word():
@@ -438,6 +447,11 @@ def test_replacement_does_not_run_into_the_next_word():
     assert law.article("123").children[0].text == (
         "Bu Kanunun 19, 21, 23/8, 31, 47, 48, mükerrer 80, 82 ve 86 ncı maddeleri ile 89 uncu "
         "maddesinin birinci fıkrasının (15) numaralı bendinde yer alan maktu had ve tutarlar")
+    # An ibare that ends inside a word keeps the word whole: 700/45 on md. 89/1-4.
+    law = _article_law("89", "Bakanlar Kurulunca belirlenen yardım kampanyalarına")
+    apply(law, AmendmentOp(op=OpType.REPLACE_PHRASE, target=Addr(madde="89", fikra=1),
+                           old="Bakanlar Kurulu", new="Cumhurbaşkanı", source_sentence=""))
+    assert law.article("89").children[0].text.startswith("Cumhurbaşkanınca belirlenen")
 
 
 def test_deleted_ibare_goes_back_into_its_mark():

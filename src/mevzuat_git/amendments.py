@@ -300,13 +300,20 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
         # Numbered fıkras that each amend a law of their own: "MADDE 32 – (1) 4447 sayılı
         # ... değiştirilmiştir.", ..., "(5) 193 sayılı Gelir Vergisi Kanununun 99 uncu
         # maddesinde yer alan ..." (5838).
-        out, n, balance = [], 1, 0
+        # A fıkra that does not start with a law is the act's own provision, not an
+        # amendment: it and its lines are left out.
+        out, n, balance, cur = [], 1, 0, None
         for line in lines:
-            if balance <= 0 and re.match(rf"\({n}\)\s", line):
-                out.append(ActArticle(number=a.number, instruction=line))
+            if balance <= 0 and (m := re.match(rf"\({n}\)\s*", line)):
+                cur = None
+                if re.match(r"(?:" + mg.DATE_RE + r"\s+tarihli\s+ve\s+)?\d+\s+sayılı",
+                            line[m.end():]):
+                    cur = ActArticle(number=a.number, instruction=line)
+                    out.append(cur)
                 n, balance = n + 1, 0
             else:
-                out[-1].payload.append(line)
+                if cur is not None:
+                    cur.payload.append(line)
                 balance += _quote_balance(line)
         if len(out) > 1:
             return out

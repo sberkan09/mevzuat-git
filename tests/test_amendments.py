@@ -554,3 +554,15 @@ def test_insert_phrase_series_with_ibaresi_between_pairs():
     assert [(o.anchor, o.new) for o in ops] == [
         ("23/8,", "23/10,"), ("31,", "40/1, 40/7,"), ("48,", "68,")]
     assert {str(o.target) for o in ops} == {"md.mukerrer-123/f2"}
+
+
+def test_numbered_fikras_of_the_act_own_are_not_amendments():
+    # 7440/10 (2): the act's own rule, which only mentions 193 sayılı Kanun.
+    a = am.ActArticle("10", (
+        "(1) Hazine ve Maliye Bakanlığına bağlı tahsil dairelerince 6183 sayılı Kanuna göre "
+        "takip edilen alacaklardan ... tahsilinden vazgeçilir."), [(
+        "(2) Bu Kanunun 3 üncü ve 4 üncü maddelerine göre yapılandırılarak kesinleşen "
+        "tarhiyatlar, yapılandırmanın ihlal edilmemesi şartıyla 193 sayılı Kanunun mükerrer "
+        "121 inci maddesinin ikinci fıkrasının (2) numaralı bendi kapsamında "
+        "değerlendirilmez.")])
+    assert am.expand_list(a) is None

@@ -414,7 +414,7 @@ def _is_heading_over_title(bs: list[Block], i: int) -> bool:
     t = bs[i].text
     return (i == 0 or bs[i - 1].blank) and i + 1 < len(bs) and not bs[i + 1].blank \
         and bs[i + 1].table is None and len(t) <= 60 and not ARTICLE_RE.match(t) \
-        and not ITEM_RE.match(t) and _is_title(bs, i + 1)
+        and not ITEM_RE.match(t) and not t.endswith((".", ";", ",")) and _is_title(bs, i + 1)
 
 
 def build_tree(html: str, number: int) -> Law:
