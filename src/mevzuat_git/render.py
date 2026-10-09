@@ -52,8 +52,7 @@ def _render(n: Node, notes: bool) -> list[str]:
         else:
             out.append(f"{hashes} {n.title or ''}")
     elif n.level is Level.MADDE:
-        head = n.label + " –"
-        out.append("#### " + _join(head, n.title or ""))
+        out.append("#### " + _join(n.label, n.title or ""))
         if (notes and n.notes) or n.text:
             out.append(escape(_join(" ".join(n.notes) if notes else "", n.text)))
     elif n.level is Level.TABLO:

@@ -6,7 +6,7 @@ import pytest
 
 from mevzuat_git.model import Level
 from mevzuat_git.render import escape, to_markdown
-from mevzuat_git.tree import build_tree, split_markers
+from mevzuat_git.tree import ITEM_RE, _follows, _is_repeal, build_tree, split_markers
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -22,8 +22,9 @@ def shape(node):
 
 def test_articles_in_order(law):
     assert [a.id for a in law.articles()] == [
-        "1", "2", "3", "4", "5", "6", "7", "8", "10", "11", "47", "48", "49", "102", "103",
-        "104", "105", "mukerrer-123", "124", "gecici-1", "gecici-2", "gecici-3",
+        "1", "2", "3", "4", "5", "6", "7", "8", "10", "11", "47", "48", "49", "94", "102",
+        "103", "104", "105", "mukerrer-123", "124", "gecici-1", "gecici-2", "gecici-3",
+        "gecici-57", "gecici-58", "gecici-59", "gecici-60", "gecici-61", "gecici-62",
         "gecici-70", "gecici-71", "gecici-72", "gecici-73",
     ]
 
@@ -136,3 +137,60 @@ def test_full_gvk_when_cached():
     assert {"1", "mukerrer-20/D", "103", "gecici-94", "126"} <= set(ids)
     assert [n.label for n in law.body] == ["BİRİNCİ KISIM", "İKİNCİ KISIM", "ÜÇÜNCÜ KISIM",
                                            "DÖRDÜNCÜ KISIM", "BEŞİNCİ KISIM"]
+
+
+def test_item_opening_with_sub_item(law):
+    # "6. a) Dağıtılsın ..." and "b) (Değişik: ...) i) Tam mükellef ..." (md. 94).
+    b6 = law.article("94").children[0].children[5]
+    assert (b6.label, b6.text) == ("6.", "")
+    assert shape(b6) == [("alt_bent", "a)"), ("alt_bent", "b)"), ("alt_bent", "c)")]
+    assert shape(b6.children[0]) == [("alt_bent", "i)"), ("alt_bent", "ii)")]
+    # "(a), (c) ve (d) bentlerinde ..." is a reference, not a label.
+    assert b6.children[0].children[0].text.startswith("(a), (c) ve (d) bentlerinde")
+    b = b6.children[1]
+    assert b.notes == ["(Değişik: 9/4/2003-4842/12 md.)"]
+    assert [c.label for c in b.children] == ["i)", "ii)", "iii)"]
+
+
+def test_punctuation_typo_keeps_the_list(law):
+    # md. 94: "8." is followed by "9)"; geçici 58: "1)" by "2-a)".
+    bents = law.article("94").children[0].children
+    assert [c.label for c in bents][7:10] == ["8.", "9)", "10."]
+    assert all(c.level is Level.BENT for c in bents)
+    g58 = law.article("gecici-58").children[0]
+    assert [c.label for c in g58.children][:3] == ["1)", "2-", "3)"]
+
+
+def test_items_continue_across_paragraphs(law):
+    # Geçici 58: "a) ...", five unlabelled lines (one with its own "1. 2. 3."), "Liradır.",
+    # then "b)": the lines belong to "a)" and "b)" continues the list.
+    two = law.article("gecici-58").children[0].children[1]
+    assert [c.label for c in two.children] == [f"{x})" for x in "abcdefghijk"]
+    assert all(c.level is Level.ALT_BENT for c in two.children)  # i) after h) is a letter
+
+
+def test_iptal_is_repeal(law):
+    k = law.article("gecici-58").children[0].children[1].children[-1]
+    assert k.notes[0].startswith("(İptal: Anayasa Mahkemesinin")
+    assert k.repealed
+    assert _is_repeal(["(Mülga birinci fıkra: 4/12/2003-5009/1 md.)"], whole=False)
+    assert not _is_repeal(["(Mülga birinci fıkra: 4/12/2003-5009/1 md.)"])
+
+
+def test_number_running_into_digits_is_not_a_label():
+    assert ITEM_RE.match("18.000 TL’ye (190.000 TL) kadar") is None
+    assert ITEM_RE.match("1.Bu Kanunun 21, 23/8, 47").group("label") == "1."
+    assert ITEM_RE.match("H) Bu Kanunun geçici 47 nci").group("label") == "H)"
+
+
+def test_turkish_alphabet_order():
+    assert _follows("h", "ı") and _follows("h", "i") and _follows("ı", "i")
+    assert _follows("c", "ç") and _follows("c", "d") and not _follows("a", "c")
+    assert _follows("8", "9")
+
+
+def test_br_is_a_space():
+    html = ("<html><body><p>Madde 1 – (Değişik: 7/1/2003-4783/1 md.)</p>"
+            "<p>Gerçek kişilerin gelirleri gelir vergisine<br>tâbidir.</p></body></html>")
+    law = build_tree(html, 193)
+    assert law.article("1").children[0].text == "Gerçek kişilerin gelirleri gelir vergisine tâbidir."
