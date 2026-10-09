@@ -462,3 +462,9 @@ def test_new_articles_under_a_heading_keep_their_title():
                "Oranı ve Hesabı", "", "Başlık", "Madde 4 – Metin.")
     assert law.body[0].title == ("Vergi Yükünün Hesaplanması, Asgari Tamamlayıcı Kurumlar "
                                  "Vergisi Matrahı, Oranı ve Hesabı")
+    # GVK's YEDİNCİ BÖLÜM title is broken after "ve".
+    law = _gvk("", "YEDİNCİ BÖLÜM", "Ortalama Kar Haddi, Asgari Gayri Safi Hasılat ve",
+               "Gider Esaslarına Göre Gelir Tayini", "", "Başlık", "Madde 111 – Metin.")
+    assert law.body[0].title == ("Ortalama Kar Haddi, Asgari Gayri Safi Hasılat ve Gider "
+                                 "Esaslarına Göre Gelir Tayini")
+    assert [a.id for a in law.body[0].children] == ["111"]

@@ -1252,3 +1252,37 @@ def test_renumbering_clause_is_not_the_next_address():
     assert [(o.op, o.target.fikra, o.target.bent) for o in ops] == [
         (OpType.INSERT_NODE, 2, "b"), (OpType.INSERT_NODE, 6, None)]
     assert ops[1].new.startswith("Yatırımın kısmen")
+
+
+def test_renumbering_clause_kept_before_bu_fikrada():
+    # RG 29/6/2012, md. 59 on 5684 md. 31: "bu fıkrada" is the renumbered fourth fıkra.
+    ops = am.parse_instruction(
+        "5684 sayılı Kanunun 31 inci maddesinin başlığı “Sigortacılık Eğitim Merkezi, destek "
+        "hizmetleri ve diğer organizasyonlar” şeklinde değiştirilmiş, birinci fıkrasına "
+        "“meslek kuruluşlarının katkılarından,” ibaresinden sonra gelmek üzere “Hesaptan "
+        "aktarılacak katkı payından,” ibaresi ve ikinci fıkrasından sonra gelmek üzere "
+        "aşağıdaki fıkra eklenmiş, mevcut üçüncü fıkra dördüncü fıkra olarak teselsül "
+        "ettirilmiş ve bu fıkrada yer alan “organizasyonlara” ibaresinden sonra gelmek üzere "
+        "“ve destek hizmetlerinin veriliş şekli ile destek hizmeti kuruluşlarına” ibaresi "
+        "eklenmiştir.", ["“(3) Bu Kanun kapsamında ...”"], 5684)
+    assert ops[-1].anchor == "organizasyonlara" and ops[-1].target.fikra == 4
+
+
+def test_new_text_of_an_unrecognised_operation_is_not_given_to_another():
+    # 4842/21 on KDV md. 11: "bu bendin sonuna aşağıdaki hüküm eklenmiştir" is not read, so
+    # its text must not end up in the (a) bendi replaced by "aşağıdaki şekilde,".
+    with pytest.raises(am.Unparsed, match="unrecognised operation with new text"):
+        am.parse_instruction(
+            "3065 sayılı Katma Değer Vergisi Kanununun 11 inci maddesinin (1) numaralı "
+            "fıkrasının (a) bendi aşağıdaki şekilde, (c) bendinin üçüncü alt bendinde yer alan "
+            "\"gecikme zammının % 50 fazlası ile birlikte\" ibaresi \"gecikme zammıyla birlikte\" "
+            "şeklinde değiştirilmiş, bu bendin sonuna aşağıdaki hüküm eklenmiştir.",
+            ["\"a) İhracat teslimleri ...\"",
+             "\"İhracatın mücbir sebepler veya beklenmedik durumlar nedeniyle ...\""], 3065)
+
+
+def test_two_appended_sentences_in_one_clause_are_not_guessed():
+    with pytest.raises(am.Unparsed, match="more than one appended text"):
+        am.parse_instruction(
+            "5520 sayılı Kanunun 10 uncu maddesinin birinci fıkrasına “Z cümle.” cümlesi, "
+            "ikinci fıkrasına “W cümle.” cümlesi eklenmiştir.", [], 5520)

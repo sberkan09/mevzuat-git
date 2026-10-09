@@ -736,6 +736,10 @@ def _check_segment(o: OpMatch, own: str) -> None:
     masked = re.sub(r"^\W*(?:(?:şeklinde|olarak)\s+)?\w+(?:miş|mış)\b", "", masked)
     if _STRAY_VERB_RE.search(masked):
         raise Unparsed(f"unrecognised operation before {o.name}: {own!r}")
+    if o.name == "append_phrase" and re.search(Q, own):
+        # "birinci fıkrasına “Z” cümlesi, ikinci fıkrasına “W” cümlesi eklenmiştir": only the
+        # last one is matched, with both addresses.
+        raise Unparsed(f"more than one appended text: {own!r}")
     if o.name == "repeal_node" and (re.search(Q, own) or "parantez" in own):
         # "“X” ibaresi ile ... yürürlükten kaldırılmıştır", "parantez içi hüküm yürürlükten
         # kaldırılmıştır": not the whole node.
@@ -776,6 +780,13 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
     earlier = earlier or []
     sentence, text = text, _letter_fikras(text)
     matches = find_ops(text)
+    # A new text below that no recognised operation claims ("bu bendin sonuna aşağıdaki
+    # hüküm eklenmiştir", 4842/21) would be handed to another operation.
+    # A cetvel attached to the law is skipped on its own ("Kanuna aşağıdaki 2 sayılı cetvel
+    # eklenmiştir", 7524/11).
+    for a in re.finditer(r"\başağıdaki\b(?!\s+(?:\(?\w+\)?\s+sayılı\s+)?cetvel)", text):
+        if not any(o.start <= a.start() < o.end for o in matches):
+            raise Unparsed(f"unrecognised operation with new text: {text[a.start():a.start() + 60]!r}")
     payload_ops = [o for o in matches
                    if o.name in ("replace_node", "insert_node", "paren_replace")]
     chunks = split_payload(payload, len(payload_ops))
@@ -810,7 +821,11 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         own = "".join(seg[a:b] for a, b in mine)
         # "mevcut (c) bendi (ç) bendi olarak teselsül ettirilmiş ve altıncı fıkrasına" (6322/
         # 39): the renumbering only describes; the address is what follows it.
-        own = TESELSUL_RE.sub(" ", own)
+        # Kept when "bu fıkrada" follows: that is the renumbered node (5684 md. 31, RG
+        # 29/6/2012).
+        own = TESELSUL_RE.sub(
+            lambda m: m.group(0) if re.match(r"\s*(?:bu|aynı)\s", m.string[m.end():]) else " ",
+            own)
         if o.name == "title_replace" and re.search(r"bölümünün|kısmının", own):
             continue  # heading of a kısım/bölüm: not addressable yet
         unquoted = re.sub(Q + QTEXT + Q, "", own)

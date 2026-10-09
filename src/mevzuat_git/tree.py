@@ -528,15 +528,19 @@ def _build(bs: list[Block], law: Law) -> None:
                     and not HEADING_RE.match(bs[j].text) and not _is_title(bs, j):
                 title = bs[j].text
                 i = j + 1
-                # A heading title broken after a comma goes on in the next paragraph
-                # (5520's "Vergi Yükünün Hesaplanması, ... Matrahı," / "Oranı ve Hesabı").
-                while title.endswith(",") and i < len(bs) and not bs[i].blank \
+                # A heading title broken after a comma or "ve" goes on in the next
+                # paragraph (5520's "Vergi Yükünün Hesaplanması, ... Matrahı," / "Oranı ve
+                # Hesabı"; GVK's "Ortalama Kar Haddi, ... Hasılat ve" / "Gider Esaslarına
+                # Göre Gelir Tayini").
+                while re.search(r"(?:,|\sve)$", title) and i < len(bs) and not bs[i].blank \
                         and bs[i].table is None and not ARTICLE_RE.match(bs[i].text) \
                         and not HEADING_RE.match(bs[i].text) and not _is_title(bs, i):
                     title += " " + bs[i].text
                     i += 1
-            # An amendment's new text has no blank lines: what follows the heading
-            # stands as if after one, so an article title there is still seen (7524/40).
+            # What follows the heading stands as if after a blank line, so an article
+            # title right under it is still seen: an amendment's new text has no blank
+            # lines (7524/40), nor has KVK's "BEŞİNCİ BÖLÜM" / "Vergi Kesintisi ve Muhtasar
+            # Beyanname" / "Dar mükellefiyette vergi kesintisi" / "MADDE 30-".
             if i < len(bs) and not bs[i].blank:
                 bs.insert(i, Block(text=""))
             # A kitap is a top-level heading, like a kısım; its kısımlar follow it.
