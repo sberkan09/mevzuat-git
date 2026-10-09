@@ -32,7 +32,8 @@ ORDINAL = (
     r"(?:BİRİNCİ|İKİNCİ|ÜÇÜNCÜ|DÖRDÜNCÜ|BEŞİNCİ|ALTINCI|YEDİNCİ|SEKİZİNCİ|DOKUZUNCU|ONUNCU"
     r"|ON\s+\w+|YİRMİNCİ)"
 )
-HEADING_RE = re.compile(rf"^{ORDINAL}\s+(?P<kind>KISIM|BÖLÜM)$")
+# VUK has books above its kısımlar: "İKİNCİ KİTAP" / "Mükellefin Ödevleri".
+HEADING_RE = re.compile(rf"^{ORDINAL}\s+(?P<kind>KİTAP|KISIM|BÖLÜM)$")
 ARTICLE_RE = mg.ARTICLE_RE
 # A leading editorial marker: "(Değişik: 7/1/2003-4783/1 md.)", "(Mülga: ...; Yeniden
 # düzenleme: ...)", "(İptal: Anayasa Mahkemesinin ... sayılı Kararı ile.)".
@@ -481,7 +482,8 @@ def _build(bs: list[Block], law: Law) -> None:
                     and not HEADING_RE.match(bs[j].text) and not _is_title(bs, j):
                 title = bs[j].text
                 i = j + 1
-            lvl = Level.KISIM if m.group("kind") == "KISIM" else Level.BOLUM
+            # A kitap is a top-level heading, like a kısım; its kısımlar follow it.
+            lvl = Level.BOLUM if m.group("kind") == "BÖLÜM" else Level.KISIM
             b.heading(lvl, text, title).footnotes = blk.footnotes
             continue
         if _is_heading_over_title(bs, i - 1):

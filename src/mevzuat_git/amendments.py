@@ -137,8 +137,9 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:(?:" + PHRASE_NOUN + r"\s+)?eklen"
         # in a series: ... önce gelmek üzere “X”, “Y” ibaresinden sonra ... ibareleri eklenmiştir
         r"|,(?=\s*" + Q + r".*eklen)"
-        # “Y” ibaresi ve (11) numaralı bendine ... eklenmiştir
-        r"|" + PHRASE_NOUN + r"\s+ve\b(?=.*eklen)"
+        # “Y” ibaresi ve (11) numaralı bendine ... eklenmiştir; “Y” ibaresi ile fıkraya
+        # aşağıdaki cümle eklenmiştir (7394/3)
+        r"|" + PHRASE_NOUN + r"\s+(?:ve|ile)\b(?=.*eklen)"
         # “23/8,” ibaresinden sonra gelmek üzere “23/10,” ibaresi, “31,” ibaresinden ... (7194/19)
         r"|" + PHRASE_NOUN + r"\s*,(?=\s*" + Q + r".*eklen))"
     )),
@@ -175,7 +176,7 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:şeklinde|olarak)\b"
     )),
     ("title_replace", re.compile(
-        r"başlığı\s+" + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:şeklinde|olarak)\b"
+        r"[Bb]aşlığı\s+" + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:şeklinde|olarak)\b"
     )),
     ("paren_replace", re.compile(
         r"parantez\s+i[çc]i(?:nde\s+(?:yer\s+alan|bulunan)\s+(?:ibare(?:si|ler)?|hüküm(?:ler)?)"
@@ -186,8 +187,11 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         r"(?:değiştiril|yeniden\s+düzenlen|düzenlen)"
     )),
     ("insert_node", re.compile(
-        r"aşağıdaki\s+(?:(?P<label>\(\w+\))\s*(?:numaralı\s+)?)?(?P<kind>(?:alt\s+)?ben[dt](?:ler)?"
-        r"|fıkra(?:lar)?|(?:(?:geçici|ek|mükerrer)\s+(?:\d+(?:/[A-ZÇĞİÖŞÜ])?\s*\w*\s+)?)?madde(?:ler)?"
+        # "274 üncü maddesinden sonra gelmek üzere 274/A maddesi eklenmiştir" (7524/8)
+        r"(?:aşağıdaki\s+|(?<=üzere\s)(?=\d+/[A-ZÇĞİÖŞÜ]\s+madde))(?:(?P<label>\(\w+\))\s*(?:numaralı\s+)?)?(?P<kind>(?:alt\s+)?ben[dt](?:ler)?"
+        r"|fıkra(?:lar)?"
+        # "aşağıdaki geçici madde", "aşağıdaki ek 3 üncü madde", "aşağıdaki 107/A maddesi"
+        r"|(?:(?:geçici|ek|mükerrer)\s+)?(?:\d+(?:/[A-ZÇĞİÖŞÜ])?\s*\w*\s+)?madde(?:ler)?"
         r"|cümle(?:ler)?|paragraf(?:lar)?"
         r"|parantez\s+içi\s+hüküm(?:ler)?)\w*\s*(?:eklen|(?:ile|ve)\b(?=.*eklen)|,(?=.*eklen))"
     )),

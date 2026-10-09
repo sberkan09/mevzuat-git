@@ -25,7 +25,7 @@
 ## Faz 3: Uygula ve doğrula
 - [x] İşlemleri ağaca uygulayan motor (`mevzuat_git.replay`)
 - [x] Replay sonucu ↔ güncel konsolide metin diff'i; hata raporu (`mevzuat-git replay`)
-- [x] Metrik: madde düzeyinde birebir eşleşme oranı (GVK: %94,2; bkz. `docs/replay.md`)
+- [x] Metrik: madde düzeyinde birebir eşleşme oranı (GVK: %94,2; VUK: %83,3; bkz. `docs/replay.md`)
 
 ## Faz 4: Git deposu üretimi
 - [x] Commit tarihi = yürürlük tarihi (madde bazında farklılık → ayrı commit; `mevzuat-git history`, bkz. `docs/history.md`)

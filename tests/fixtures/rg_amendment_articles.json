@@ -365,5 +365,12 @@
   "source": "https://www.resmigazete.gov.tr/eskiler/2010/08/20100801-1.htm",
   "instruction": "193 sayılı Kanunun geçici 69 uncu maddesinin birinci fıkrasında yer alan “yine bu tarihteki mevzuat hükümleri (vergi oranına ilişkin hükümler dâhil) çerçevesinde kazançlarından indirebilirler.” ibaresi “yine bu tarihteki mevzuat hükümleri (bu Kanunun geçici 61 inci maddesinin ikinci fıkrasında yer alan vergi oranına ilişkin hüküm dâhil) çerçevesinde kazançlarından indirebilirler.” şeklinde değiştirilmiş ve bu ibareden sonra gelmek üzere “Şu kadar ki, vergi matrahlarının tespitinde yatırım indirimi istisnası olarak indirim konusu yapılacak tutar, ilgili kazancın % 25’ini aşamaz. Kalan kazanç üzerinden yürürlükteki vergi oranına göre vergi hesaplanır.” cümleleri eklenmiştir.",
   "payload": []
+ },
+ "7394/3": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2022/04/20220415-1.htm",
+  "instruction": "4/1/1961 tarihli ve 213 sayılı Vergi Usul Kanununun 4 üncü maddesinin ikinci fıkrasına “usul ve esasları belirlemeye” ibaresinden sonra gelmek üzere “, vergi dairesince bu Kanun ile diğer kanunlar kapsamında yapılan işlemlerde elektronik imza, mühür veya onay kullandırmaya, vergi daireleri tarafından düzenlenen ve vergi dairesince imzalanması gereken belgelerin Gelir İdaresi Başkanlığınca elektronik ortamda imzalanmasına, mühürlenmesine veya onaylanmasına izin vermeye, elektronik imza, mühür veya onayın kullanım usul ve esaslarını düzenlemeye” ibaresi ile fıkraya aşağıdaki cümle eklenmiştir.",
+  "payload": [
+   "“Vergi daireleri tarafından düzenlenen ve imzalanması gereken belgelerin, Gelir İdaresi Başkanlığınca elektronik ortamda imzalanması, mühürlenmesi veya onaylanması durumunda belgeler vergi dairesi tarafından imzalanmış, mühürlenmiş veya onaylanmış sayılır.”"
+  ]
  }
 }

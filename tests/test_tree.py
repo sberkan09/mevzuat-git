@@ -313,3 +313,16 @@ def test_short_line_after_an_open_list_closes_the_fikra():
     f1, f2, f3 = law.article("109").children
     assert shape(f1) == [("bent", "1."), ("bent", "2."), ("bent", "3."), ("paragraf", "")]
     assert f1.children[-1].text == "Tarh edilir." and f2.repealed and f3.repealed
+
+
+def test_book_heading():
+    # VUK (213): "İKİNCİ KİTAP" / "Mükellefin Ödevleri" after md. 152/A, not its text.
+    law = _gvk(
+        "", "Uluslararası anlaşmalar gereğince bilgi değişimi:",
+        "Madde 152/A – (Ek: 24/5/2013-6487/9 md.)",
+        "Maliye Bakanlığı Gelir İdaresi Başkanlığı ... bilgi toplayabilir.",
+        "İKİNCİ KİTAP", "Mükellefin Ödevleri", "BİRİNCİ KISIM", "Bildirmeler",
+        "İşe başlamayı bildirme:", "Madde 153 – Aşağıda yazılı mükelleflerden ...")
+    assert len(law.article("152/A").children) == 1
+    assert [(n.label, n.title) for n in law.body if n.level is Level.KISIM][-2:] == [
+        ("İKİNCİ KİTAP", "Mükellefin Ödevleri"), ("BİRİNCİ KISIM", "Bildirmeler")]

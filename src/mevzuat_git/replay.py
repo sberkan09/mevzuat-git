@@ -106,6 +106,13 @@ def locate(law: Law, path: Path, whole: bool = False, live: bool = True) -> Loca
         if not cands:
             cands = [d for d in node.walk() if d.level is Level.ALT_BENT
                      and d.key == path.bent]
+        if not cands and path.fikra in (None, 1):
+            # An article that is only a numbered list ("1. ...", "2. ...") reads as fıkras
+            # (GVK md. 22, 6728/11 "(1) numaralı fıkrası"), but acts may call the items
+            # bents: VUK md. 353, "353 üncü maddesinin birinci fıkrasının (1) numaralı
+            # bendi" (7338/40).
+            cands = [f for f in art.children if f.level is Level.FIKRA and f.key == path.bent
+                     and re.fullmatch(r"\d+\.", (f.label or "").strip())]
         if not cands:
             if any(d.text == UNKNOWN for d in node.walk()):
                 raise Superseded()
@@ -121,6 +128,12 @@ def locate(law: Law, path: Path, whole: bool = False, live: bool = True) -> Loca
         if not cands:
             raise ReplayError(f"alt bent {path.alt_bent} not found in {path}")
         node = cands[0]
+        chain.append(node)
+    if (path.cumle is not None and node is art and not art.text
+            and [c.level for c in art.children] == [Level.FIKRA]):
+        # "256 ncı maddesinin son cümlesine" (7104/20): the sentence is in the article's
+        # one fıkra.
+        node = art.children[0]
         chain.append(node)
     if path.paragraf is not None and path.paragraf != 1:
         paras = [c for c in node.children if c.level is Level.PARAGRAF]
@@ -156,6 +169,8 @@ def _span(text: str, sentence: int | None) -> tuple[int, int]:
     if sentence is None:
         return 0, len(text)
     spans = sentence_spans(text)
+    if not spans:
+        raise ReplayError("no sentence in the text")
     if sentence == -1:
         return spans[-1]
     if sentence >= len(spans):
@@ -436,11 +451,19 @@ def _law_insert_articles(law: Law, nodes: list[Node]) -> None:
 
 def _past_family(siblings: list[Node], i: int, new_id: str) -> int:
     """7338 md. 1-3 add mükerrer 20/A, 20/B and 20/C, each "mükerrer 20 nci maddesinden
-    sonra gelmek üzere": a new article goes after the ones of its family before it."""
+    sonra gelmek üzere": a new article goes after the ones of its family before it. So
+    do ek 14 to ek 18, each "ek 13 üncü maddesinden sonra" (7338/46-50)."""
     family = new_id.split("/")[0]
+    kind = new_id.split("-")[0] if "-" in new_id else None
+
+    def before(sib_id: str) -> bool:
+        if sib_id.split("/")[0] == family and "/" in sib_id:
+            return sib_id < new_id
+        return bool(kind) and sib_id.startswith(kind + "-") and "/" not in new_id \
+            and _article_key(sib_id) < _article_key(new_id)
+
     while i < len(siblings) and siblings[i].level is Level.MADDE and siblings[i].id \
-            and siblings[i].id.split("/")[0] == family and "/" in siblings[i].id \
-            and siblings[i].id < new_id:
+            and before(siblings[i].id):
         i += 1
     return i
 
@@ -640,7 +663,9 @@ def _apply_insert(law: Law, op: AmendmentOp) -> None:
                 raise ReplayError(f"article {n.id} already exists")
         _law_insert_articles(law, new_nodes)
         return
-    loc = locate(law, t, live=_live(op))
+    # An article goes after another wherever that one stands, whatever its text: 7338/46
+    # puts ek 14 after ek 13, which 7524/15 rewrote later.
+    loc = locate(law, t, whole=op.kind is Level.MADDE, live=_live(op))
     if op.kind is Level.PARAGRAF and not new_nodes:
         new = op.new or ""
         if _is_sentence_op(op):

@@ -26,8 +26,16 @@ _ELLIPSIS = re.compile(r"\(\s*(?:…|\.\s*\.\s*\.)\s*\)\d*")
 # Amounts that mevzuat.gov.tr adds after an amount for its current value: "600 milyon
 # lirayı (22.000 TL) aşmayan", "51 (300 TL) Türk lirasını", "220.000 (1.900.000 TL.)
 # Türk lirasını", and the space it leaves before a comma: "135.000 Türk lirasını
-# (1.380.000 TL) , söz konusu".
-_EDITORIAL_AMOUNT = re.compile(r"\s*\(\s*\d[\d.,]*\s*TL\.?\s*\)(?:\s+(?=[,;:]))?")
+# (1.380.000 TL) , söz konusu". Also a range, "birmilyar ila yüzmilyar lira arasındaki
+# (30.000-3.000.000 TL)" (VUK md. 104), and a bare number between an amount and its
+# unit: "3.600 (30.000) Türk lirasından", "10 milyon (79.000.000) Türk lirasına", "25
+# (0,43) kuruştan" (VUK md. 104, 257, 413). A bare number elsewhere is the law's own:
+# "toplamı 300 (1000) dönüm" (GVK md. 52).
+_EDITORIAL_AMOUNT = re.compile(
+    r"\s*\(\s*\d[\d.,]*(?:\s*-\s*\d[\d.,]*)?\s*TL\.?(?:\s*ve\s+üzeri)?\s*\)(?:\s+(?=[,;:]))?"
+    r"|(?:(?<=\d)|(?<=milyon)|(?<=milyar))\s*\(\s*\d[\d.,]*\s*\)"
+    r"(?=\s*(?:Türk\s+[Ll]ira|TL\b|YTL\b|kuruş|lira))"
+)
 _TRANSLATE = str.maketrans({
     "“": '"', "”": '"', "„": '"', "‘": "'", "’": "'", "´": "'", "`": "'",
     "–": "-", "—": "-", " ": " ", "­": "",
@@ -88,7 +96,8 @@ def node_lines(n: Node, with_title: bool = True) -> list[str]:
     out: list[str] = []
     if n.level is Level.MADDE:
         if with_title and n.title:
-            out.append("# " + norm(n.title))
+            # "bilgi değişimi:" (mevzuat.gov.tr) and "bilgi değişimi" (6487/9).
+            out.append("# " + norm(n.title).rstrip(":").rstrip())
         if n.text:
             out.append(norm(n.text))
     else:
