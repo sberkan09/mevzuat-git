@@ -28,7 +28,10 @@ yüzden yapı paragrafların metninden çıkarılır:
   biçim alt bent. `i)` önceki harf `h)` ise harf, değilse Roma rakamıdır.
 - Etiketsiz paragraf yeni fıkradır. İki istisna: numaralı fıkralı maddelerde içinde
   bulunulan fıkranın paragrafıdır; `1.` ile `2.` arasında kalan etiketsiz paragraf `1.`
-  bendinin devamıdır (GVK md. 7).
+  bendinin devamıdır (GVK md. 7). Ayrıca küçük harfle ya da `%` ile başlayan satır ve `– `
+  ile başlayan tire maddeleri yeni fıkra açmaz, önceki fıkranın paragrafıdır; noktayla
+  bitmeyen bir tire maddesinden sonraki satır da o fıkraya aittir ve fıkrayı kapatır (GVK
+  md. 94'ün dördüncü ve sekizinci fıkraları). Değişiklik cümlelerindeki "sekizinci fıkra" sayımı buna dayanır.
 - Madde içindeki `<table>` (md. 103 tarifesi) tek bir `tablo` düğümüdür; hücreler ` | `,
   satırlar yeni satırla ayrılır.
 

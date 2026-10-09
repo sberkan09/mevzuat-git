@@ -170,6 +170,7 @@ class ActArticle:
     payload: list[str] = field(default_factory=list)
 
 
+ARTICLE_START_RE = re.compile(r"(?:(?:GEÇİCİ|EK|MÜKERRER|Geçici|Ek|Mükerrer)\s+)?(?:MADDE|Madde)\s+\d")
 ACT_ARTICLE_RE = re.compile(
     r"^(?P<pre>GEÇİCİ\s+|EK\s+)?MADDE\s+(?P<num>\d+)\s*\.?\s*[–—-]\s*(?P<rest>.*)$"
 )
@@ -638,8 +639,25 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         else:
             parts = [raw] * n
         for (t, sub), part in zip(targets, parts, strict=True):
-            ops.extend(_make_ops(o, t, sub, _strip_quotes(part), text))
+            ops.extend(_make_ops(o, _after_inserts(t, sub, ops), sub, _strip_quotes(part), text))
     return ops
+
+
+def _after_inserts(path: Path, sub: str, ops: list[AmendmentOp]) -> Path:
+    """"birinci fıkrasından sonra gelmek üzere aşağıdaki fıkra eklenmiş, mevcut ikinci
+    fıkrasında ...": "mevcut" counts fıkralar before the insert earlier in the sentence,
+    which is applied first. Return the position the fıkra has once that is done."""
+    if not re.search(r"\bmevcut\b", sub) or not path.fikra or path.fikra < 1:
+        return path
+    n = path.fikra
+    for op in ops:
+        t = op.target
+        if op.op is not OpType.INSERT_NODE or op.kind is not Level.FIKRA \
+                or t.madde != path.madde or not t.fikra or t.fikra < 1 or t.bent:
+            continue
+        if (op.position == "after" and n > t.fikra) or (op.position == "before" and n >= t.fikra):
+            n += len(op.new_nodes)
+    return path.model_copy(update={"fikra": n})
 
 
 # Separators between two addresses in one segment: "(6) numaralı bendi ile ... üçüncü
@@ -760,7 +778,8 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
                                 source_sentence=sentence)]
         kind = _target_level(path)
         with_title = bool(g.get("title"))
-        nodes = parse_fragment(new_text, kind) if kind is not Level.PARAGRAF else []
+        nodes = parse_fragment(_unquote_articles(new_text), kind) \
+            if kind is not Level.PARAGRAF else []
         if kind is not Level.PARAGRAF and not nodes:
             raise Unparsed(f"no {kind.value} in the new text")
         op = AmendmentOp(op=OpType.REPLACE_NODE, kind=kind, new_nodes=nodes,
@@ -789,16 +808,17 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
             field = "fikra" if kind is Level.FIKRA else "bent"
             prev = int(n) - 1 if kind is Level.FIKRA else str(int(n) - 1)
             target = path.model_copy(update={field: prev})
-        if anchor and g["kind"].startswith("parantez"):
-            # "“...” ibaresinden sonra gelmek üzere aşağıdaki parantez içi hüküm" (7566/3):
-            # text inside the sentence, not a paragraph.
+        if g["kind"].startswith("parantez") and (anchor or position == "end"):
+            # "“...” ibaresinden sonra gelmek üzere aşağıdaki parantez içi hüküm" (7566/3),
+            # "bentlerine sırasıyla aşağıdaki parantez içi hükümler" (7194/13): text inside
+            # the node's own text, not a paragraph.
             return [AmendmentOp(op=OpType.INSERT_PHRASE, anchor=anchor, new=" ".join(new_text),
                                 position=position, target=target, source_sentence=sentence)]
         if kind is Level.PARAGRAF:
             nodes = []
             new = " ".join(new_text)
         else:
-            nodes = parse_fragment(new_text, kind)
+            nodes = parse_fragment(_unquote_articles(new_text), kind)
             new = None
             if not nodes:
                 raise Unparsed(f"no {kind.value} in the new text")
@@ -806,6 +826,17 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
                             anchor=anchor, position=position, renumber=teselsul,
                             target=target, source_sentence=sentence)]
     raise Unparsed(o.name)
+
+
+def _unquote_articles(texts: list[str]) -> list[str]:
+    """“GEÇİCİ MADDE 76 – ...” “GEÇİCİ MADDE 77 – ...”: each new article quoted on its own.
+    The quotes around each one are dropped so that the next article is seen."""
+    out = list(texts)
+    for i, t in enumerate(out):
+        if i and t[:1] in Q_OPEN and ARTICLE_START_RE.match(t[1:].lstrip()):
+            out[i] = t[1:].lstrip()
+            out[i - 1] = re.sub(r"[”\"’]\s*$", "", out[i - 1]).rstrip()
+    return out
 
 
 def text_after(m: re.Match, group: str) -> str:

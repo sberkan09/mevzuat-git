@@ -293,6 +293,31 @@ class _Builder:
         parent.children.append(node)
 
 
+def _fold_continuations(art: Node) -> None:
+    """Unlabelled "fıkras" that are really part of the one before: a fıkra never starts in
+    lower case or with "%" ("itibarıyla dağıtılmış kâr payı sayılır", "% 25 vergi
+    tevkifatı yapılır." in GVK md. 94); "– " lines are dash items of a fıkra, and the line
+    after an unfinished dash item ("... itibariyle,") closes it."""
+    kids: list[Node] = []
+    for f in art.children:
+        prev = kids[-1] if kids else None
+        if prev is not None and prev.level is Level.FIKRA and f.level is Level.FIKRA \
+                and not f.label and not f.children and f.text and _continues(prev, f.text):
+            f.level = Level.PARAGRAF
+            prev.children.append(f)
+            continue
+        kids.append(f)
+    art.children = kids
+
+
+def _continues(fikra: Node, text: str) -> bool:
+    if text[:1].islower() or text[:1] == "%" or re.match(r"[–-]\s", text):
+        return True
+    last = fikra.children[-1] if fikra.children else None
+    return bool(last and last.level is Level.PARAGRAF and re.match(r"[–-]\s", last.text)
+                and not last.text.rstrip().endswith("."))
+
+
 def _follows(prev: str, key: str) -> bool:
     """Is ``key`` the label right after ``prev``? "3" -> "4"; letters in Turkish order,
     where ç, ğ, ı, ö, ş, ü may be skipped ("h" -> "ı" or "i")."""
@@ -372,6 +397,7 @@ def parse_fragment(texts: list[str], kind: Level) -> list[Node]:
     art = b.open_article("", "", None, [], [])
     for t in texts:
         b.paragraph(t, [])
+    _fold_continuations(art)  # as in the consolidated text (7256/17)
     if kind is Level.FIKRA:
         return art.children
     items: list[Node] = []
@@ -434,6 +460,7 @@ def _build(bs: list[Block], law: Law) -> None:
             continue
         b.paragraph(text, blk.footnotes)
     for a in law.articles():
+        _fold_continuations(a)
         # "Madde 20 – (Mülga: ...)" followed by fıkras in force is not repealed.
         if a.repealed and any(n.text for n in a.walk()):
             a.repealed = False

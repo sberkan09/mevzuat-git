@@ -238,6 +238,15 @@ def test_numbered_insert_with_teselsul_goes_to_its_place():
     assert ops[1].renumber
 
 
+def test_mevcut_fikra_counts_before_the_insert():
+    # 7587/5: birinci fıkrasından sonra ... fıkra eklenmiş, mevcut ikinci fıkrasında ...
+    # mevcut beşinci fıkrasında: once the insert is made, those are the third and sixth.
+    ops = ops_of("7587/5")
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.INSERT_NODE, "md.113/f1"), (OpType.REPLACE_PHRASE, "md.113/f3"),
+        (OpType.REPLACE_PHRASE, "md.113/f6")]
+
+
 def test_plural_word_inside_the_ibare_is_not_plural():
     (op,) = ops_of("5035/48/Geçici")
     assert op.old == "1.1.1999 - 31.12.2003 tarihleri arasında" and not op.all

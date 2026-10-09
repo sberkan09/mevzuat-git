@@ -190,5 +190,38 @@
   "source": "https://www.resmigazete.gov.tr/eskiler/2004/07/20040731.htm",
   "instruction": "193 sayılı Kanunun 19 uncu maddesinin (4) numaralı fıkrasının üçüncü bendinde yer alan \"Gayri maddi haklar\" ibaresi \"Gayri maddi haklar ile ekonomik ömrü 5 yıldan daha kısa olan özel maliyet bedelleri\" şeklinde değiştirilmiştir",
   "payload": []
+ },
+ "6322/10": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2012/06/20120615-1.htm",
+  "instruction": "193 sayılı Kanunun 94 üncü maddesinin birinci fıkrasının (5) numaralı bendine aşağıdaki alt bent eklenmiş, (7) numaralı bendinin (c) alt bendinde yer alan “Kamu Ortaklığı İdaresi” ibaresi “28/3/2002 tarihli ve 4749 sayılı Kamu Finansmanı ve Borç Yönetiminin Düzenlenmesi Hakkında Kanuna göre kurulan varlık kiralama şirketleri” şeklinde değiştirilmiş, (10) numaralı bendinin (a) alt bendi aşağıdaki şekilde değiştirilmiş, fıkraya aşağıdaki bent eklenmiş ve altıncı fıkrasında yer alan “6, 7, 8 ve 9 numaralı” ibaresi “6, 7, 8, 9 ve 16 numaralı” şeklinde değiştirilmiştir.",
+  "payload": [
+   "“d) Yabancı devletlere, yabancı kamu idare ve kuruluşları ile uluslararası kuruluşlara ait diplomatik statüsü bulunmayan gayrimenkullerin kiralanması karşılığında bunlara yapılan kira ödemelerinden,”",
+   "“a) Başbayiler hariç olmak üzere, 14/3/2007 tarihli ve 5602 sayılı Şans Oyunları Hasılatından Alınan Vergi, Fon ve Payların Düzenlenmesi Hakkında Kanunda tanımlanan şans oyunlarına ilişkin olarak; bilet, kupon ve benzerlerini satanlara, düzenlenen her türlü bahis ve şans oyunlarının oynatılmasına aracılık edenlere, diğer kişilerce çıkartılan bu nitelikteki biletleri satanlara yapılan komisyon, prim ve benzeri ödemelerden,”",
+   "“16. 75 inci maddenin ikinci fıkrasının (16) numaralı bendi kapsamındaki menkul sermaye iratlarından,”"
+  ]
+ },
+ "5582/29": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2007/03/20070306-1.htm",
+  "instruction": "193 sayılı Kanunun 94 üncü maddesinin birinci fıkrasının (7) numaralı bendinin (e) alt bendinden sonra gelmek üzere aşağıdaki alt bent eklenmiş ve mevcut (f) alt bendi (g) alt bendi olarak teselsül ettirilmiştir.",
+  "payload": [
+   "\"f) İpotek finansmanı kuruluşları ve konut finansmanı kuruluşları tarafından ihraç edilen ipotekli sermaye piyasası araçlarından elde edilen kâr payı ve faiz gelirlerinden,\""
+  ]
+ },
+ "6462/1/31": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2013/05/20130503-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 31 inci maddesinin başlığında yer alan “Sakatlık” ibaresi “Engellilik”, birinci fıkrasında yer alan “sakat” ve “sakatlık” ibareleri sırasıyla “engelli” ve “engellilik”, ikinci fıkrasında yer alan “Sakatlık” ve “sakatlar” ibareleri sırasıyla “Engellilik” ve “engelliler”, üçüncü fıkrasında yer alan “Sakatlık” ibaresi “Engellilik” şeklinde değiştirilmiştir",
+  "payload": []
+ },
+ "7582/3": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2026/06/20260604-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 17 nci maddesinin birinci fıkrasında yer alan “tutarını” ibaresi “tutarının iki katını” şeklinde, ikinci fıkrasında yer alan “üç”, “dört”, “altı”, “yedi” ve “on iki” ibareleri sırasıyla “iki”, “üç”, “dört”, “beş” ve “altı” şeklinde değiştirilmiştir.",
+  "payload": []
+ },
+ "7587/5": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2026/07/20260701-1.htm",
+  "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 113 üncü maddesine birinci fıkrasından sonra gelmek üzere aşağıdaki fıkra eklenmiş, mevcut ikinci fıkrasında yer alan “birinci fıkra” ibaresi “bu madde” şeklinde ve mevcut beşinci fıkrasında yer alan “yarısına kadar” ibaresi “birinci fıkra kapsamına girenler bakımından yarısına kadar” şeklinde değiştirilmiştir.",
+  "payload": [
+   "“Taksi ile yolcu taşımacılığı faaliyetinde bulunanlardan bu faaliyetlerinden kaynaklanan hasılatlarının tamamını, elektronik ücret toplama sistemleri aracılığı olmaksızın, kullanma zorunluluğu getirilen taksi mali cihazla tespit ve belgelendirmek suretiyle elde edenler de talep etmeleri hâlinde, birinci fıkraya göre tespit edilen kazançları üzerinden vergilendirilir. Bu kapsama girenler, talep tarihini takip eden yılın başından itibaren hasılat esaslı kazanç tespit usulünden en fazla üç yıl süreyle yararlanabilir.”"
+  ]
  }
 }
