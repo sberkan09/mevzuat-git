@@ -147,10 +147,13 @@ def mark_replaced(ops: list[OpResult]) -> None:
     replaced: dict[str, OpResult] = {}  # article -> the earliest later replacement
     for r in reversed(ops):
         by = replaced.get(r.op.target.madde or "")
-        if r.check == "fail" and by is not None and by.act != r.act:
+        # An inserted article's target is the article it goes after.
+        article_insert = r.op.op is OpType.INSERT_NODE and r.op.kind is Level.MADDE
+        if r.check == "fail" and by is not None and by.act != r.act and not article_insert:
             r.check = "superseded"
             r.check_message = f"article replaced by {by.act} md. {by.article}"
-        if _whole_article(r.op):
+        if _whole_article(r.op) and r.check in ("ok", "superseded"):
+            # Only a replacement found in the text: a failed one may be misparsed.
             replaced[r.op.target.madde or ""] = r
 
 

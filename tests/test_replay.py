@@ -360,3 +360,13 @@ def test_operations_before_a_whole_article_replacement_are_superseded():
     assert [x.check for x in (early, other, whole, later)] == [
         "superseded", "fail", "superseded", "fail"]
     assert early.check_message == "article replaced by 5228 md. 1"
+
+    # An article inserted after md. 89 is not part of it; a replacement whose text was
+    # not found proves nothing.
+    insert = r("4842", OpType.INSERT_NODE, {"madde": "89"}, "fail")
+    insert.op.kind = Level.MADDE
+    early = r("4842", OpType.INSERT_NODE, {"madde": "89", "fikra": 1, "bent": "3"}, "fail")
+    failed = r("5228", OpType.REPLACE_NODE, {"madde": "89"}, "fail")
+    mark_replaced([insert, whole])
+    mark_replaced([early, failed])
+    assert (insert.check, early.check) == ("fail", "fail")

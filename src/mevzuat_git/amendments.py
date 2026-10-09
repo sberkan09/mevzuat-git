@@ -137,7 +137,7 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
     )),
     # parantez içi hükmü “(...)” olarak değiştirilmiştir
     ("paren_inline", re.compile(
-        r"parantez\s+i[çc]i(?:\s+hükmü|nde\s+(?:yer\s+alan|bulunan)\s+ibare(?:si)?)\s+"
+        r"parantez\s+i[çc]i(?:\s+hükmü(?:nün)?|nde\s+(?:yer\s+alan|bulunan)\s+ibare(?:si)?)\s+"
         + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:şeklinde|olarak)\b"
     )),
     ("title_replace", re.compile(
@@ -274,8 +274,9 @@ LIST_VERB_RE = re.compile(
     r"|eklenmiştir|metinden\s+çıkarılmıştır)\s*\.?$", re.IGNORECASE
 )
 _TR_LOWER = str.maketrans({"I": "ı", "İ": "i"})
-GROUP_RE = re.compile(r"^\d+\s*[.)-]\s*(?P<text>.*)$")
-ITEM_RE = re.compile(r"^[a-zçğıöşü]{1,2}\s*\)\s*(?P<text>.*)$")
+# "1) 6183 sayılı Kanunun;", and "A) 213 sayılı Vergi Usul Kanununun;" (4962/17)
+GROUP_RE = re.compile(r"^(?P<label>\d+\s*[.)-]|[A-ZÇĞİÖŞÜ]\))\s*(?P<text>.*)$")
+ITEM_RE = re.compile(r"^(?P<label>[a-zçğıöşü]{1,2})\s*\)\s*(?P<text>.*)$")
 
 
 def expand_list(a: ActArticle) -> list[ActArticle] | None:
@@ -309,17 +310,24 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
             return None
         out = []
         sub = None  # "b) (13) numaralı bendinin;" then "1) Birinci cümlesinde ..." (6728)
+        # Items and sub-items come in order: an unquoted new text that starts like one
+        # ("15) Kurumlar Vergisi Kanununun ..." after "9)", 5436/14) is a payload.
+        letter, number = None, 0
         balance = 0
         for line in rest:
-            if balance <= 0 and (it := ITEM_RE.match(line)) and (head or LAW_REF_RE.search(line)):
+            it = ITEM_RE.match(line) if balance <= 0 else None
+            g = GROUP_RE.match(line) if balance <= 0 and sub else None
+            if it and (letter is None or _follows(letter, it.group("label"))) \
+                    and (head or LAW_REF_RE.search(line)):
                 item = it.group("text").rstrip()
-                sub = None
-                if item.endswith((";", ":")):
-                    sub = f"{head} {item.rstrip(';:').rstrip()}".lstrip()
+                letter, sub = it.group("label"), None
+                if item.endswith((";", ":")) and not AMEND_VERB_RE.search(item):
+                    sub, number = f"{head} {item.rstrip(';:').rstrip()}".lstrip(), 0
                     continue
                 out.append(ActArticle(number=a.number, instruction=f"{head} {item}".lstrip()))
                 balance = 0
-            elif balance <= 0 and sub and (g := GROUP_RE.match(line)):
+            elif g and g.group("label").rstrip(".)- ") == str(number + 1):
+                number += 1
                 # Mid-sentence once joined: "bendinin birinci cümlesinde".
                 item = g.group("text").rstrip()
                 low = item[:1].translate(_TR_LOWER).lower() + item[1:]
@@ -361,6 +369,8 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
         elif (it := ITEM_RE.match(line)) and head:
             item = it.group("text").rstrip().rstrip(",;").rstrip()
             out.append(ActArticle(number=a.number, instruction=f"{head} {item} {verb}"))
+        else:
+            return None  # not a list we can read: an item would go under the wrong law
     return out or None
 
 
@@ -1131,13 +1141,15 @@ def ops_from_markers(act: AmendingAct, law: Law) -> list[Amendment]:
     from mevzuat_git.replay import UNKNOWN
 
     by_article: dict[str, Amendment] = {}
+    footnoted = {fn.footnote for fn in act.footnotes}
     nodes = node_paths(law)
     path_of = {id(n): p for n, p, _ in nodes}
     for n, _, sibs in nodes:
         marks = [m for note in n.notes for m in _EK_MARK.finditer(note)
                  if m.group("act") == act.number]
         i = next(k for k, c in enumerate(sibs) if c is n)
-        if not marks or i == 0 or n.level not in (Level.BENT, Level.ALT_BENT, Level.FIKRA):
+        if (not marks or i == 0 or footnoted & set(n.footnotes)
+                or n.level not in (Level.BENT, Level.ALT_BENT, Level.FIKRA)):
             continue
         prev = path_of[id(sibs[i - 1])]
         new = n.model_copy(deep=True, update={"notes": [], "footnotes": []})

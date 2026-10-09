@@ -432,11 +432,28 @@ def test_list_item_with_numbered_sub_items():
 def test_list_items_naming_their_own_laws():
     # 5436/14: "a) 375 sayılı KHK’ye ... eklenmiştir." with an unquoted new article, then
     # "b) 193 sayılı ... aşağıdaki bent eklenmiştir." with the unquoted bent "10. ...".
+    # Item d) has sub-items 1) to 10); "15) Kurumlar Vergisi Kanununun ..." after 9) and
+    # "f) Bakanlar Kurulunca ..." after c) are new texts, not items.
     items = _items("5436/14")
-    assert [it.instruction[:2] for it in items] == ["27", "31"]
-    (op,) = _ops(items)
+    assert [it.instruction[:2] for it in items] == ["27", "31", "3."] + ["31"] * 10 + ["5."]
+    assert items[2].payload[0].startswith("f) Bakanlar Kurulunca")
+    assert items[11].payload[0].startswith("15) Kurumlar Vergisi Kanununun")
+    assert items[12].payload[0].startswith("17) Bu madde hükümlerinin")
+    op = _ops(items[1:2])[0]
     assert op.op is OpType.INSERT_NODE and str(op.target) == "md.89/f1"
     assert [n.label for n in op.new_nodes] == ["10."]
+
+
+def test_list_with_lettered_groups():
+    # 4962/17: "A) 213 sayılı ...;" a) b) c), "B) 6183 sayılı ...;" a) b), C) to F),
+    # "Değiştirilmiştir." The 6183 items stay under 6183.
+    items = _items("4962/17")
+    assert [it.instruction.split(" sayılı")[0][-3:] for it in items] == [
+        "213", "213", "213", "183", "183", "492", "193", "193", "422"]
+    ops = _ops(items)
+    assert [(str(o.target), o.paren) for o in ops] == [
+        ("md.86/f1/b1/abb", True), ("md.89/f1/b2", False)]
+    assert ops[0].new.startswith("(birden fazla işverenden ücret almakla beraber")
 
 
 def test_list_items_sharing_one_verb():
@@ -473,6 +490,10 @@ def test_operations_from_change_markers():
     assert a.article == "2"
     assert (op.op, str(op.target), op.position) == (OpType.INSERT_NODE, "md.89/f1/b14", "after")
     assert op.new_nodes[0].label == "15." and not op.new_nodes[0].repealed
+    # A footnote of the act on the node says it already: no second insertion.
+    b15.footnotes = [7]
+    act.footnotes = [FootnoteRef(footnote=7, article="89", law_article="2", text="...")]
+    assert am.ops_from_markers(act, Law(number=193, name="", body=[md89])) == []
 
 
 def test_act_on_a_day_page_ends_at_the_next_act():
