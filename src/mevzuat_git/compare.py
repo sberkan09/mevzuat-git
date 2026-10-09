@@ -30,10 +30,11 @@ _ELLIPSIS = re.compile(r"\(\s*(?:…|\.\s*\.\s*\.)\s*\)\d*")
 # (30.000-3.000.000 TL)" (VUK md. 104), and a bare number between an amount and its
 # unit: "3.600 (30.000) Türk lirasından", "10 milyon (79.000.000) Türk lirasına", "25
 # (0,43) kuruştan" (VUK md. 104, 257, 413). A bare number elsewhere is the law's own:
-# "toplamı 300 (1000) dönüm" (GVK md. 52).
+# "toplamı 300 (1000) dönüm" (GVK md. 52), and so are digits after an amount in words:
+# "beş milyon (5.000.000,00) Türk Lirası" (6518).
 _EDITORIAL_AMOUNT = re.compile(
     r"\s*\(\s*\d[\d.,]*(?:\s*-\s*\d[\d.,]*)?\s*TL\.?(?:\s*ve\s+üzeri)?\s*\)(?:\s+(?=[,;:]))?"
-    r"|(?:(?<=\d)|(?<=milyon)|(?<=milyar))\s*\(\s*\d[\d.,]*\s*\)"
+    r"|(?:(?<=\d)|(?<=\d\smilyon)|(?<=\d\smilyar))\s*\(\s*\d[\d.,]*\s*\)"
     r"(?=\s*(?:Türk\s+[Ll]ira|TL\b|YTL\b|kuruş|lira))"
 )
 _TRANSLATE = str.maketrans({

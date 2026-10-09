@@ -336,6 +336,7 @@ def test_find_all_ignores_spacing_and_circumflex(text, phrase):
     ("olmak üzere 3.600 (30.000) Türk lirasından fazla", "olmak üzere 3.600 Türk lirasından fazla"),
     ("kayıt başına 25 (0,43) kuruştan az", "kayıt başına 25 kuruştan az"),
     ("toplamı 300 (1000) dönüm", "toplamı 300 (1000) dönüm"),
+    ("beş milyon (5.000.000,00) Türk Lirası", "beş milyon (5.000.000,00) Türk Lirası"),
 ])
 def test_norm(raw, normal):
     assert norm(raw) == normal
@@ -677,6 +678,17 @@ def test_numbered_list_article_items_as_bents():
                      old="Perakende", new="Toptan", source_sentence="")
     apply(law, op)
     assert law.article("353").children[1].text == "Toptan satış fişi verilmemesi"
+    # 7103/12 rewrites bent 1, then 7338/40 changes an ibare in it: it stays an item of
+    # the list, under the same address.
+    apply(law, AmendmentOp(op=OpType.REPLACE_NODE, kind=Level.BENT,
+                           target=Addr(madde="353", fikra=1, bent="1"), new_nodes=[
+                               Node(level=Level.BENT, label="1.", text="Fatura kesilmemesi")],
+                           source_sentence=""))
+    apply(law, AmendmentOp(op=OpType.REPLACE_PHRASE, target=Addr(madde="353", fikra=1, bent="1"),
+                           old="Fatura", new="Belge", source_sentence=""))
+    assert [(f.level, f.label, f.text) for f in law.article("353").children] == [
+        (Level.FIKRA, "1.", "Belge kesilmemesi"),
+        (Level.FIKRA, "2.", "Toptan satış fişi verilmemesi")]
 
 
 def test_sentence_of_an_article_with_one_fikra():

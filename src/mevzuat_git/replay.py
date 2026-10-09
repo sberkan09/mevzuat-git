@@ -608,6 +608,16 @@ def _keep_label(old: Node, new: list[Node]) -> list[Node]:
     return new
 
 
+def _as_items(at: Node, nodes: list[Node]) -> list[Node]:
+    """Bents that take the place of, or go next to, a numbered-list item read as a fıkra
+    (VUK md. 353, "(1) numaralı bendi" in ``locate``) become fıkras like it, so that the
+    list stays one level and later addresses still find them."""
+    if at.level is Level.FIKRA and re.fullmatch(r"\d+\.", (at.label or "").strip()):
+        return [n.model_copy(update={"level": Level.FIKRA}) if n.level is Level.BENT else n
+                for n in nodes]
+    return nodes
+
+
 def _apply_replace(law: Law, op: AmendmentOp) -> None:
     t = op.target
     if t.baslik:
@@ -629,6 +639,8 @@ def _apply_replace(law: Law, op: AmendmentOp) -> None:
         raise ReplayError("replace without new nodes")
     i = _index(loc.siblings, loc.node)
     new_nodes = _keep_label(loc.node, [n.model_copy(deep=True) for n in op.new_nodes])
+    if t.bent is not None:
+        new_nodes = _as_items(loc.node, new_nodes)
     if loc.node.level is Level.MADDE:
         new = new_nodes[0]
         new.id = loc.node.id
@@ -690,6 +702,8 @@ def _apply_insert(law: Law, op: AmendmentOp) -> None:
         i = _index(loc.siblings, loc.node) + (1 if op.position == "after" else 0)
         if op.kind is Level.MADDE and op.position == "after":
             i = _past_family(loc.siblings, i, new_nodes[0].id or "")
+        if t.bent is not None:
+            new_nodes = _as_items(loc.node, new_nodes)
         loc.siblings[i:i] = new_nodes
         if op.renumber:
             _renumber(loc.siblings, i + len(new_nodes), new_nodes, +len(new_nodes))
