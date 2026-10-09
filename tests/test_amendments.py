@@ -11,6 +11,7 @@ from mevzuat_git.fetch import decode_html
 from mevzuat_git.model import Law, Level, Node, OpType
 from mevzuat_git.model import Path as Addr
 from mevzuat_git.replay import resolve, unapply
+from mevzuat_git.tree import TABLE_MARK
 
 FIX = Path(__file__).parent / "fixtures"
 ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="utf-8"))
@@ -394,3 +395,115 @@ def test_footnote_path_keeps_only_inherited_parts():
     named, inherited = a.ops[1], a.ops[3]
     assert named.footnote_path.bent is None
     assert inherited.footnote_path.fikra == 9
+
+
+def _items(key: str) -> list[am.ActArticle]:
+    a = ARTICLES[key]
+    return am.expand_list(am.ActArticle(key.split("/")[1], a["instruction"], a["payload"]))
+
+
+def _ops(items: list[am.ActArticle]) -> list:
+    return [o for it in items if am.mentions(it.instruction, 193)
+            for o in am.parse_instruction(it.instruction, it.payload, 193)]
+
+
+def test_list_with_verb_after_olarak():
+    # 5281/43: groups for many laws, "Olarak değiştirilmiştir." once at the end.
+    ops = _ops(_items("5281/43"))
+    assert [(str(o.target), o.old) for o in ops][:4] == [
+        ("md.40/f1/b10", "gıda maddelerinin"),
+        ("md.48/f2", ("Tekele tabi maddelerle, damga pulu, milli piyango bileti, akaryakıt, "
+                      "şeker ve bunlar gibi")),
+        ("md.89/f1/b2", "gelirin % 5'ini aşmaması"),
+        ("md.89/f1/b6", "gıda maddelerinin")]
+    assert ops[2].new == "gelirin % 10'unu aşmaması"
+
+
+def test_list_item_with_numbered_sub_items():
+    # 6728/15 b): "(13) numaralı bendinin;" then "1) Birinci cümlesinde ...".
+    ops = _ops(_items("6728/15"))
+    assert [(o.op, str(o.target)) for o in ops] == [
+        (OpType.REPEAL_NODE, "md.89/f1/b9"),
+        (OpType.REPLACE_PHRASE, "md.89/f1/b13/c1"),
+        (OpType.INSERT_PHRASE, "md.89/f1/b13/c3")]
+    assert ops[2].new == "ve kazanç tutarları" and ops[2].anchor == "hizmet alanları"
+
+
+def test_list_items_naming_their_own_laws():
+    # 5436/14: "a) 375 sayılı KHK’ye ... eklenmiştir." with an unquoted new article, then
+    # "b) 193 sayılı ... aşağıdaki bent eklenmiştir." with the unquoted bent "10. ...".
+    # Item d) has sub-items 1) to 10); "15) Kurumlar Vergisi Kanununun ..." after 9) and
+    # "f) Bakanlar Kurulunca ..." after c) are new texts, not items.
+    items = _items("5436/14")
+    assert [it.instruction[:2] for it in items] == ["27", "31", "3."] + ["31"] * 10 + ["5."]
+    assert items[2].payload[0].startswith("f) Bakanlar Kurulunca")
+    assert items[11].payload[0].startswith("15) Kurumlar Vergisi Kanununun")
+    assert items[12].payload[0].startswith("17) Bu madde hükümlerinin")
+    op = _ops(items[1:2])[0]
+    assert op.op is OpType.INSERT_NODE and str(op.target) == "md.89/f1"
+    assert [n.label for n in op.new_nodes] == ["10."]
+
+
+def test_list_with_lettered_groups():
+    # 4962/17: "A) 213 sayılı ...;" a) b) c), "B) 6183 sayılı ...;" a) b), C) to F),
+    # "Değiştirilmiştir." The 6183 items stay under 6183.
+    items = _items("4962/17")
+    assert [it.instruction.split(" sayılı")[0][-3:] for it in items] == [
+        "213", "213", "213", "183", "183", "492", "193", "193", "422"]
+    ops = _ops(items)
+    assert [(str(o.target), o.paren) for o in ops] == [
+        ("md.86/f1/b1/abb", True), ("md.89/f1/b2", False)]
+    assert ops[0].new.startswith("(birden fazla işverenden ücret almakla beraber")
+
+
+def test_list_items_sharing_one_verb():
+    # 6353/65: "193 sayılı Gelir Vergisi Kanununun;" a) b) "değiştirilmiştir."
+    items = _items("6353/65")
+    assert [it.instruction.split("Kanununun ")[1][:8] for it in items] == ["75 inci ", "94 üncü "]
+    assert all(it.instruction.endswith("değiştirilmiştir") for it in items)
+
+
+def test_article_heading_with_figure_dash():
+    # 6525/5 writes "MADDE 5 ‒" with U+2012.
+    (a,) = am.act_articles([(
+        "MADDE 5 ‒ 31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 89 uncu maddesinin "
+        "birinci fıkrasının (5) numaralı bendinde yer alan “Diyanet İşleri Başkanlığı "
+        "denetiminde yaygın din eğitimi verilen tesislerin” ibaresinden sonra gelmek üzere “ve "
+        "Gençlik ve Spor Bakanlığına ait gençlik merkezleri ile gençlik ve izcilik kamplarının” "
+        "ibaresi eklenmiştir.")])
+    (op,) = am.parse_instruction(a.instruction, a.payload, 193)
+    assert a.number == "5" and str(op.target) == "md.89/f1/b5"
+    assert op.anchor == "Diyanet İşleri Başkanlığı denetiminde yaygın din eğitimi verilen tesislerin"
+
+
+def test_operations_from_change_markers():
+    # 6663 (a scanned PDF) added md. 89/f1/b15, which 7338 repealed; only the marker
+    # "(Ek: 29/1/2016-6663/2 md.)" is left of it.
+    b14 = Node(level=Level.BENT, label="14.", text="1/7/2005 tarihli ve 5378 sayılı ...")
+    b15 = Node(level=Level.BENT, label="15.", repealed=True, notes=[
+        "(Ek: 29/1/2016-6663/2 md.)", "(Mülga:14/10/2021-7338/5 md.)"])
+    md89 = Node(level=Level.MADDE, id="89", label="Madde 89 –", children=[
+        Node(level=Level.FIKRA, text="Gelir vergisi matrahının tespitinde", children=[b14, b15])])
+    act = AmendingAct(kind="kanun", number="6663")
+    (a,) = am.ops_from_markers(act, Law(number=193, name="", body=[md89]))
+    (op,) = a.ops
+    assert a.article == "2"
+    assert (op.op, str(op.target), op.position) == (OpType.INSERT_NODE, "md.89/f1/b14", "after")
+    assert op.new_nodes[0].label == "15." and not op.new_nodes[0].repealed
+    # A footnote of the act on the node says it already: no second insertion.
+    b15.footnotes = [7]
+    act.footnotes = [FootnoteRef(footnote=7, article="89", law_article="2", text="...")]
+    assert am.ops_from_markers(act, Law(number=193, name="", body=[md89])) == []
+
+
+def test_act_on_a_day_page_ends_at_the_next_act():
+    # RG 3/7/2001: 4684's header comes twice (a table and its cell); 4689 follows.
+    paras = [
+        "Kanun No. 4684 Kabul Tarihi : 20.6.2001",
+        f"{TABLE_MARK}Kanun No. 4684 | Kabul Tarihi : 20.6.2001",
+        ("MADDE 17. — 31.12.1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 38 inci "
+         "maddesinin üçüncü fıkrası aşağıdaki şekilde değiştirilmiştir."),
+        f"{TABLE_MARK}Kanun No. 4689 | Kabul Tarihi : 26.6.2001",
+        ("MADDE 1. – 4.11.1981 tarihli ve 2547 sayılı Yükseköğretim Kanununun 48 inci "
+         "maddesi başlığıyla birlikte aşağıdaki şekilde değiştirilmiştir.")]
+    assert [a.number for a in am.act_articles(paras, "4684")] == ["17"]

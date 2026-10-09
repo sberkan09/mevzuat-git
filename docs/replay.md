@@ -42,6 +42,9 @@ Ayrıca:
   sarmada çıkarılır, ileri oynatmada değiştiren kanunun metniyle geri eklenir.
 - Yer tutucuyla karşılaştırma `superseded` sayılır: o metni sonraki bir işlem bütünüyle
   değiştirmiştir.
+- Sonradan bütünüyle değiştirilen bir maddedeki eski işlemlerin izi bulunamazsa da
+  `superseded` sayılır (`verify.mark_replaced`): etkiledikleri metin artık yoktur. Örneğin
+  4842 sayılı Kanunun md. 89'a eklediği bent, 5228'in maddeyi yeniden yazmasıyla gitmiştir.
 
 ## Metrik
 
@@ -49,8 +52,8 @@ Bir madde, replay sonucu konsolide metinle normalizasyondan sonra birebir aynıy
 **eşleşir**. Geri getirilemeyen bir metne dayanıyorsa **doğrulanamaz** sayılır ve
 metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 
-GVK için (2026-10): 104 maddeye işlem uygulandı. Bunların 74'ü eşleşiyor, 30'u farklı,
-3'ü doğrulanamıyor. **Oran: %71,2.**
+GVK için (2026-10): 108 maddeye işlem uygulandı. Bunların 77'si eşleşiyor, 27'si farklı,
+4'ü doğrulanamıyor. **Oran: %74,0.**
 
 ## RG metni taranmış PDF olan değişiklikler
 
@@ -70,6 +73,11 @@ düğüme bağlanır ve adresi, geri sarmada o düğümün o anki yerinden çöz
 (`replay.rebase`). GVK'da 35 işlem böyle bulunur (KHK 700: 32, 6663: 1, 6676: 2).
 6663'ün başlık değişikliği ("… iken … metne işlendiği şekilde yeniden düzenlenmiştir")
 ve hiç dipnotu olmayan 6655 kapsam dışıdır.
+
+Dipnotu olmayan bir ekleme yalnızca değişiklik işaretinden de okunur
+(`amendments.ops_from_markers`): "(Ek: 29/1/2016-6663/2 md.)" işaretli md. 89/1-15
+bendi, kendinden önceki bentten sonra eklenmiş sayılır. Metni bugünkü metindir; bent
+sonradan yürürlükten kaldırılmışsa o dönemdeki metni bilinmez.
 
 ## Farkların başlıca nedenleri
 

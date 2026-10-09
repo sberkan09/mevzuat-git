@@ -526,6 +526,16 @@ def _last_text_slot(slots: list[TextSlot]) -> TextSlot:
     return texts[0]  # the target's own text, not its sub-nodes
 
 
+def _keep_label(old: Node, new: list[Node]) -> list[Node]:
+    """``new`` as it replaces ``old``. A bent's new text given without its number keeps
+    the number: "(10) numaralı bendi ile 5520 sayılı Kanunun ... (e) bendi aşağıdaki
+    şekilde değiştirilmiştir. “Başbakanlıkça ...”" (6552/92)."""
+    if (len(new) == 1 and not new[0].label and old.label and not new[0].children
+            and old.level in (Level.BENT, Level.ALT_BENT)):
+        return [new[0].model_copy(update={"level": old.level, "label": old.label})]
+    return new
+
+
 def _apply_replace(law: Law, op: AmendmentOp) -> None:
     t = op.target
     if t.baslik:
@@ -546,7 +556,7 @@ def _apply_replace(law: Law, op: AmendmentOp) -> None:
     if not op.new_nodes:
         raise ReplayError("replace without new nodes")
     i = _index(loc.siblings, loc.node)
-    new_nodes = [n.model_copy(deep=True) for n in op.new_nodes]
+    new_nodes = _keep_label(loc.node, [n.model_copy(deep=True) for n in op.new_nodes])
     if loc.node.level is Level.MADDE:
         new = new_nodes[0]
         new.id = loc.node.id
@@ -618,7 +628,22 @@ def _apply_insert(law: Law, op: AmendmentOp) -> None:
     if op.kind is Level.BENT and container.level in (Level.BENT, Level.ALT_BENT):
         for n in new_nodes:
             n.level = Level.ALT_BENT
-    container.children.extend(new_nodes)
+    h = _end_split(container, new_nodes)
+    container.children.extend(new_nodes[:h])
+    if h < len(new_nodes):
+        sibs = siblings_of(law, container)
+        i = _index(sibs, container) + 1
+        sibs[i:i] = new_nodes[h:]
+
+
+def _end_split(container: Node, nodes: list[Node]) -> int:
+    """How many of ``nodes``, added at the end of ``container``, go into it. The rest are
+    unlabelled fıkras that follow it, as the consolidated text has them: an added bent's
+    closing paragraph ("Cumhurbaşkanı bu bentte yer alan oran…", 7256/16) is a fıkra of
+    the article there, after the fıkra with the bents."""
+    if container.level is not Level.FIKRA:
+        return len(nodes)
+    return next((i for i, n in enumerate(nodes) if i and n.level is Level.FIKRA), len(nodes))
 
 
 # -- unapply (inverse, with a check that the operation's result is in the text) ---------
@@ -782,7 +807,7 @@ def _unapply_replace(law: Law, op: AmendmentOp) -> Check:
         return Check("ok")
     i = _index(loc.siblings, loc.node)
     k = len(op.new_nodes)
-    diff = _differs(loc.siblings[i:i + k], op.new_nodes)
+    diff = _differs(loc.siblings[i:i + k], _keep_label(loc.node, op.new_nodes))
     if diff:
         return Check("fail", diff)
     placeholder = Node(level=loc.node.level, label=loc.node.label, text=UNKNOWN)
@@ -879,25 +904,37 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
             container = fikras[-1]
     # Inserted at the end then; later insertions at the end were undone already, but an
     # amendment may have added it with an explicit number among others ("(15) numaralı").
-    keys = [n.key for n in op.new_nodes]
+    h = _end_split(container, op.new_nodes)
+    head, k = op.new_nodes[:h], h
+    sibs, after = [], slice(0)
+    if h < len(op.new_nodes):
+        sibs = siblings_of(law, container)
+        i = _index(sibs, container) + 1
+        after = slice(i, i + len(op.new_nodes) - h)
+    keys = [n.key for n in head]
     if keys and all(keys):
         idx = [i for i, c in enumerate(container.children) if c.key in keys
                and c.level in (Level.BENT, Level.ALT_BENT, Level.FIKRA)]
         if len(idx) == k and idx == list(range(idx[0], idx[0] + k)):
-            got = container.children[idx[0]:idx[0] + k]
-            diff = _inserted_differs(got, op.new_nodes)
-            if diff:
-                return Check("fail", diff)
-            del container.children[idx[0]:idx[0] + k]
-            return Check("ok")
+            return _remove_end(container, idx[0], k, sibs, after, op.new_nodes)
+    # The last nodes of the first one's level, with what follows them ("şarttır." after
+    # an added bent's alt bents is a paragraph of the fıkra).
+    kb = sum(1 for n in head if n.level is head[0].level) if head else 0
     same_level = [i for i, c in enumerate(container.children)
-                  if c.level is op.new_nodes[0].level] if op.new_nodes else []
-    if len(same_level) < k:
+                  if c.level is head[0].level] if head else []
+    if not head or len(same_level) < kb:
         return Check("fail", f"{k} inserted node(s) not found in {t}")
-    start = same_level[-k]
-    got = container.children[start:start + k]
-    diff = _inserted_differs(got, op.new_nodes)
+    return _remove_end(container, same_level[-kb], k, sibs, after, op.new_nodes)
+
+
+def _remove_end(container: Node, start: int, k: int, sibs: list[Node], after: slice,
+                want: list[Node]) -> Check:
+    """Remove ``k`` children of ``container`` from ``start`` and the fıkras ``after`` it
+    in ``sibs``, if they read as ``want``."""
+    got = container.children[start:start + k] + sibs[after]
+    diff = _inserted_differs(got, want)
     if diff:
         return Check("fail", diff)
     del container.children[start:start + k]
+    del sibs[after]
     return Check("ok")
