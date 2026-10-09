@@ -14,12 +14,12 @@
 - [x] Ağaç → kanonik Markdown serileştirici (deterministik, diff dostu)
 
 ## Faz 2: Değişiklik ayrıştırıcı
-- [ ] Değişiklik formülleri taksonomisi (`docs/amendment-taxonomy.md`)
+- [x] Değişiklik formülleri taksonomisi (`docs/amendment-taxonomy.md`)
   - ibare değiştirme / ekleme / yürürlükten kaldırma
   - fıkra/bent ekleme ("...sonra gelmek üzere"), teselsül
   - madde başlığıyla birlikte değiştirme
   - "aşağıdaki şekilde değiştirilmiştir" (tam yeniden yazım)
-- [ ] Kural tabanlı ayrıştırıcı → `AmendmentOp` JSON
+- [x] Kural tabanlı ayrıştırıcı → `AmendmentOp` JSON (`mevzuat-git amendments`)
 - [ ] Çözülemeyenler için LLM yedeği (yapılandırılmış çıktı, şema doğrulama)
 
 ## Faz 3: Uygula ve doğrula

@@ -42,6 +42,8 @@ ITEM_RE = re.compile(
     r"^(?P<label>\(\d+\)|\d+\s*[.)](?!\d)|\d+\s*-(?!\d)|[a-zçğıöşü]{1,4}\s*\)"
     r"|[A-ZÇĞİÖŞÜ]\s*\)|\([a-zçğıöşü]{1,3}\))\s*"
 )
+# Marks a table among plain paragraph strings (RG texts): rows by "\n", cells by " | ".
+TABLE_MARK = "\x01table\x01"
 ROMAN = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"}
 TR_ALPHABET = "abcçdefgğhıijklmnoöprsştuüvyz"
 
@@ -192,6 +194,9 @@ class _Builder:
     def paragraph(self, text: str, fns: list[int]) -> None:
         if self.article is None:
             return  # preamble lines between headings and the first article
+        if text.startswith(TABLE_MARK):
+            self.table([r.split(" | ") for r in text[len(TABLE_MARK):].split("\n")], fns)
+            return
         notes, rest = split_markers(text)
         label = ""
         if m := ITEM_RE.match(rest):
@@ -325,6 +330,7 @@ def _is_title(bs: list[Block], i: int) -> bool:
         return True
     prev = bs[i - 1] if i > 0 else None
     return (prev is None or prev.blank) and len(b.text) < 200 \
+        and not b.text.endswith((".", ";", ",")) \
         and not LEADING_MARKER_RE.match(b.text) and not ITEM_RE.match(b.text)
 
 
@@ -347,8 +353,46 @@ def _is_unnumbered_heading(bs: list[Block], i: int) -> bool:
 def build_tree(html: str, number: int) -> Law:
     header = mg.parse_header(html)
     law = Law(number=number, name=header.title)
+    _build(blocks(html), law)
+    return law
+
+
+def parse_fragment(texts: list[str], kind: Level) -> list[Node]:
+    """Parse the new text of an amendment ("... aşağıdaki şekilde değiştirilmiştir.")
+    into nodes of ``kind``, with the same rules as the consolidated text."""
+    law = Law(number=0, name="")
+    if kind is Level.MADDE:
+        bs = [Block(text="", table=[r.split(" | ") for r in t[len(TABLE_MARK):].split("\n")])
+              if t.startswith(TABLE_MARK) else Block(text=t) for t in texts]
+        _build(bs, law)
+        return list(law.articles())
+    if kind is Level.PARAGRAF:
+        return [Node(level=Level.PARAGRAF, text=t) for t in texts]
     b = _Builder(law)
-    bs = blocks(html)
+    art = b.open_article("", "", None, [], [])
+    for t in texts:
+        b.paragraph(t, [])
+    if kind is Level.FIKRA:
+        return art.children
+    items: list[Node] = []
+    for f in art.children:
+        if items and items[-1].label and not f.label and not f.children:
+            # An unlabelled paragraph after the items continues the last one, as in the
+            # consolidated text when another item follows (GVK md. 41/1-5).
+            f.level = Level.PARAGRAF
+            items[-1].children.append(f)
+            continue
+        if f.label or f.text or f.notes:
+            items.append(f)
+        items.extend(f.children)
+    for n in items:
+        if n.level in (Level.BENT, Level.ALT_BENT):
+            n.level = kind
+    return items
+
+
+def _build(bs: list[Block], law: Law) -> None:
+    b = _Builder(law)
     pending_title: Block | None = None
     i = 0
     while i < len(bs):
@@ -393,4 +437,3 @@ def build_tree(html: str, number: int) -> Law:
         # "Madde 20 – (Mülga: ...)" followed by fıkras in force is not repealed.
         if a.repealed and any(n.text for n in a.walk()):
             a.repealed = False
-    return law

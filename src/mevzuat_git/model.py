@@ -72,13 +72,30 @@ class Law(BaseModel):
 
 
 class Path(BaseModel):
-    """Address of a node: madde 23 / fıkra 2 / bent b ..."""
+    """Address of a node inside a law: madde 23 / fıkra 2 / bent 4 / alt bent c ...
 
-    madde: str
+    ``fikra`` is a 1-based position ("ikinci fıkra", "(2) numaralı fıkra"); -1 is "son
+    fıkra". ``bent`` and ``alt_bent`` are label keys ("4", "c"). ``cumle`` and
+    ``paragraf`` narrow a phrase operation to one sentence or unlabelled paragraph.
+    """
+
+    madde: str  # canonical article id: "23", "mukerrer-80", "gecici-67"; "" = the law
     fikra: int | None = None
     bent: str | None = None
     alt_bent: str | None = None
-    kind: Literal["madde", "gecici", "ek"] = "madde"
+    paragraf: int | None = None
+    cumle: int | None = None
+    baslik: bool = False  # the madde başlığı itself
+
+    def __str__(self) -> str:
+        parts = [f"md.{self.madde}" if self.madde else "law"]
+        if self.baslik:
+            parts.append("başlık")
+        for name, v in (("f", self.fikra), ("b", self.bent), ("ab", self.alt_bent),
+                        ("p", self.paragraf), ("c", self.cumle)):
+            if v is not None:
+                parts.append(f"{name}{v}")
+        return "/".join(parts)
 
 
 class OpType(str, Enum):
@@ -93,19 +110,26 @@ class OpType(str, Enum):
 class AmendmentOp(BaseModel):
     op: OpType
     target: Path
-    old: str | None = None
-    new: str | None = None
-    new_node: Node | None = None
+    old: str | None = None  # phrase ops: the ibare being replaced/deleted
+    new: str | None = None  # phrase ops: the new ibare; title-only replace: new title
+    anchor: str | None = None  # insert_phrase: the ibare the new one goes after/before
+    position: Literal["after", "before", "start", "end"] | None = None
+    all: bool = False  # "ibareleri": every occurrence in the target
+    paren: bool = False  # "parantez içi hükmü": the parenthesised part of the target
+    kind: Level | None = None  # node ops: level of the inserted/replaced nodes
+    new_nodes: list[Node] = Field(default_factory=list)
+    with_title: bool = False  # "başlığıyla birlikte"
     renumber: bool = False  # teselsül
     source_sentence: str  # RG'deki ham cümle, izlenebilirlik için
 
 
 class Amendment(BaseModel):
-    """One amending law (or one article of a torba kanun) applied to one target law."""
+    """One amending act applied to one target law."""
 
-    amending_law: int
-    rg_date: date
-    rg_number: str
-    effective_date: date
+    amending_law: str
+    article: str  # article of the amending act, e.g. "5"
+    rg_date: date | None = None
+    rg_number: str | None = None
+    effective_date: date | None = None
     target_law: int
     ops: list[AmendmentOp]

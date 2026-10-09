@@ -207,10 +207,39 @@ edilebilir:
 yürürlük tarihi metnin sonundaki yürürlük tablosundan gelir (çoğu zaman serbest metin:
 "1/1/2025 tarihinden itibaren … yayımı tarihinde (19/12/2025)").
 
-## Açık sorular (Faz 2)
+## Ayrıştırıcı (Faz 2)
 
-- Çok paragraflı `aşağıdaki` metinlerinde tırnak sınırı; yeni metin içindeki iç tırnaklar.
-- `ibareleri` kapsamı: yalnız adı geçen düğümde mi, alt düğümler dahil mi?
-- Göreli adresler (`aynı fıkraya`, `fıkraya`) için bağlam yığını.
-- Model genişletmeleri: kısım/bölüm başlığı hedefi, cümle/paragraf/parantez içi hüküm düzeyi,
-  tüm geçişler bayrağı, başlıkla birlikte değiştirme bayrağı.
+`mevzuat_git.amendments` bu formülleri kural tabanlı okur; `mevzuat-git amendments 193`
+çıktısı `data/processed/193_ops.json`. RG metni HTML olan 69 GVK değişikliğinde hedef
+kanunu anan 245 cümlenin 243'ü işleme ayrıldı (363 işlem). Ayrılamayan ikisi GVK'yı
+değiştirmez: 5746 MADDE 3 kendi hükmüdür, 6728 MADDE 60 ise 5746'yı değiştirir.
+
+Önceki açık sorulara verilen cevaplar:
+
+- **Tırnak sınırı.** Açılış ve kapanış tırnakları sayılır; düz `"` için tek sayıda tırnak
+  paragrafın başındaysa açar, sonundaysa kapatır. Böylece tırnak içinde `MADDE 32 –` geçen
+  yeni madde metni değiştiren kanunun kendi maddesi sanılmaz (5615 MADDE 2).
+- **Tırnaksız eski metinler.** Yeni metin birden çok işleme ya da hedefe paylaştırılırken
+  önce tırnaklara, sonra her paragrafa bir işlem kuralına, en son etiketlere bakılır:
+  yeniden başlayan bir liste ("9." ardından "2.", "d)" ardından "15.") yeni işlemi başlatır
+  (4697 MADDE 4 ve 8). Hedefin etiketi biliniyorsa ("(2) ve (3) numaralı fıkraları" için
+  "2." ve "3.") paylaştırma o etiketlere göre yapılır (5024 MADDE 6).
+- **Bir işlemde birden çok adres.** `(6) numaralı bendi ile … üçüncü fıkrası aşağıdaki
+  şekilde değiştirilmiştir` iki ayrı işlem olur. Tırnak içindeki `ile`/`ve` adres ayırıcı
+  sayılmaz (7491 MADDE 11).
+- **Liste maddeleri.** `geçici 67 nci maddesinin;` ardından `a)`, `b)` … gelen ve her
+  maddesi kendi fiilini taşıyan yazılışta, her madde kendi tırnaklı metnini alır. Tırnak
+  içindeki `a)`, `b)` yeni metnin parçasıdır (5527 MADDE 1, 5766 MADDE 8).
+- **Tanınmayan işlem.** İki işlem arasındaki metinde çekimli bir fiil (`eklenmiş`,
+  `değiştirilmiş`) kalırsa cümle ayrıştırılamadı sayılır; o metin bir sonraki işlemin
+  adresi gibi okunmaz. Tırnaklı bir ibare ya da `parantez` geçen bir adres hiçbir zaman
+  bütün düğümün yürürlükten kaldırılması olarak okunmaz (5661 MADDE 3, 7491 MADDE 9).
+- **`ibareleri`.** Hedef düğümün tüm alt ağacındaki her geçiş değişir (`AmendmentOp.all`).
+- **Göreli adresler.** Her işlemin adresi bir öncekinin bağlamında çözülür (`aynı maddenin`,
+  `fıkraya`, `bende`).
+- **Model.** `Path` cümle, paragraf ve madde başlığını adresler; `AmendmentOp` tüm geçişler,
+  parantez içi hüküm ve başlıkla birlikte değiştirme bayraklarını taşır. Kısım/bölüm
+  başlığı hâlâ adreslenemiyor: bu işlemler atlanır.
+
+Kalan iş: RG metni PDF olan değişiklikler (KHK 700, 6655, 6663, 6676) ve kural dışı kalan
+cümleler için LLM yedeği.

@@ -5,7 +5,8 @@ from mevzuat_git.model import Amendment, AmendmentOp, OpType, Path
 
 def test_amendment_roundtrip():
     a = Amendment(
-        amending_law=7524,
+        amending_law="7524",
+        article="1",
         rg_date=date(2024, 8, 2),
         rg_number="32620",
         effective_date=date(2024, 8, 2),
