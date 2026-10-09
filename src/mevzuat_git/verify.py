@@ -132,6 +132,28 @@ def unwind(current: Law, groups: list[list[OpResult]]) -> Law:
     return state
 
 
+def _whole_article(op: AmendmentOp) -> bool:
+    t = op.target
+    return (op.op is OpType.REPLACE_NODE and bool(t.madde) and not t.baslik
+            and all(getattr(t, f) is None
+                    for f in ("fikra", "bent", "alt_bent", "paragraf", "cumle")))
+
+
+def mark_replaced(ops: list[OpResult]) -> None:
+    """An operation on an article that a later act replaced as a whole acted on text that
+    is gone: its effect cannot be in the consolidated text, and the replay need not do it
+    (4842/10 on md. 89, before 5228/28 rewrote the article). Its failed check becomes
+    "superseded"."""
+    replaced: dict[str, OpResult] = {}  # article -> the earliest later replacement
+    for r in reversed(ops):
+        by = replaced.get(r.op.target.madde or "")
+        if r.check == "fail" and by is not None and by.act != r.act:
+            r.check = "superseded"
+            r.check_message = f"article replaced by {by.act} md. {by.article}"
+        if _whole_article(r.op):
+            replaced[r.op.target.madde or ""] = r
+
+
 def replay_batch(law: Law, batch: list[OpResult]) -> None:
     """Apply one batch in place; errors are recorded on the operations."""
     live = [r for r in batch if r.check != "superseded" and not _not_undone(r)]
@@ -155,6 +177,7 @@ def run(current: Law, opsfile: OpsFile) -> Report:
     ops = op_results(opsfile)
     groups = batches(ops)
     replayed = unwind(current, groups)  # the baseline, replayed forward in place
+    mark_replaced(ops)
     for b in groups:
         replay_batch(replayed, b)
 

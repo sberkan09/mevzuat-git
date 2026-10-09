@@ -8,7 +8,8 @@ import pytest
 from mevzuat_git import amendments as am
 from mevzuat_git.compare import node_lines, norm
 from mevzuat_git.fetch import decode_html
-from mevzuat_git.model import Law, Level, Node, OpType
+from mevzuat_git.model import AmendmentOp, Law, Level, Node, OpType
+from mevzuat_git.model import Path as Addr
 from mevzuat_git.replay import (
     UNKNOWN,
     ReplayError,
@@ -22,7 +23,7 @@ from mevzuat_git.replay import (
     unapply_batch,
 )
 from mevzuat_git.tree import build_tree, parse_fragment
-from mevzuat_git.verify import OpResult, batches
+from mevzuat_git.verify import OpResult, batches, mark_replaced
 
 FIX = Path(__file__).parent / "fixtures"
 ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="utf-8"))
@@ -300,3 +301,62 @@ def test_find_all_ignores_typography():
 ])
 def test_norm(raw, normal):
     assert norm(raw) == normal
+
+
+def _md89(*fikra1: Node, after: list[Node] = ()) -> Law:
+    f1 = Node(level=Level.FIKRA, text="Gelir vergisi matrahının tespitinde ...",
+              children=list(fikra1))
+    rest = Node(level=Level.FIKRA, text="Bağış ve yardımın nakden yapılmaması halinde ...")
+    return Law(number=193, name="", body=[Node(level=Level.MADDE, id="89", label="Madde 89 –",
+                                              children=[f1, *after, rest])])
+
+
+def test_bent_added_at_the_end_with_closing_paragraphs():
+    # 7256/16 adds bent 16: its alt bents, "şarttır. ..." (a paragraph of the fıkra) and
+    # "Cumhurbaşkanı bu bentte ..." (a fıkra of the article, as the consolidated text has
+    # it). Undoing it removes those and nothing else: bent 15, repealed, reads as nothing.
+    (op,) = ops_of("7256/16")
+    assert [n.level for n in op.new_nodes] == [Level.BENT, Level.PARAGRAF, Level.FIKRA]
+    b14 = Node(level=Level.BENT, label="14.", text="1/7/2005 tarihli ve 5378 sayılı ...")
+    b15 = Node(level=Level.BENT, label="15.", repealed=True)
+    head, tail = op.new_nodes[:2], op.new_nodes[2:]
+    law = _md89(b14, b15, *[n.model_copy(deep=True) for n in head],
+                after=[n.model_copy(deep=True) for n in tail])
+    before = node_lines(law.article("89"))
+    assert unapply(law, op).status == "ok"
+    md89 = law.article("89")
+    assert [c.label for c in md89.children[0].children] == ["14.", "15."]
+    assert len(md89.children) == 2
+    apply(law, op)
+    assert node_lines(law.article("89")) == before
+    assert len(law.article("89").children) == 3
+
+
+def test_bent_replaced_by_unnumbered_text_keeps_its_number():
+    # 6552/92 gives the new (10) numaralı bent of md. 89 without its number: it serves
+    # 5520 sayılı Kanunun (e) bendi too.
+    (op,) = [o for o in ops_of("6552/92") if str(o.target) == "md.89/f1/b10"]
+    law = _md89(Node(level=Level.BENT, label="9.", text="..."),
+                Node(level=Level.BENT, label="10.", text="Bakanlar Kurulunca yardım ..."))
+    apply(law, op)
+    b10 = law.article("89").children[0].children[1]
+    assert (b10.level, b10.label) == (Level.BENT, "10.")
+    assert b10.text.startswith("Başbakanlıkça veya Bakanlar Kurulunca")
+    assert unapply(law, op).status == "ok"
+    assert law.article("89").children[0].children[1].text == UNKNOWN
+
+
+def test_operations_before_a_whole_article_replacement_are_superseded():
+    # 4842/10 added md. 89/f1/b3 in 2003; 5228/28 rewrote md. 89 in 2004. The bent 4842
+    # added is gone, so its failed check means nothing.
+    def r(act, op, target, check):
+        return OpResult(act=act, article="1", check=check, op=AmendmentOp(
+            op=op, target=Addr.model_validate(target), source_sentence=""))
+    early = r("4842", OpType.INSERT_NODE, {"madde": "89", "fikra": 1, "bent": "3"}, "fail")
+    other = r("4842", OpType.INSERT_NODE, {"madde": "90", "fikra": 1}, "fail")
+    whole = r("5228", OpType.REPLACE_NODE, {"madde": "89"}, "superseded")
+    later = r("6322", OpType.INSERT_NODE, {"madde": "89", "fikra": 1}, "fail")
+    mark_replaced([early, other, whole, later])
+    assert [x.check for x in (early, other, whole, later)] == [
+        "superseded", "fail", "superseded", "fail"]
+    assert early.check_message == "article replaced by 5228 md. 1"

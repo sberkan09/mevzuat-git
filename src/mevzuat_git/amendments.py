@@ -172,7 +172,7 @@ class ActArticle:
 
 ARTICLE_START_RE = re.compile(r"(?:(?:GEÇİCİ|EK|MÜKERRER|Geçici|Ek|Mükerrer)\s+)?(?:MADDE|Madde)\s+\d")
 ACT_ARTICLE_RE = re.compile(
-    r"^(?P<pre>GEÇİCİ\s+|EK\s+)?MADDE\s+(?P<num>\d+)\s*\.?\s*[–—-]\s*(?P<rest>.*)$"
+    r"^(?P<pre>GEÇİCİ\s+|EK\s+)?MADDE\s+(?P<num>\d+)\s*\.?\s*[–—‒-]\s*(?P<rest>.*)$"
 )
 
 
@@ -236,8 +236,11 @@ def act_articles(paras: list[str], law_no: str | None = None) -> list[ActArticle
         start = next((i for i, p in enumerate(paras)
                       if re.search(rf"Kanun\s+(?:No|Numarası)\s*[.:]*\s*{law_no}\b", p)), None)
         if start is not None:
+            # The next act's header; the same act's header may come twice, as a table
+            # and as its cell (4684).
             end = next((j for j in range(start + 1, len(paras))
-                        if re.search(r"Kanun\s+(?:No|Numarası)\s*[.:]*\s*\d+\b", paras[j])),
+                        if (m := re.search(r"Kanun\s+(?:No|Numarası)\s*[.:]*\s*(\d+)\b",
+                                           paras[j])) and m.group(1) != law_no),
                        len(paras))
             paras = paras[start:end]
     arts: list[ActArticle] = []
@@ -267,9 +270,10 @@ def act_articles(paras: list[str], law_no: str | None = None) -> list[ActArticle
 
 
 LIST_VERB_RE = re.compile(
-    r"^(?:(?P<seklinde>[Şş]eklinde)\s+)?(?P<verb>değiştirilmiştir|yürürlükten\s+kaldırılmıştır"
+    r"^(?:(?P<how>[Şş]eklinde|[Oo]larak)\s+)?(?P<verb>değiştirilmiştir|yürürlükten\s+kaldırılmıştır"
     r"|eklenmiştir|metinden\s+çıkarılmıştır)\s*\.?$", re.IGNORECASE
 )
+_TR_LOWER = str.maketrans({"I": "ı", "İ": "i"})
 GROUP_RE = re.compile(r"^\d+\s*[.)-]\s*(?P<text>.*)$")
 ITEM_RE = re.compile(r"^[a-zçğıöşü]{1,2}\s*\)\s*(?P<text>.*)$")
 
@@ -291,17 +295,37 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
     verb_at = next((i for i in range(len(lines) - 1, 0, -1) if LIST_VERB_RE.match(lines[i])),
                    None)
     if verb_at is None:
-        # "193 sayılı Kanunun;" followed by items that carry their own verbs (5527, 7578).
-        if not (re.search(r"sayılı\s.*[;:]$", lines[0]) and len(lines) > 1
-                and ITEM_RE.match(lines[1])):
+        if ITEM_RE.match(lines[0]) and LAW_REF_RE.search(lines[0]):
+            # "MADDE 14 – a) 375 sayılı KHK’ye ... eklenmiştir." then "b) 193 sayılı ...":
+            # items that each name their law and carry their own verb (5436). An item's
+            # new text may be unquoted ("f) Bakanlar Kurulunca ..."), so only a line that
+            # names a law starts the next item.
+            head, rest = "", lines
+        elif (re.search(r"sayılı\s.*[;:]$", lines[0]) and len(lines) > 1
+              and ITEM_RE.match(lines[1])):
+            # "193 sayılı Kanunun;" followed by items that carry their own verbs (5527, 7578).
+            head, rest = lines[0].rstrip(";:").rstrip(), lines[1:]
+        else:
             return None
         out = []
-        head = lines[0].rstrip(";:").rstrip()
+        sub = None  # "b) (13) numaralı bendinin;" then "1) Birinci cümlesinde ..." (6728)
         balance = 0
-        for line in lines[1:]:
-            if balance <= 0 and (it := ITEM_RE.match(line)):
+        for line in rest:
+            if balance <= 0 and (it := ITEM_RE.match(line)) and (head or LAW_REF_RE.search(line)):
                 item = it.group("text").rstrip()
-                out.append(ActArticle(number=a.number, instruction=f"{head} {item}"))
+                sub = None
+                if item.endswith((";", ":")):
+                    sub = f"{head} {item.rstrip(';:').rstrip()}".lstrip()
+                    continue
+                out.append(ActArticle(number=a.number, instruction=f"{head} {item}".lstrip()))
+                balance = 0
+            elif balance <= 0 and sub and (g := GROUP_RE.match(line)):
+                # Mid-sentence once joined: "bendinin birinci cümlesinde".
+                item = g.group("text").rstrip()
+                low = item[:1].translate(_TR_LOWER).lower() + item[1:]
+                if re.match(r"(?:" + ORD_RE + r"|son)\s", low):
+                    item = low
+                out.append(ActArticle(number=a.number, instruction=f"{sub} {item}"))
                 balance = 0
             elif out:
                 out[-1].payload.append(line)  # the new text of the item before
@@ -309,17 +333,23 @@ def expand_list(a: ActArticle) -> list[ActArticle] | None:
             else:
                 return None
         return out or None
+    head = ""
     if not GROUP_RE.match(lines[0]):
-        # "MADDE 1 – Bu maddenin yayımı tarihinde;" then the groups (6462).
-        if not (lines[0].rstrip().endswith((";", ":")) and len(lines) > 1
-                and GROUP_RE.match(lines[1])):
+        if not (lines[0].rstrip().endswith((";", ":")) and len(lines) > 1):
+            return None
+        if GROUP_RE.match(lines[1]):
+            # "MADDE 1 – Bu maddenin yayımı tarihinde;" then the groups (6462).
+            pass
+        elif ITEM_RE.match(lines[1]):
+            # "193 sayılı Kanunun;" then items and one verb for all of them (6353).
+            head = lines[0].rstrip().rstrip(";:").rstrip()
+        else:
             return None
         lines = lines[1:]
         verb_at -= 1
     vm = LIST_VERB_RE.match(lines[verb_at])
-    verb = ("şeklinde " if vm.group("seklinde") else "") + vm.group("verb").lower()
+    verb = (vm.group("how").lower() + " " if vm.group("how") else "") + vm.group("verb").lower()
     out: list[ActArticle] = []
-    head = ""
     for line in lines[:verb_at]:
         if g := GROUP_RE.match(line):
             text = g.group("text").rstrip()
@@ -989,13 +1019,11 @@ def parse_all(fetcher: Fetcher, alist: AmendmentList) -> OpsFile:
 _FOOTNOTE_ACT = re.compile(r"^.*?\b\d+\s+sayılı\s+\S+\s+\d+\s*\S*\s+maddes[iı]yle,\s*")
 
 
-def footnote_paths(law: Law) -> dict[int, Path]:
-    """The address of the node each footnote number is attached to."""
-    out: dict[int, Path] = {}
+def node_paths(law: Law) -> list[tuple[Node, Path, list[Node]]]:
+    """Every node below an article with its address and its siblings, in text order."""
+    out: list[tuple[Node, Path, list[Node]]] = []
 
     def visit(n: Node, path: Path) -> None:
-        for fn in n.footnotes:
-            out.setdefault(fn, path)
         fikras = [c for c in n.children if c.level is Level.FIKRA]
         paras = [c for c in n.children if c.level is Level.PARAGRAF]
         for c in n.children:
@@ -1012,11 +1040,25 @@ def footnote_paths(law: Law) -> dict[int, Path]:
                 p = path.model_copy(update={"paragraf": paras.index(c) + 2})
             else:
                 p = path
+            out.append((c, p, n.children))
             visit(c, p)
 
     for art in law.articles():
         if art.id:
             visit(art, Path(madde=art.id))
+    return out
+
+
+def footnote_paths(law: Law) -> dict[int, Path]:
+    """The address of the node each footnote number is attached to."""
+    out: dict[int, Path] = {}
+    for art in law.articles():
+        if art.id:
+            for fn in art.footnotes:
+                out.setdefault(fn, Path(madde=art.id))
+    for n, path, _ in node_paths(law):
+        for fn in n.footnotes:
+            out.setdefault(fn, path)
     return out
 
 
@@ -1078,14 +1120,51 @@ def ops_from_footnotes(act: AmendingAct, law: Law) -> tuple[list[Amendment],
     return list(by_article.values()), unparsed
 
 
+# "(Ek: 29/1/2016-6663/2 md.)", "(Ek:11/11/2020-7256/16 md.)"
+_EK_MARK = re.compile(r"\bEk\s*:\s*[\d/.]+\s*-\s*(?P<act>\d+)\s*/\s*(?P<art>\d+)\s*md\b")
+
+
+def ops_from_markers(act: AmendingAct, law: Law) -> list[Amendment]:
+    """Nodes that the consolidated text marks as added by ``act`` ("(Ek: 29/1/2016-6663/2
+    md.)") when no footnote says so: an insertion after the node before it. The node's
+    text is today's; a repealed node's text at the time is unknown."""
+    from mevzuat_git.replay import UNKNOWN
+
+    by_article: dict[str, Amendment] = {}
+    nodes = node_paths(law)
+    path_of = {id(n): p for n, p, _ in nodes}
+    for n, _, sibs in nodes:
+        marks = [m for note in n.notes for m in _EK_MARK.finditer(note)
+                 if m.group("act") == act.number]
+        i = next(k for k, c in enumerate(sibs) if c is n)
+        if not marks or i == 0 or n.level not in (Level.BENT, Level.ALT_BENT, Level.FIKRA):
+            continue
+        prev = path_of[id(sibs[i - 1])]
+        new = n.model_copy(deep=True, update={"notes": [], "footnotes": []})
+        if n.repealed or not (n.text or n.children):
+            new.text, new.repealed, new.children = UNKNOWN, False, []
+        article = marks[0].group("art")
+        op = AmendmentOp(op=OpType.INSERT_NODE, target=prev, position="after", kind=n.level,
+                         new_nodes=[new], source_sentence=" ".join(n.notes))
+        by_article.setdefault(article, Amendment(
+            amending_law=act.number, article=article, target_law=law.number,
+            rg_date=act.rg.date if act.rg else None,
+            rg_number=act.rg.number if act.rg else None, ops=[])).ops.append(op)
+    return list(by_article.values())
+
+
 def add_footnote_ops(opsfile: OpsFile, alist: AmendmentList, law: Law) -> None:
     """Fill in acts whose RG text could not be read from the footnotes of ``law``."""
     acts = {a.number: a for a in alist.acts}
     for rec in opsfile.acts:
         act = acts.get(rec.act)
-        if rec.error is None or act is None or not act.footnotes:
+        if rec.error is None or act is None:
+            continue
+        marked = ops_from_markers(act, law)
+        if not (act.footnotes or marked):
             continue
         rec.amendments, rec.unparsed = ops_from_footnotes(act, law)
+        rec.amendments += marked
         rec.sentences = len(act.footnotes)
         rec.source = "footnotes"
 
