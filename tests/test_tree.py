@@ -6,7 +6,14 @@ import pytest
 
 from mevzuat_git.model import Level
 from mevzuat_git.render import escape, to_markdown
-from mevzuat_git.tree import ITEM_RE, _follows, _is_repeal, build_tree, split_markers
+from mevzuat_git.tree import (
+    ITEM_RE,
+    _follows,
+    _is_repeal,
+    build_tree,
+    parse_fragment,
+    split_markers,
+)
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -194,3 +201,25 @@ def test_br_is_a_space():
             "<p>Gerçek kişilerin gelirleri gelir vergisine<br>tâbidir.</p></body></html>")
     law = build_tree(html, 193)
     assert law.article("1").children[0].text == "Gerçek kişilerin gelirleri gelir vergisine tâbidir."
+
+
+# GVK md. 94, dördüncü fıkra, as on mevzuat.gov.tr.
+MD94_F4 = [
+    ("MADDE 94 – Tam mükellef sermaye şirketlerinin iktisap ettikleri kendi hisse senetlerini "
+    "veya ortaklık paylarını,"),
+    ("i) Sermaye azaltımı yoluyla itfa etmeleri hâlinde iktisap bedeli ile hisse senetlerinin "
+    "veya ortaklık paylarının itibari değeri arasındaki fark tutar sermaye azaltımına ilişkin "
+    "kararın ticaret sicilinde tescil edildiği tarih,"),
+    ("ii) İktisap bedelinin altında bir bedel karşılığında elden çıkarmaları hâlinde iktisap "
+    "bedeli ile elden çıkarma bedeli arasındaki fark tutar elden çıkarma tarihi,"),
+    ("itibarıyla dağıtılmış kâr payı sayılır ve bu tutarlar üzerinden %15 oranında vergi "
+    "tevkifatı yapılır."),
+]
+
+
+def test_lower_case_line_continues_the_fikra():
+    (art,) = parse_fragment(MD94_F4, Level.MADDE)
+    (f,) = art.children
+    assert [(c.level, c.label) for c in f.children] == [
+        (Level.BENT, "i)"), (Level.BENT, "ii)"), (Level.PARAGRAF, "")]
+    assert f.children[-1].text.startswith("itibarıyla dağıtılmış")

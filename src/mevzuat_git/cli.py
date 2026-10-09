@@ -96,9 +96,24 @@ def amendments(
 
 
 @app.command()
-def replay(law: int) -> None:
-    """Apply parsed amendments in order and diff against consolidated text (Faz 3)."""
-    raise NotImplementedError("Faz 3: see docs/ROADMAP.md")
+def replay(
+    law: int = typer.Argument(..., help="Kanun numarası, ör. 193"),
+    cache_dir: Path = typer.Option(DEFAULT_CACHE_DIR, help="Raw response cache"),
+    out_dir: Path = typer.Option(PROCESSED_DIR, help="Where <law>_replay.md goes"),
+    offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
+) -> None:
+    """Replay parsed amendments and compare with the consolidated text (Faz 3)."""
+    from mevzuat_git.verify import OpsFile, current_tree, render_report, run
+
+    ops = OpsFile.model_validate_json((out_dir / f"{law}_ops.json").read_text())
+    with Fetcher(cache_dir=cache_dir, offline=offline) as f:
+        current = current_tree(f, law)
+    rep = run(current, ops)
+    out = out_dir / f"{law}_replay.md"
+    out.write_text(render_report(rep, law))
+    c = rep.counts
+    typer.echo(f"{out}: article match rate {rep.match_rate:.1%} "
+               f"({c['match']} match, {c['mismatch']} mismatch, {c['unverified']} unverified)")
 
 
 if __name__ == "__main__":

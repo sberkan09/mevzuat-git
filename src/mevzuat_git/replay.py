@@ -1,0 +1,839 @@
+"""Faz 3: apply amendment operations to a law tree, and undo them.
+
+``apply`` is the replay engine: it changes a :class:`~mevzuat_git.model.Law` in place
+the way an amending act changed the law. ``unapply`` is its inverse, used to rebuild the
+text as it stood before the first amendment we have the RG text of (see verify.py).
+
+Text is changed only by the operations themselves; new text is inserted verbatim.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from itertools import pairwise
+
+from mevzuat_git.compare import node_lines, norm
+from mevzuat_git.model import AmendmentOp, Law, Level, Node, OpType, Path, label_key
+from mevzuat_git.tree import TR_ALPHABET
+
+UNKNOWN = "\x00?"  # text of a node whose earlier content cannot be recovered
+
+
+class ReplayError(Exception):
+    pass
+
+
+class Superseded(Exception):
+    """The target lies inside text that a later operation replaced wholesale."""
+
+
+# -- locating --------------------------------------------------------------------------
+
+@dataclass
+class Located:
+    node: Node
+    siblings: list[Node]  # the list that holds ``node``
+    article: Node | None
+    sentence: int | None = None  # 0-based; -1 = last
+
+
+def _containers(law: Law) -> list[list[Node]]:
+    out = [law.body]
+    for top in law.body:
+        for n in top.walk():
+            out.append(n.children)
+    return out
+
+
+def siblings_of(law: Law, node: Node) -> list[Node]:
+    for lst in _containers(law):
+        if any(x is node for x in lst):
+            return lst
+    raise ReplayError("node not in tree")
+
+
+def _index(lst: list[Node], node: Node) -> int:
+    return next(i for i, x in enumerate(lst) if x is node)
+
+
+def _ord_pick(items: list[Node], n: int, what: str) -> Node:
+    if n == -1:
+        if not items:
+            raise ReplayError(f"no {what}")
+        return items[-1]
+    if not 1 <= n <= len(items):
+        raise ReplayError(f"{what} {n} not found ({len(items)} present)")
+    return items[n - 1]
+
+
+def _check_known(n: Node) -> None:
+    if n.text == UNKNOWN:
+        raise Superseded()
+
+
+def locate(law: Law, path: Path, whole: bool = False) -> Located:
+    """The node at ``path``. Raises :class:`Superseded` when the path runs through text
+    a later operation replaced (see ``UNKNOWN``); with ``whole``, the node itself may be
+    such a placeholder, since the operation replaces or repeals all of it."""
+    if not path.madde:
+        raise ReplayError("law-level path has no node")
+    art = law.article(path.madde)
+    if art is None:
+        raise ReplayError(f"article {path.madde} not found")
+    node = art
+    chain = [art]
+    if path.fikra is not None:
+        fikras = [c for c in art.children if c.level is Level.FIKRA]
+        by_label = [f for f in fikras if f.key == str(path.fikra)]
+        node = by_label[0] if by_label and path.fikra > 0 else _ord_pick(fikras, path.fikra,
+                                                                           "fıkra")
+        chain.append(node)
+    if path.bent is not None:
+        cands = [d for d in node.walk() if d.level is Level.BENT and d.key == path.bent]
+        if not cands:
+            cands = [d for d in node.walk() if d.level is Level.ALT_BENT
+                     and d.key == path.bent]
+        if not cands:
+            if any(d.text == UNKNOWN for d in node.walk()):
+                raise Superseded()
+            raise ReplayError(f"bent {path.bent} not found in {path}")
+        node = cands[0]
+        chain.append(node)
+    if path.alt_bent is not None:
+        cands = [d for d in node.walk() if d.level is Level.ALT_BENT
+                 and d.key == path.alt_bent and d is not node]
+        if not cands and path.alt_bent.isdigit():
+            kids = [c for c in node.children if c.level is Level.ALT_BENT]
+            cands = [_ord_pick(kids, int(path.alt_bent), "alt bent")]
+        if not cands:
+            raise ReplayError(f"alt bent {path.alt_bent} not found in {path}")
+        node = cands[0]
+        chain.append(node)
+    if path.paragraf is not None and path.paragraf != 1:
+        paras = [c for c in node.children if c.level is Level.PARAGRAF]
+        if path.paragraf == -1:
+            node = paras[-1] if paras else node
+        else:
+            node = _ord_pick(paras, path.paragraf - 1, "paragraf")
+        chain.append(node)
+    sentence = None
+    for n in chain[:-1] if whole and path.cumle is None else chain:
+        _check_known(n)
+    if path.cumle is not None:
+        sentence = path.cumle - 1 if path.cumle > 0 else -1
+    sibs = siblings_of(law, node)
+    return Located(node=node, siblings=sibs, article=art, sentence=sentence)
+
+
+# -- text helpers ----------------------------------------------------------------------
+
+_SENT_END = re.compile(r"(?<=[.])\s+(?=[A-ZÇĞİÖŞÜ0-9(“\"])")
+
+
+def sentence_spans(text: str) -> list[tuple[int, int]]:
+    spans, start = [], 0
+    for m in _SENT_END.finditer(text):
+        spans.append((start, m.start()))
+        start = m.end()
+    spans.append((start, len(text)))
+    return [s for s in spans if s[1] > s[0]]
+
+
+def _span(text: str, sentence: int | None) -> tuple[int, int]:
+    if sentence is None:
+        return 0, len(text)
+    spans = sentence_spans(text)
+    if sentence == -1:
+        return spans[-1]
+    if sentence >= len(spans):
+        raise ReplayError(f"sentence {sentence + 1} not found ({len(spans)} present)")
+    return spans[sentence]
+
+
+_FLEX = {'"': "[\"“”]", "“": "[\"“”]", "”": "[\"“”]", "'": "['’‘]", "’": "['’‘]",
+         "‘": "['’‘]", "–": "[–—-]", "—": "[–—-]", "-": "[–—-]"}
+
+
+def _phrase_re(phrase: str) -> re.Pattern:
+    parts = []
+    for ch in phrase:
+        if ch.isspace():
+            if not parts or parts[-1] != r"\s+":
+                parts.append(r"\s+")
+        else:
+            parts.append(_FLEX.get(ch, re.escape(ch)))
+    return re.compile("".join(parts))
+
+
+def find_all(text: str, phrase: str, lo: int = 0, hi: int | None = None) -> list[tuple[int, int]]:
+    hi = len(text) if hi is None else hi
+    if not phrase:
+        return []
+    return [(m.start(), m.end()) for m in _phrase_re(phrase).finditer(text, lo, hi)]
+
+
+def _join_insert(text: str, pos: int, new: str) -> str:
+    """Insert ``new`` at ``pos`` with the spacing the sentence needs."""
+    before, after = text[:pos], text[pos:]
+    if new[:1] not in ",.;:)" and before and not before.endswith((" ", "(", "“", '"')):
+        new = " " + new
+    if after and not after.startswith((" ", ",", ".", ";", ":", ")")) \
+            and not new.endswith((" ", "(")):
+        new = new + " "
+    return before + new + after
+
+
+def _remove_span(text: str, s: int, e: int) -> str:
+    """``text`` without ``text[s:e]``; spacing is tidied only where the cut was made."""
+    left, right = text[:s], text[e:]
+    if not left.strip():
+        return left + right.lstrip(" ")
+    if right[:1] in (",", ".", ";", ":", ")") or not right.strip():
+        return left.rstrip(" ") + right
+    if left.endswith(" ") and right.startswith(" "):
+        right = right.lstrip(" ")
+    return left + right
+
+
+# -- scope of phrase operations -------------------------------------------------------
+
+@dataclass
+class TextSlot:
+    """Where a phrase operation may act: a node's text (or title), maybe one sentence."""
+
+    node: Node
+    attr: str  # "text" or "title"
+    lo: int
+    hi: int
+
+    def get(self) -> str:
+        return getattr(self.node, self.attr) or ""
+
+    def set(self, value: str) -> None:
+        setattr(self.node, self.attr, value)
+
+
+def phrase_slots(law: Law, path: Path) -> list[TextSlot]:
+    if path.baslik:
+        art = law.article(path.madde)
+        if art is None:
+            raise ReplayError(f"article {path.madde} not found")
+        return [TextSlot(art, "title", 0, len(art.title or ""))]
+    loc = locate(law, path)
+    if loc.sentence is not None:
+        lo, hi = _span(loc.node.text, loc.sentence)
+        return [TextSlot(loc.node, "text", lo, hi)]
+    slots = []
+    for n in loc.node.walk():
+        if n.text == UNKNOWN:
+            raise Superseded()
+        slots.append(TextSlot(n, "text", 0, len(n.text)))
+    if loc.node.level is Level.MADDE and loc.node.title:
+        slots.insert(0, TextSlot(loc.node, "title", 0, len(loc.node.title)))
+    return slots
+
+
+def _occurrences(slots: list[TextSlot], phrase: str) -> list[tuple[TextSlot, int, int]]:
+    return [(sl, s, e) for sl in slots for s, e in find_all(sl.get(), phrase, sl.lo, sl.hi)]
+
+
+def _replace_in_slots(slots: list[TextSlot], old: str, new: str, every: bool) -> int:
+    occ = _occurrences(slots, old)
+    if not occ:
+        return 0
+    if not every:
+        occ = occ[:1]
+    # Replace right to left inside each slot so earlier offsets stay valid.
+    for sl, s, e in sorted(occ, key=lambda x: -x[1]):
+        t = sl.get()
+        sl.set(t[:s] + new + t[e:])
+    return len(occ)
+
+
+def _replace_many(slots: list[TextSlot], pairs: list[tuple[str, str, bool]]) -> list[int]:
+    """Replace several ibareler in one pass ("sırasıyla"): no replacement is looked for
+    inside the text another one wrote, and a longer ibare wins over its prefix. Returns
+    how many times each pair was replaced."""
+    order = sorted(range(len(pairs)), key=lambda i: -len(pairs[i][0]))
+    rx = re.compile("|".join(f"(?P<g{i}>{_phrase_re(pairs[i][0]).pattern})" for i in order))
+    done = [0] * len(pairs)
+    for sl in slots:
+        t, out, pos = sl.get(), [], sl.lo
+        for m in rx.finditer(t, sl.lo, sl.hi):
+            i = int(m.lastgroup[1:])
+            if done[i] and not pairs[i][2]:
+                continue
+            done[i] += 1
+            out += [t[pos:m.start()], pairs[i][1]]
+            pos = m.end()
+        if out:
+            sl.set(t[:sl.lo] + "".join(out) + t[pos:])
+    return done
+
+
+def apply_batch(law: Law, ops: list[AmendmentOp]) -> list[str | None]:
+    """Apply ibare replacements of one sentence that act on the same text at once.
+    Returns an error per operation (None when it applied); :class:`Superseded` and an
+    unknown target are raised."""
+    if len(ops) == 1:
+        try:
+            apply(law, ops[0])
+        except Superseded:
+            raise
+        except ReplayError as exc:
+            return [str(exc)]
+        return [None]
+    if not all(o.old for o in ops):
+        raise ReplayError(f"empty ibare in a batch on {ops[0].target}")
+    done = _replace_many(phrase_slots(law, ops[0].target),
+                         [(o.old or "", o.new or "", o.all) for o in ops])
+    return [None if n else f"ibare not found: {o.old!r} in {o.target}"
+            for o, n in zip(ops, done, strict=True)]
+
+
+def unapply_batch(law: Law, ops: list[AmendmentOp]) -> list[Check]:
+    """Undo a batch of :func:`apply_batch`; one check per operation."""
+    if len(ops) == 1:
+        return [unapply(law, ops[0])]
+    try:
+        slots = phrase_slots(law, ops[0].target)
+    except Superseded:
+        return [Check("superseded") for _ in ops]
+    except ReplayError as exc:
+        return [Check("fail", str(exc)) for _ in ops]
+    checks = [Check("lossy", "replacement with an empty ibare") if not o.new else
+              Check("ok") if _occurrences(slots, o.new) else
+              Check("fail", f"new ibare not in text: {o.new!r}") for o in ops]
+    live = [o for o, c in zip(ops, checks, strict=True) if c.status == "ok"]
+    if live:
+        _replace_many(slots, [(o.new or "", o.old or "", o.all) for o in live])
+    return checks
+
+
+# -- node helpers ---------------------------------------------------------------------
+
+def _style(label: str) -> str:
+    k = label_key(label)
+    if k.isdigit():
+        return "num" + re.sub(r"[\d\s]", "", label)
+    return "alpha" + re.sub(r"[a-zçğıöşü\s]", "", label)
+
+
+def _bump(label: str, delta: int, alphabet: str = TR_ALPHABET) -> str:
+    def num(m: re.Match) -> str:
+        return str(int(m.group(0)) + delta)
+
+    if re.search(r"\d+", label):
+        return re.sub(r"\d+", num, label, count=1)
+
+    def letter(m: re.Match) -> str:
+        i = alphabet.find(m.group(0))
+        if i < 0 or not 0 <= i + delta < len(alphabet):
+            raise ReplayError(f"cannot renumber {label!r}")
+        return alphabet[i + delta]
+
+    # "aa)" -> "bb)": every letter of a doubled label moves.
+    key = label_key(label)
+    whole = len(key) > 1 and len(set(key)) == 1
+    return re.sub(r"[a-zçğıöşü]", letter, label, count=0 if whole else 1)
+
+
+def _alphabet(siblings: list[Node]) -> str:
+    """Letter labels run in Turkish order: a) b) c) ç) d) ... Some laws skip ç, ğ, ı, ö,
+    ş and ü; if the siblings go from c) straight to d), so does the renumbering."""
+    keys = [k[0] for n in siblings if n.label and (k := label_key(n.label)).isalpha()]
+    for x, y in pairwise(keys):
+        i, j = TR_ALPHABET.find(x), TR_ALPHABET.find(y)
+        if 0 <= i < j and j - i > 1 and all(c in "çğıöşü" for c in TR_ALPHABET[i + 1:j]):
+            return "".join(c for c in TR_ALPHABET if c not in "çğıöşü")
+    return TR_ALPHABET
+
+
+def _renumber(siblings: list[Node], after: int, inserted: list[Node], delta: int) -> None:
+    if not inserted or not inserted[0].label:
+        return
+    style = _style(inserted[0].label)
+    alphabet = _alphabet(siblings)
+    for n in siblings[after:]:
+        if n.label and _style(n.label) == style and n.level is inserted[0].level:
+            n.label = _bump(n.label, delta, alphabet)
+
+
+def _blank(n: Node) -> None:
+    n.text = UNKNOWN
+    n.children = []
+    n.notes = []
+
+
+def _law_insert_articles(law: Law, nodes: list[Node]) -> None:
+    """Append new articles after the last article of the same kind."""
+    for new in nodes:
+        prefix = (new.id or "").split("-")[0] if "-" in (new.id or "") else ""
+        arts = list(law.articles())
+        same = [a for a in arts if (a.id or "").startswith(prefix + "-")] if prefix else []
+        anchor = same[-1] if same else (arts[-1] if arts else None)
+        if anchor is None:
+            law.body.append(new)
+            continue
+        sibs = siblings_of(law, anchor)
+        sibs.insert(_index(sibs, anchor) + 1, new)
+
+
+# -- apply -----------------------------------------------------------------------------
+
+def _is_sentence_op(op: AmendmentOp) -> bool:
+    return op.target.cumle is not None or bool(
+        re.search(r"aşağıdaki\s+cümle", op.source_sentence))
+
+
+def apply(law: Law, op: AmendmentOp) -> None:
+    """Apply one operation in place. Raises :class:`ReplayError` if it does not fit."""
+    t = op.target
+    if op.op is OpType.REPLACE_PHRASE and op.paren:
+        sl, s, e = _paren_group(phrase_slots(law, t))
+        sl.set(sl.get()[:s] + (op.new or "") + sl.get()[e:])
+        return
+    if op.op is OpType.REPLACE_PHRASE:
+        if not _replace_in_slots(phrase_slots(law, t), op.old or "", op.new or "", op.all):
+            raise ReplayError(f"ibare not found: {op.old!r} in {t}")
+        return
+    if op.op is OpType.DELETE_PHRASE:
+        slots = phrase_slots(law, t)
+        occ = _occurrences(slots, op.old or "")
+        if not occ:
+            raise ReplayError(f"ibare not found: {op.old!r} in {t}")
+        for sl, s, e in sorted(occ if op.all else occ[:1], key=lambda x: -x[1]):
+            sl.set(_remove_span(sl.get(), s, e))
+        return
+    if op.op is OpType.INSERT_PHRASE:
+        slots = phrase_slots(law, t)
+        new = op.new or ""
+        if op.position in ("after", "before"):
+            occ = _occurrences(slots, op.anchor or "")
+            if not occ:
+                raise ReplayError(f"anchor not found: {op.anchor!r} in {t}")
+            for sl, s, e in sorted(occ if op.all else occ[:1], key=lambda x: -x[1]):
+                pos = e if op.position == "after" else s
+                sl.set(_join_insert(sl.get(), pos, new))
+            return
+        sl = slots[0] if op.position == "start" else _last_text_slot(slots)
+        pos = sl.lo if op.position == "start" else sl.hi
+        sl.set(_join_insert(sl.get(), pos, new))
+        return
+    if op.op is OpType.REPEAL_NODE:
+        if t.baslik:
+            raise ReplayError("repeal of a title")
+        loc = locate(law, t, whole=True)
+        if loc.sentence is not None:
+            s, e = _span(loc.node.text, loc.sentence)
+            loc.node.text = _remove_span(loc.node.text, s, e)
+            return
+        loc.node.repealed = True
+        loc.node.text = ""
+        loc.node.children = []
+        return
+    if op.op is OpType.REPLACE_NODE:
+        _apply_replace(law, op)
+        return
+    if op.op is OpType.INSERT_NODE:
+        _apply_insert(law, op)
+        return
+    raise ReplayError(f"unsupported op {op.op}")
+
+
+def _paren_group(slots: list[TextSlot]) -> tuple[TextSlot, int, int]:
+    """The first top-level "( ... )" of the target, ignoring short ones like "(a)"."""
+    for sl in slots:
+        text, depth, start = sl.get(), 0, -1
+        for i in range(sl.lo, sl.hi):
+            if text[i] == "(":
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif text[i] == ")" and depth:
+                depth -= 1
+                if depth == 0 and i - start > 20:
+                    return sl, start, i + 1
+    raise ReplayError("no parenthetical in target")
+
+
+def _last_text_slot(slots: list[TextSlot]) -> TextSlot:
+    texts = [s for s in slots if s.attr == "text"]
+    if not texts:
+        raise ReplayError("no text to append to")
+    return texts[0]  # the target's own text, not its sub-nodes
+
+
+def _apply_replace(law: Law, op: AmendmentOp) -> None:
+    t = op.target
+    if t.baslik:
+        art = law.article(t.madde)
+        if art is None:
+            raise ReplayError(f"article {t.madde} not found")
+        art.title = op.new
+        return
+    loc = locate(law, t, whole=True)
+    if op.kind is Level.PARAGRAF or loc.sentence is not None:
+        new = op.new or ""
+        if loc.sentence is not None:
+            s, e = _span(loc.node.text, loc.sentence)
+            loc.node.text = loc.node.text[:s] + new + loc.node.text[e:]
+        else:
+            loc.node.text = new
+        return
+    if not op.new_nodes:
+        raise ReplayError("replace without new nodes")
+    i = _index(loc.siblings, loc.node)
+    new_nodes = [n.model_copy(deep=True) for n in op.new_nodes]
+    if loc.node.level is Level.MADDE:
+        new = new_nodes[0]
+        new.id = loc.node.id
+        if new.title is None or (not op.with_title and loc.node.title):
+            new.title = loc.node.title if not op.with_title else new.title
+        new.repealed = False
+        loc.siblings[i] = new
+        return
+    loc.siblings[i:i + 1] = new_nodes
+
+
+def _at_anchor(loc: Located, anchor: str | None) -> Located:
+    """With a quoted anchor ("“– Tam ve dar ...” paragrafından sonra"), the node inside
+    ``loc`` whose text holds it; the insertion goes next to that node."""
+    if not anchor:
+        return loc
+    stack: list[tuple[Node, list[Node]]] = [(loc.node, loc.siblings)]
+    while stack:
+        node, sibs = stack.pop(0)
+        if find_all(node.text, anchor):
+            return Located(node=node, siblings=sibs, article=loc.article)
+        stack.extend((c, node.children) for c in node.children)
+    raise ReplayError(f"anchor not found: {anchor[:80]!r}")
+
+
+def _apply_insert(law: Law, op: AmendmentOp) -> None:
+    t = op.target
+    new_nodes = [n.model_copy(deep=True) for n in op.new_nodes]
+    if op.kind is Level.MADDE and (not t.madde or op.position == "end"):
+        for n in new_nodes:
+            if law.article(n.id or "") is not None:
+                raise ReplayError(f"article {n.id} already exists")
+        _law_insert_articles(law, new_nodes)
+        return
+    loc = locate(law, t)
+    if op.kind is Level.PARAGRAF and not new_nodes:
+        new = op.new or ""
+        if _is_sentence_op(op):
+            if loc.sentence is not None and op.position in ("after", "before"):
+                s, e = _span(loc.node.text, loc.sentence)
+                pos = e if op.position == "after" else s
+            else:
+                pos = len(loc.node.text)
+            loc.node.text = _join_insert(loc.node.text, pos, new)
+            return
+        para = Node(level=Level.PARAGRAF, text=new)
+        loc = _at_anchor(loc, op.anchor)
+        if op.position in ("after", "before"):
+            i = _index(loc.siblings, loc.node)
+            loc.siblings.insert(i + 1 if op.position == "after" else i, para)
+        else:
+            loc.node.children.append(para)
+        return
+    if not new_nodes:
+        raise ReplayError("insert without new nodes")
+    if op.position in ("after", "before"):
+        i = _index(loc.siblings, loc.node) + (1 if op.position == "after" else 0)
+        loc.siblings[i:i] = new_nodes
+        if op.renumber:
+            _renumber(loc.siblings, i + len(new_nodes), new_nodes, +len(new_nodes))
+        return
+    container = loc.node
+    if op.kind in (Level.BENT, Level.ALT_BENT) and container.level is Level.MADDE:
+        fikras = [c for c in container.children if c.level is Level.FIKRA]
+        if fikras:
+            container = fikras[-1]
+    if op.kind is Level.BENT and container.level in (Level.BENT, Level.ALT_BENT):
+        for n in new_nodes:
+            n.level = Level.ALT_BENT
+    container.children.extend(new_nodes)
+
+
+# -- unapply (inverse, with a check that the operation's result is in the text) ---------
+
+@dataclass
+class Check:
+    status: str  # "ok" | "fail" | "superseded" | "lossy"
+    message: str = ""
+
+
+def unapply(law: Law, op: AmendmentOp) -> Check:
+    """Undo ``op`` on a law that already contains its effect.
+
+    Before undoing, the effect is looked for in the text: the new ibare must be there,
+    a replaced node must read like the act's new text, and so on. The result says
+    whether it was found ("ok") or not ("fail"); "superseded" means a later operation
+    has already replaced the text this one acted on, "lossy" that the old text cannot
+    be recovered exactly (a deleted ibare whose place is not marked).
+    """
+    try:
+        return _unapply(law, op)
+    except Superseded:
+        return Check("superseded")
+    except ReplayError as exc:
+        return Check("fail", str(exc))
+
+
+def _unapply(law: Law, op: AmendmentOp) -> Check:
+    t = op.target
+    if op.op is OpType.REPLACE_PHRASE and op.paren:
+        if not op.new:
+            return Check("lossy", "deleted parenthetical")
+        slots = phrase_slots(law, t)
+        if not _occurrences(slots, op.new or ""):
+            return Check("fail", f"new parenthetical not in text: {(op.new or '')[:120]!r}")
+        return Check("lossy", "replaced parenthetical")
+    if op.op is OpType.REPLACE_PHRASE:
+        slots = phrase_slots(law, t)
+        if not op.new:
+            return Check("lossy", "replacement with an empty ibare")
+        if not _occurrences(slots, op.new):
+            return Check("fail", f"new ibare not in text: {op.new!r}")
+        _replace_in_slots(slots, op.new, op.old or "", op.all)
+        return Check("ok")
+    if op.op is OpType.INSERT_PHRASE:
+        slots = phrase_slots(law, t)
+        occ = _occurrences(slots, op.new or "")
+        if not occ:
+            return Check("fail", f"inserted ibare not in text: {op.new!r}")
+        if op.position in ("after", "before"):
+            anchors = _occurrences(slots, op.anchor or "")
+            if not anchors:
+                return Check("fail", f"anchor not in text: {op.anchor!r}")
+            occ = [o for o in occ if _next_to(o, anchors, op.position)]
+            if not occ:
+                return Check("fail", f"inserted ibare not next to its anchor: {op.new!r}")
+        sl, s, e = occ[-1] if op.position == "end" else occ[0]
+        sl.set(_remove_span(sl.get(), s, e))
+        return Check("ok")
+    if op.op is OpType.DELETE_PHRASE:
+        slots = phrase_slots(law, t)
+        marks = [(sl, m.start(), m.end()) for sl in slots
+                 for m in re.finditer(r"\(\s*(?:…|\.\.\.)\s*\)", sl.get()[sl.lo:sl.hi])]
+        if len(marks) == 1:
+            sl, s, e = marks[0]
+            txt = sl.get()
+            sl.set(txt[:sl.lo + s] + (op.old or "") + txt[sl.lo + e:])
+            return Check("ok")
+        return Check("lossy", "deleted ibare: its place in the text is not marked")
+    if op.op is OpType.REPEAL_NODE:
+        loc = locate(law, t)
+        if loc.sentence is not None:
+            return Check("lossy", "repealed sentence")
+        n = loc.node
+        if not (n.repealed or (not n.text and not n.children)):
+            return Check("fail", f"{t} is not repealed in the consolidated text")
+        _blank(n)
+        n.repealed = False
+        return Check("ok")
+    if op.op is OpType.REPLACE_NODE:
+        return _unapply_replace(law, op)
+    if op.op is OpType.INSERT_NODE:
+        return _unapply_insert(law, op)
+    return Check("fail", f"unsupported op {op.op}")
+
+
+def _next_to(o: tuple[TextSlot, int, int], anchors: list[tuple[TextSlot, int, int]],
+             position: str | None) -> bool:
+    """Does the ibare at ``o`` sit right after (or before) one of the anchors?"""
+    sl, s, e = o
+    text = sl.get()
+    for asl, a_s, a_e in anchors:
+        if asl is not sl:
+            continue
+        if position == "after" and a_e <= s and not text[a_e:s].strip():
+            return True
+        if position == "before" and e <= a_s and not text[e:a_s].strip():
+            return True
+    return False
+
+
+def _differs(have: list[Node], want: list[Node], with_title: bool = True) -> str | None:
+    """Where the consolidated nodes ``have`` differ from the act's ``want``. Raises
+    :class:`Superseded` if ``have`` holds text a later operation replaced wholesale."""
+    if any(n.text == UNKNOWN or (with_title and n.title == UNKNOWN)
+           for h in have for n in h.walk()):
+        raise Superseded()
+    a = [x for n in have for x in node_lines(n, with_title)]
+    b = [x for n in want for x in node_lines(n, with_title)]
+    if a == b:
+        return None
+    for i, (x, y) in enumerate(zip(a, b, strict=False)):
+        if x != y:
+            return f"line {i + 1}: consolidated {_around(x, y)} != act {_around(y, x)}"
+    return f"{len(a)} lines in consolidated text, {len(b)} in the act"
+
+
+def _around(x: str, y: str, width: int = 60) -> str:
+    """``x`` around the first position where it differs from ``y``."""
+    i = next((k for k, (p, q) in enumerate(zip(x, y, strict=False)) if p != q),
+             min(len(x), len(y)))
+    lo = max(0, i - width)
+    return repr(("…" if lo else "") + x[lo:i + width] + ("…" if i + width < len(x) else ""))
+
+
+def _unapply_replace(law: Law, op: AmendmentOp) -> Check:
+    t = op.target
+    if t.baslik:
+        art = law.article(t.madde)
+        if art is None:
+            return Check("fail", f"article {t.madde} not found")
+        if art.title == UNKNOWN:
+            raise Superseded()
+        if norm(art.title or "") != norm(op.new or ""):
+            return Check("fail", f"title is {art.title!r}, act says {op.new!r}")
+        art.title = UNKNOWN
+        return Check("ok")
+    loc = locate(law, t)
+    if op.kind is Level.PARAGRAF or loc.sentence is not None:
+        if loc.sentence is not None:
+            s, e = _span(loc.node.text, loc.sentence)
+            have = loc.node.text[s:e]
+        else:
+            have = loc.node.text
+        if UNKNOWN in have:
+            raise Superseded()
+        if norm(have) != norm(op.new or ""):
+            return Check("fail", f"text is {have[:120]!r}, act says {(op.new or '')[:120]!r}")
+        if loc.sentence is None:
+            loc.node.text = UNKNOWN
+            return Check("ok")
+        return Check("lossy", "replaced sentence")
+    if loc.node.level is Level.MADDE:
+        diff = _differs([loc.node], op.new_nodes[:1], with_title=op.with_title)
+        if diff:
+            return Check("fail", diff)
+        title = loc.node.title
+        _blank(loc.node)
+        loc.node.title = UNKNOWN if op.with_title else title
+        return Check("ok")
+    i = _index(loc.siblings, loc.node)
+    k = len(op.new_nodes)
+    diff = _differs(loc.siblings[i:i + k], op.new_nodes)
+    if diff:
+        return Check("fail", diff)
+    placeholder = Node(level=loc.node.level, label=loc.node.label, text=UNKNOWN)
+    loc.siblings[i:i + k] = [placeholder]
+    return Check("ok")
+
+
+def _with_siblings(node: Node, siblings: list[Node]) -> list[tuple[Node, list[Node]]]:
+    out = [(node, siblings)]
+    for c in node.children:
+        out.extend(_with_siblings(c, node.children))
+    return out
+
+
+def _inserted_differs(have: list[Node], want: list[Node]) -> str | None:
+    """Like :func:`_differs`, for nodes an operation inserted. A later operation may have
+    replaced part of them; they are removed anyway, and the replay inserts the act's text
+    again before applying the later operation on it."""
+    try:
+        return _differs(have, want)
+    except Superseded:
+        return None
+
+
+def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
+    t = op.target
+    k = len(op.new_nodes)
+    if op.kind is Level.MADDE:
+        diffs = []
+        for n in op.new_nodes:
+            art = law.article(n.id or "")
+            if art is None:
+                return Check("fail", f"inserted article {n.id} not found")
+            diff = _inserted_differs([art], [n])
+            if diff and not art.repealed:
+                diffs.append(diff)
+        # Removed even when it reads differently (a change we have no act for): the replay
+        # adds the act's text back and the comparison shows the difference.
+        for n in op.new_nodes:
+            art = law.article(n.id or "")
+            sibs = siblings_of(law, art)
+            del sibs[_index(sibs, art)]
+        return Check("fail", diffs[0]) if diffs else Check("ok")
+    loc = locate(law, t)
+    if op.kind is Level.PARAGRAF and not op.new_nodes:
+        new = op.new or ""
+        if _is_sentence_op(op):
+            occ = find_all(loc.node.text, new)
+            if not occ:
+                return Check("fail", f"inserted sentence not in text: {new[:120]!r}")
+            s, e = occ[-1]
+            loc.node.text = _remove_span(loc.node.text, s, e)
+            return Check("ok")
+        paras = [c for c in loc.node.children if c.level is Level.PARAGRAF
+                 and norm(c.text) == norm(new)]
+        if op.anchor:
+            # Undone before the anchor is looked for: the anchor may be anywhere in the node.
+            hits = [(n, sibs) for n, sibs in _with_siblings(loc.node, loc.siblings)
+                    if n.level is Level.PARAGRAF and norm(n.text) == norm(new)]
+            if not hits:
+                return Check("fail", f"inserted paragraph not found: {new[:120]!r}")
+            n, sibs = hits[0]
+            del sibs[_index(sibs, n)]
+            return Check("ok")
+        if op.position in ("after", "before"):
+            paras = [c for c in loc.siblings if c.level is Level.PARAGRAF
+                     and norm(c.text) == norm(new)]
+            if not paras:
+                return Check("fail", f"inserted paragraph not found: {new[:120]!r}")
+            del loc.siblings[_index(loc.siblings, paras[0])]
+            return Check("ok")
+        if not paras:
+            return Check("fail", f"inserted paragraph not found: {new[:120]!r}")
+        del loc.node.children[_index(loc.node.children, paras[-1])]
+        return Check("ok")
+    if op.position in ("after", "before"):
+        i = _index(loc.siblings, loc.node) + (1 if op.position == "after" else 0)
+        if op.position == "before":
+            i -= k
+            if i < 0:
+                return Check("fail", "nothing before the anchor")
+        got = loc.siblings[i:i + k]
+        diff = _inserted_differs(got, op.new_nodes)
+        if diff:
+            return Check("fail", diff)
+        del loc.siblings[i:i + k]
+        if op.renumber:
+            _renumber(loc.siblings, i, op.new_nodes, -k)
+        return Check("ok")
+    container = loc.node
+    if op.kind in (Level.BENT, Level.ALT_BENT) and container.level is Level.MADDE:
+        fikras = [c for c in container.children if c.level is Level.FIKRA]
+        if fikras:
+            container = fikras[-1]
+    # Inserted at the end then; later insertions at the end were undone already, but an
+    # amendment may have added it with an explicit number among others ("(15) numaralı").
+    keys = [n.key for n in op.new_nodes]
+    if keys and all(keys):
+        idx = [i for i, c in enumerate(container.children) if c.key in keys
+               and c.level in (Level.BENT, Level.ALT_BENT, Level.FIKRA)]
+        if len(idx) == k and idx == list(range(idx[0], idx[0] + k)):
+            got = container.children[idx[0]:idx[0] + k]
+            diff = _inserted_differs(got, op.new_nodes)
+            if diff:
+                return Check("fail", diff)
+            del container.children[idx[0]:idx[0] + k]
+            return Check("ok")
+    same_level = [i for i, c in enumerate(container.children)
+                  if c.level is op.new_nodes[0].level] if op.new_nodes else []
+    if len(same_level) < k:
+        return Check("fail", f"{k} inserted node(s) not found in {t}")
+    start = same_level[-k]
+    got = container.children[start:start + k]
+    diff = _inserted_differs(got, op.new_nodes)
+    if diff:
+        return Check("fail", diff)
+    del container.children[start:start + k]
+    return Check("ok")
