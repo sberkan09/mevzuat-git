@@ -758,11 +758,15 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         own = "".join(seg[a:b] for a, b in mine)
         if o.name == "title_replace" and re.search(r"bölümünün|kısmının", own):
             continue  # heading of a kısım/bölüm: not addressable yet
-        if re.search(r"\b(?:Kanuna|Kanunun)\s+(?:ekli|bağlı)\b|[Cc]etvel", own) \
-                and not ARTICLE_REF_RE.search(own):
+        unquoted = re.sub(Q + QTEXT + Q, "", own)
+        if not ARTICLE_REF_RE.search(own) and (
+                re.search(r"\b(?:Kanuna|Kanunun)\s+(?:ekli|bağlı)\b", unquoted)
+                or (re.search(r"[Cc]etvel", unquoted)
+                    and not re.search(r"madde|fıkra|bent|cümle", unquoted))):
             # "Kanuna bağlı “Usulsüzlük Cezalarına Ait Cetvel” başlığı", "mevcut Usulsüzlük
             # Cezalarına Ait Cetveldeki miktarlar aşağıdaki şekilde" (7524/10): a table
-            # attached to the law, not an article; not addressable yet.
+            # attached to the law, not an article; not addressable yet. A table inside an
+            # article ("ikinci fıkrasındaki cetvelde") is addressed by its fıkra.
             continue
         if raw and len(addressed) > 1 and len(set(addressed)) == len(addressed):
             parts = split_payload(raw, len(addressed))

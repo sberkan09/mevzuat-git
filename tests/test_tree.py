@@ -359,3 +359,19 @@ def test_title_in_a_heading_tag():
             "<p>Kayıtlar Türkçe tutulur.</p></body></html>")
     law = build_tree(html, 213)
     assert law.article("215").title == "Türkçe tutma ve Türk Parası kullanma zorunluluğu"
+
+
+def test_line_that_goes_on_with_the_list_is_a_fikra():
+    # GVK md. 54: "2 nci grup" is a fıkra like "1 inci grup" and "3 üncü grup".
+    law = _gvk(
+        "", "İşletme büyüklüğü ölçüleri", "Madde 54 – (Değişik: 30/12/1980-2361/12 md.)",
+        "1 inci grup: Deniz ve iç su balıkları yetiştiriciliği;",
+        ("a) Denizlerdeki sınırları belirlenebilen üretim alanlarında yapılan balık "
+         "yetiştiriciliğinde (ağ kafes vb.) 500 (750) m2,"),
+        ("b) İç su balıkları yetiştiriciliğinde sınırları belirlenebilen havuz (beton, toprak "
+         "vb), göl, gölet ve baraj gölleri gibi üretim alanlarında 600 (900) m2,"),
+        "2 nci grup: Denizlerde yapılan balık avcılığında toplam tekne boyu 20 (20) metre;",
+        "3 üncü grup: Arıcılık ziraatinde kovan sayısı 500 (500) adet;")
+    f1, f2, f3 = law.article("54").children
+    assert shape(f1) == [("bent", "a)"), ("bent", "b)")]
+    assert f2.text.startswith("2 nci grup") and f3.text.startswith("3 üncü grup")

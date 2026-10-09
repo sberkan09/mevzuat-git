@@ -341,12 +341,14 @@ def _continues(fikra: Node, text: str) -> bool:
     # "ikinci ve üçüncü fıkraları", which come after).
     # So does VUK mükerrer 227: "Maliye Bakanlığı:", "1. ... uygulatmaya,", ..., "Bu
     # uygulamalara ilişkin usul ve esasları belirlemeye yetkilidir." (7338/22 counts the
-    # fıkras after it).
+    # fıkras after it). A line that goes on with the list is not one: GVK md. 54's "2 nci
+    # grup: ... 20 (20) metre;" after "1 inci grup: ...;" and its "... 600 (900) m2,".
     live = [c for c in fikra.children if c.level is Level.BENT and c.text]
     last_bent = live[-1].text.rstrip() if live else ""
     if (live and fikra.children[-1].level is Level.BENT and fikra.text.rstrip().endswith((":", ";"))
             and ((len(text) < 60 and last_bent.endswith(";"))
-                 or (len(text) < 100 and last_bent.endswith(",")))):
+                 or (len(text) < 100 and last_bent.endswith(",")
+                     and text.rstrip().endswith(".")))):
         return True
     last = fikra.children[-1] if fikra.children else None
     return bool(last and last.level is Level.PARAGRAF and re.match(r"[–-]\s", last.text)

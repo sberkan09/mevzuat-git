@@ -949,6 +949,12 @@ def test_table_attached_to_the_law_is_skipped():
         "şekilde değiştirilmiştir.", ["Birinci derece ..."], 213)
     assert [(o.op, o.target.cumle) for o in ops] == [
         (OpType.REPLACE_PHRASE, 1), (OpType.REPLACE_PHRASE, 2)]
+    # A table inside an article is addressed by its fıkra and stays.
+    ops = am.parse_instruction(
+        "193 sayılı Kanunun 5 inci maddesinin birinci fıkrasında yer alan “x” ibaresi “y” "
+        "şeklinde, ikinci fıkrasındaki cetvelde yer alan “a” ibaresi “b” şeklinde "
+        "değiştirilmiştir.", [], 193)
+    assert [str(o.target) for o in ops] == ["md.5/f1", "md.5/f2"]
 
 
 def test_annulment_from_a_marker():
@@ -995,4 +1001,7 @@ def test_marker_insertion_keeps_the_unwound_text():
     # A footnoted op still has to match.
     md359.children[0].children.append(cc)
     op.footnote, op.new_nodes = 4, [b("ç)", "... sekiz ...")]
+    assert unapply(law, op).status == "fail"
+    # So does one whose node is not the one there.
+    op.footnote, op.new_nodes = None, [b("d)", "... sekiz ...")]
     assert unapply(law, op).status == "fail"

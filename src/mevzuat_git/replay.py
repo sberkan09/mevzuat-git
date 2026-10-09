@@ -1077,7 +1077,8 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
         got = loc.siblings[i:i + k]
         diff = _inserted_differs(got, op.new_nodes)
         if diff and _from_marker(op) and len(got) == k \
-                and [n.level for n in got] == [n.level for n in op.new_nodes]:
+                and [(n.level, label_key(n.label)) for n in got] \
+                == [(n.level, label_key(n.label)) for n in op.new_nodes]:
             # Read from a change marker, the new text is today's (``ops_from_markers``);
             # what the unwind left there is the better guess for the text at the time:
             # 7318/4 added md. 359 (ç) with "üç yıldan beş yıla", which 7394/4 made "sekiz".
