@@ -14,11 +14,13 @@ from mevzuat_git.history import (
     _differing_articles,
     build,
     clause_dates,
+    op_date,
     render,
     table_articles,
     yururluk_date,
 )
-from mevzuat_git.model import Amendment, Law, Level, Node
+from mevzuat_git.model import Amendment, Law, Level, Node, OpType
+from mevzuat_git.verify import OpResult
 
 FIX = Path(__file__).parent / "fixtures"
 ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="utf-8"))
@@ -35,8 +37,20 @@ ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="u
     ("Mükerrer Madde 20/D", ["mukerrer-20/D"]),
     ("Mükerer Madde 20/B, 40", ["mukerrer-20/B", "40"]),
     ("94/10-a, Geçici Madde 80", ["94", "gecici-80"]),
-    ("19, Mükerrer 21, İkinci Kısım Sekizinci Bölüm Başlığı, Ek 1, 2, 3, 4",
-     ["19", "mukerrer-21", "ek-1", "ek-2", "ek-3", "ek-4"]),
+    (("19, Mükerrer 21, İkinci Kısım Sekizinci Bölüm Başlığı, Ek 1, 2, 3, 4, 5 ve 6 ncı "
+      "Maddeler, 38, 75, Mükerrer 75, 89, 94, Mükerrer 120, Mükerrer 123, Geçici 61, 62, 63 "
+      "ve 64 üncü Maddeler"),
+     ["19", "mukerrer-21", "ek-1", "ek-2", "ek-3", "ek-4", "ek-5", "ek-6", "38", "75",
+      "mukerrer-75", "89", "94", "mukerrer-120", "mukerrer-123", "gecici-61", "gecici-62",
+      "gecici-63", "gecici-64"]),
+    # Not a list of Mükerrer articles: no "Maddeler".
+    ("40, 42, 44, 68, 89, 92, 94, 98, 119, Mükerrer 120, 121, Geçici 55 ve 59",
+     ["40", "42", "44", "68", "89", "92", "94", "98", "119", "mukerrer-120", "121",
+      "gecici-55", "gecici-59"]),
+    ("(…)[222], Geçici 69 ve 70 inci Maddeler", ["gecici-69", "gecici-70"]),
+    # The ordinals are fıkralar of geçici 67, not articles.
+    ("Geçici Madde 67’nin 1 inci fıkrasının birinci paragrafı, 7 nci, 14 üncü, 17 nci fıkrası",
+     ["gecici-67"]),
 ])
 def test_table_articles(text, ids):
     assert [a for a, _ in table_articles(text)] == ids
@@ -59,11 +73,61 @@ RG = date(2004, 12, 31)
     (("1/1/2022 tarihinden itibaren elde edilen kazançlara uygulanmak üzere yayımı tarihinde "
       "(26/10/2021)"), date(2021, 10, 26)),
     ("(…)[223] 1/8/2010", date(2010, 8, 1)),
+    (("24/6/2018 tarihinde birlikte yapılan Türkiye Büyük Millet Meclisi ve Cumhurbaşkanlığı "
+      "seçimleri sonucunda Cumhurbaşkanının andiçerek göreve başladığı tarihte (9/7/2018)"),
+     date(2018, 7, 9)),
     (("23 üncü maddesi ve 29 uncu maddesi 1/2/2019 tarihinde, Geçici madde 76 1/1/2019 "
       "tarihinde"), None),
 ])
 def test_yururluk_date(text, expected):
     assert yururluk_date(text, RG) == expected
+
+
+def _act(number, rg, rows):
+    return AmendingAct(kind="kanun", number=number,
+                       rg=RGRef(date=rg, source="resmigazete.gov.tr"),
+                       effective=[EffectiveEntry(articles=a, effective=e) for a, e in rows])
+
+
+def _r(target, op=OpType.REPLACE_PHRASE, kind=None, new_nodes=()):
+    return OpResult(act="", article="", op=am.AmendmentOp(
+        op=op, kind=kind, target=target, new_nodes=list(new_nodes), source_sentence=""))
+
+
+def test_rows_are_told_apart_by_the_parts_they_name():
+    act = _act("5527", date(2006, 7, 7), [
+        (("Geçici Madde 67’nin 1 inci fıkrasının birinci paragrafı, 7 nci, 14 üncü, 17 nci "
+          "fıkrası"), "7/7/2006"),
+        ("Geçici Madde 67’nin 1 inci fıkrasının altıncı paragrafı, 8 inci fıkrası", "1/10/2006")])
+    rg = date(2006, 7, 7)
+
+    def day(**target):
+        return op_date(_r(am.Path(madde="gecici-67", **target)), act, rg).date
+    assert day(fikra=1, paragraf=1) == date(2006, 7, 7)
+    assert day(fikra=1, paragraf=6) == date(2006, 10, 1)
+    assert day(fikra=8) == date(2006, 10, 1)
+    assert day(fikra=14, cumle=2) == date(2006, 7, 7)
+    # The (17) numaralı fıkra it adds.
+    added = Node(level=Level.FIKRA, label="(17)", text="…")
+    assert op_date(_r(am.Path(madde="gecici-67", fikra=16), OpType.INSERT_NODE, Level.FIKRA,
+                      [added]), act, rg).date == date(2006, 7, 7)
+
+    act = _act("6322", date(2012, 6, 15), [
+        ("9, 46, 75, 89, 94, Geçici Madde 67, Geçici Madde 81", "15/6/2012"),
+        ("94/10-a, Geçici Madde 80", "1/7/2012")])
+    rg = date(2012, 6, 15)
+    target = am.Path(madde="94", fikra=1, bent="10", alt_bent="a")
+    assert op_date(_r(target), act, rg).date == date(2012, 7, 1)
+    assert op_date(_r(am.Path(madde="94", fikra=1, bent="3")), act, rg).date == rg
+    whole = op_date(_r(am.Path(madde="94", fikra=4)), act, rg)
+    assert (whole.date, whole.assumed) == (rg, False)
+
+
+def test_table_date_long_after_publication_is_not_taken():
+    # 4761 was published on 22/6/2002; the table says "22/6/2012".
+    act = _act("4761", date(2002, 6, 22), [("Geçici Madde 60", "22/6/2012")])
+    got = op_date(_r(am.Path(madde="gecici-60")), act, date(2002, 6, 22))
+    assert (got.date, got.assumed) == (date(2002, 6, 22), True)
 
 
 def test_clause_dates():

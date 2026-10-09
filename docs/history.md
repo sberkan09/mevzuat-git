@@ -41,12 +41,21 @@ maddesinin satırından tarih alır.
 - Maddelere göre ayrı tarih veren satırlarda ("23 üncü maddesi ve 29 uncu maddesi
   1/2/2019 tarihinde, Geçici madde 76 1/1/2019 tarihinde") her madde kendi tarihini alır.
   "diğer hükümleri" kalanlar içindir.
-- Aynı madde bir kanunun birden çok satırında geçiyorsa ("94 üncü maddenin (11) numaralı
-  bendi" / "(15) numaralı bendi"), işlemin değiştirdiği ya da eklediği bendi anan satır
-  seçilir.
+- Aynı madde bir kanunun birden çok satırında geçiyorsa, işlemin eriştiği kısmı anan satır
+  seçilir. Satırın andığı fıkra, paragraf, bent ve alt bentler işleminkilerle
+  karşılaştırılır: "Geçici Madde 67’nin 1 inci fıkrasının altıncı paragrafı, 8 inci
+  fıkrası", "94 üncü maddenin (15) numaralı bendi", "94/10-a". Eşitlikte daha az kısım
+  anan satır (maddenin tamamı) seçilir. Yine de birden çok tarih kalıyorsa ilki alınır ve
+  mesajda "birden çok satıra uyuyor" yazar (GVK'da bir kez: 4842, md. 89).
+- Tablodaki tarih yayımdan üç yıldan fazla sonraysa yazım hatası sayılır ve RG tarihi
+  alınır. 4761 (RG 22/6/2002) için tabloda "22/6/2012" yazıyor.
 - Satır yoksa ya da tek tarih okunamıyorsa RG tarihi alınır ve mesajda "(varsayılan)"
-  yazar; tablo satırı bulunan işlemlerle aynı tarihe düşenlerde ise mesaj her kaynağı
-  ayrı satırda listeler. GVK'da tümüyle varsayılan tarihli tek commit vardır (4756).
+  yazar. Tablo satırı bulunan işlemlerle aynı tarihe düşenlerde mesaj her kaynağı ayrı
+  satırda listeler.
+
+Aynı kanunun farklı tarihli hükümleri ayrı commit'lerde, tarih sırasıyla uygulanır. Aynı
+türden maddeler (geçici, mükerrer) numara sırasıyla yerleştirildiğinden bu sıra metni
+değiştirmez. 6322'nin geçici 81'i geçici 80'den önce yürürlüğe girer.
 
 ## Metin
 

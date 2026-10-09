@@ -28,11 +28,12 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
+from mevzuat_git import amendments as am
 from mevzuat_git import mevzuat_gov as mg
 from mevzuat_git.amendment_list import AmendingAct, AmendmentList, EffectiveEntry
 from mevzuat_git.amendments import OpsFile
 from mevzuat_git.compare import node_lines, strip_editorial
-from mevzuat_git.model import Law, Node
+from mevzuat_git.model import Law, Level, Node, OpType
 from mevzuat_git.render import to_markdown
 from mevzuat_git.replay import UNKNOWN
 from mevzuat_git.verify import OpResult, articles_of, batches, op_results, replay_batch, unwind
@@ -48,16 +49,28 @@ _ARTICLE_RE = re.compile(r"(?:(?P<prefix>Mükerrer|Mükerer|Geçici|Ek)\s+)?(?:M
                          r"(?P<num>\d+(?:\s*/\s*[A-ZÇĞİÖŞÜ](?![a-zçğıöşü]))?)", re.IGNORECASE)
 
 
+_SUFFIX = r"(?:inci|nci|ncı|üncü|uncu|ıncı)"
+
+
 def table_articles(text: str) -> list[tuple[str, str]]:
-    """Articles named in the first column of a yürürlük table row, with the piece of text
-    that names each: "Mükerrer 21, 25, 94 üncü maddenin (15) numaralı bendi" ->
+    """Articles named in the first column of a yürürlük table row, each with the text that
+    names it: "Mükerrer 21, 25, 94 üncü maddenin (15) numaralı bendi" ->
     [("mukerrer-21", ...), ("25", ...), ("94", "94 üncü maddenin (15) numaralı bendi")].
 
-    A prefix carries over "ve" ("Geçici 73 ve 74 Maddeler") and, for "Ek", over a comma
-    to the next number in sequence ("Ek 1, 2, 3"): "Mükerrer 21, 25" is articles
-    mükerrer 21 and 25."""
-    out: list[tuple[str, str]] = []
-    for piece in (p.strip() for p in text.split(",")):
+    - A prefix carries over "ve" ("Geçici 73 ve 74 Maddeler"), and over commas to the
+      next numbers in sequence in a list ending in "Maddeler" ("Geçici 61, 62, 63 ve 64
+      üncü Maddeler"). Otherwise it does not: "Mükerrer 21, 25" is mükerrer 21 and 25.
+    - A piece with an ordinal and no "madde" ("7 nci" in "Geçici Madde 67’nin 1 inci
+      fıkrasının birinci paragrafı, 7 nci, 14 üncü, 17 nci fıkrası") is not an article but
+      part of the previous one, and its text goes with it."""
+    text = re.sub(r"\(\s*…\s*\)|\[\d+\]", " ", text)
+    pieces = [p.strip() for p in text.split(",")]
+    out: list[list[str]] = []  # [id, text]
+    for k, piece in enumerate(pieces):
+        if out and re.match(rf"\d+\s*{_SUFFIX}\b", piece) \
+                and not re.search(r"madde", piece, re.IGNORECASE):
+            out[-1][1] += ", " + piece
+            continue
         prefix = None
         for sub in re.split(r"\s+ve\s+", piece):
             m = _ARTICLE_RE.search(sub)
@@ -66,11 +79,22 @@ def table_articles(text: str) -> list[tuple[str, str]]:
             num = m.group("num").replace(" ", "")
             if m.group("prefix"):
                 prefix = m.group("prefix")
-            elif prefix is None and out and out[-1][0].startswith("ek-") \
-                    and num.isdigit() and out[-1][0][3:] == str(int(num) - 1):
-                prefix = "Ek"
-            out.append((mg.article_id(prefix, num), piece))
-    return out
+            elif prefix is None and out and "-" in out[-1][0] and num.isdigit() \
+                    and out[-1][0].split("-", 1)[1] == str(int(num) - 1) \
+                    and _list_of_articles(pieces[k:]):
+                prefix = out[-1][0].split("-", 1)[0]
+            out.append([mg.article_id(prefix, num), piece])
+    return [(a, t) for a, t in out]
+
+
+def _list_of_articles(rest: list[str]) -> bool:
+    """Does the list go on, without a new prefix, to a piece ending in "Maddeler"?"""
+    for p in rest:
+        if re.search(r"Maddeler\s*$", p, re.IGNORECASE):
+            return True
+        if re.match(r"(?:Mükerrer|Mükerer|Geçici|Ek)\b", p, re.IGNORECASE):
+            return False
+    return False
 
 
 def _month_start(d: date, months: int) -> date:
@@ -101,6 +125,9 @@ def yururluk_date(text: str, rg_date: date | None) -> date | None:
         if len(dates) > 1:
             return None
         return mg.parse_date(dates[0]) if dates else rg_date
+    if m := re.search(rf"\btarihte\s*\(\s*({_DATE})\s*\)\s*$", clause):
+        # KHK 700: "... Cumhurbaşkanının andiçerek göreve başladığı tarihte (9/7/2018)".
+        return mg.parse_date(m.group(1))
     dates = re.findall(_DATE, clause)
     if len(dates) == 1 and re.fullmatch(rf"\s*\d*\s*{_DATE}\s*(?:tarihinde)?\s*", clause):
         return mg.parse_date(dates[0])
@@ -152,8 +179,48 @@ class Dated:
     assumed: bool = False
 
 
-def _numbers(piece: str) -> set[str]:
-    return set(re.findall(r"\((\d+|[a-zçğıöşü])\)", piece))
+def _parts(text: str) -> dict[str, set[str]]:
+    """The parts of an article a table row names: "1 inci fıkrasının altıncı paragrafı, 8
+    inci fıkrası" -> fıkra {1, 8}, paragraf {6}; "(15) numaralı bendi" and "94/10-a" ->
+    bent {15} / {10} and alt bent {a}."""
+    out: dict[str, set[str]] = {"fikra": set(), "paragraf": set(), "bent": set(),
+                                "alt_bent": set()}
+    for m in re.finditer(r"\b\d+\s*/\s*(\d+)(?:\s*-\s*([a-zçğıöşü]))?", text):
+        out["bent"].add(m.group(1))
+        if m.group(2):
+            out["alt_bent"].add(m.group(2))
+    out["bent"] |= set(re.findall(r"\((\d+)\)\s*numaralı\s+bend", text))
+    out["alt_bent"] |= set(re.findall(r"\(([a-zçğıöşü])\)\s*alt\s+bend", text))
+    for m in re.finditer(r"(\w+)\s+paragraf", text):
+        if m.group(1) in am.ORDINALS:
+            out["paragraf"].add(str(am.ORDINALS[m.group(1)]))
+    # Ordinal numbers that are not the article: fıkralar ("7 nci, 14 üncü, 17 nci fıkrası").
+    for m in re.finditer(rf"\b(\d+)\s*{_SUFFIX}\b(?!\s+madde)", text, re.IGNORECASE):
+        if not re.match(r"\s*[’']?\s*(?:nin|nın)", text[m.end():]):
+            out["fikra"].add(m.group(1))
+    return out
+
+
+def _op_parts(r: OpResult) -> dict[str, set[str]]:
+    t = r.op.target
+    out = {"fikra": {str(t.fikra)} if t.fikra else set(),
+           "paragraf": {str(t.paragraf)} if t.paragraf else set(),
+           "bent": {t.bent} if t.bent else set(),
+           "alt_bent": {t.alt_bent} if t.alt_bent else set()}
+    field = {Level.FIKRA: "fikra", Level.BENT: "bent", Level.ALT_BENT: "alt_bent"}.get(r.op.kind)
+    if field and r.op.op is OpType.INSERT_NODE:
+        out[field] |= {n.key for n in r.op.new_nodes if n.key}
+    return out
+
+
+def _score(row: dict[str, set[str]], op: dict[str, set[str]]) -> int:
+    """How well a row's parts fit an operation's: +1 for each kind of part they share, -1
+    for each kind the row names but the operation does not reach."""
+    score = 0
+    for k, names in row.items():
+        if names and op[k]:
+            score += 1 if names & op[k] else -1
+    return score
 
 
 def op_date(r: OpResult, act: AmendingAct | None, rg_date: date) -> Dated:
@@ -162,12 +229,18 @@ def op_date(r: OpResult, act: AmendingAct | None, rg_date: date) -> Dated:
     rows: list[tuple[EffectiveEntry, str]] = []
     for e in act.effective if act else []:
         rows.extend((e, piece) for a, piece in table_articles(e.articles) if a in arts)
+    note = ""
     if len(rows) > 1:
         # "94 üncü maddenin (11) numaralı bendi" / "(15) numaralı bendi": the row that
-        # names the bent the operation acts on, or adds.
-        keys = {r.op.target.bent, *(n.key for n in r.op.new_nodes)} - {None}
-        exact = [(e, p) for e, p in rows if _numbers(p) & keys]
-        rows = exact or rows
+        # names the part the operation acts on, or adds.
+        # On a tie, the row that names fewer parts: "94" covers what "94/10-a" does not.
+        parts = _op_parts(r)
+        scores = [(_score(_parts(p), parts), -sum(map(len, _parts(p).values())))
+                  for _, p in rows]
+        best = max(scores)
+        rows = [row for row, sc in zip(rows, scores, strict=True) if sc == best]
+        if len({e.effective for e, _ in rows}) > 1:
+            note = " (birden çok satıra uyuyor; ilki alındı)"
     if not rows:
         return Dated(rg_date, "yürürlük tablosunda yok; yayım tarihi alındı", assumed=True)
     e, _ = rows[0]
@@ -178,7 +251,11 @@ def op_date(r: OpResult, act: AmendingAct | None, rg_date: date) -> Dated:
     if d is None:
         return Dated(rg_date, f"{e.articles}: {e.effective} (tek tarih okunamadı; yayım "
                               "tarihi alındı)", assumed=True)
-    return Dated(d, f"{e.articles}: {e.effective}")
+    if (d - rg_date).days > 3 * 365:
+        # 4761 (RG 22/6/2002): "22/6/2012" in the table.
+        return Dated(rg_date, f"{e.articles}: {e.effective} (yayımdan çok sonra; yayım "
+                              "tarihi alındı)", assumed=True)
+    return Dated(d, f"{e.articles}: {e.effective}{note}", assumed=bool(note))
 
 
 # -- commits ---------------------------------------------------------------------------------
@@ -363,8 +440,7 @@ def _differing_articles(replayed: Law, current: Law) -> tuple[list[str], list[st
             same = node_lines(x.body[0]) == node_lines(y.body[0])
             (typography if same else content).append(i)
     # Article order is part of the text too.
-    if [a.id for a in replayed.articles()] != [a.id for a in current.articles()] \
-            and not content:
+    if [a.id for a in replayed.articles()] != [a.id for a in current.articles()]:
         content.append("(madde sırası)")
     return content, typography
 
