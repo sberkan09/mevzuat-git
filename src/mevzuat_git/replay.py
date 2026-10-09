@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from itertools import pairwise
 
 from mevzuat_git.compare import node_lines, norm
 from mevzuat_git.model import AmendmentOp, Law, Level, Node, OpType, Path, label_key
@@ -271,18 +272,24 @@ def _replace_many(slots: list[TextSlot], pairs: list[tuple[str, str, bool]]) -> 
     return done
 
 
-def apply_batch(law: Law, ops: list[AmendmentOp]) -> None:
-    """Apply ibare replacements of one sentence that act on the same text at once."""
+def apply_batch(law: Law, ops: list[AmendmentOp]) -> list[str | None]:
+    """Apply ibare replacements of one sentence that act on the same text at once.
+    Returns an error per operation (None when it applied); :class:`Superseded` and an
+    unknown target are raised."""
     if len(ops) == 1:
-        apply(law, ops[0])
-        return
+        try:
+            apply(law, ops[0])
+        except Superseded:
+            raise
+        except ReplayError as exc:
+            return [str(exc)]
+        return [None]
     if not all(o.old for o in ops):
         raise ReplayError(f"empty ibare in a batch on {ops[0].target}")
     done = _replace_many(phrase_slots(law, ops[0].target),
                          [(o.old or "", o.new or "", o.all) for o in ops])
-    missing = [o.old for o, n in zip(ops, done, strict=True) if not n]
-    if missing:
-        raise ReplayError(f"ibare not found: {missing!r} in {ops[0].target}")
+    return [None if n else f"ibare not found: {o.old!r} in {o.target}"
+            for o, n in zip(ops, done, strict=True)]
 
 
 def unapply_batch(law: Law, ops: list[AmendmentOp]) -> list[Check]:
@@ -295,7 +302,8 @@ def unapply_batch(law: Law, ops: list[AmendmentOp]) -> list[Check]:
         return [Check("superseded") for _ in ops]
     except ReplayError as exc:
         return [Check("fail", str(exc)) for _ in ops]
-    checks = [Check("ok") if o.new and _occurrences(slots, o.new) else
+    checks = [Check("lossy", "replacement with an empty ibare") if not o.new else
+              Check("ok") if _occurrences(slots, o.new) else
               Check("fail", f"new ibare not in text: {o.new!r}") for o in ops]
     live = [o for o, c in zip(ops, checks, strict=True) if c.status == "ok"]
     if live:
@@ -312,7 +320,7 @@ def _style(label: str) -> str:
     return "alpha" + re.sub(r"[a-zçğıöşü\s]", "", label)
 
 
-def _bump(label: str, delta: int) -> str:
+def _bump(label: str, delta: int, alphabet: str = TR_ALPHABET) -> str:
     def num(m: re.Match) -> str:
         return str(int(m.group(0)) + delta)
 
@@ -320,22 +328,36 @@ def _bump(label: str, delta: int) -> str:
         return re.sub(r"\d+", num, label, count=1)
 
     def letter(m: re.Match) -> str:
-        # Turkish order, as the labels run: a) b) c) ç) d) ...
-        i = TR_ALPHABET.find(m.group(0)) + delta
-        if not 0 <= i < len(TR_ALPHABET):
+        i = alphabet.find(m.group(0))
+        if i < 0 or not 0 <= i + delta < len(alphabet):
             raise ReplayError(f"cannot renumber {label!r}")
-        return TR_ALPHABET[i]
+        return alphabet[i + delta]
 
-    return re.sub(r"[a-zçğıöşü]", letter, label, count=1)
+    # "aa)" -> "bb)": every letter of a doubled label moves.
+    key = label_key(label)
+    whole = len(key) > 1 and len(set(key)) == 1
+    return re.sub(r"[a-zçğıöşü]", letter, label, count=0 if whole else 1)
+
+
+def _alphabet(siblings: list[Node]) -> str:
+    """Letter labels run in Turkish order: a) b) c) ç) d) ... Some laws skip ç, ğ, ı, ö,
+    ş and ü; if the siblings go from c) straight to d), so does the renumbering."""
+    keys = [k[0] for n in siblings if n.label and (k := label_key(n.label)).isalpha()]
+    for x, y in pairwise(keys):
+        i, j = TR_ALPHABET.find(x), TR_ALPHABET.find(y)
+        if 0 <= i < j and j - i > 1 and all(c in "çğıöşü" for c in TR_ALPHABET[i + 1:j]):
+            return "".join(c for c in TR_ALPHABET if c not in "çğıöşü")
+    return TR_ALPHABET
 
 
 def _renumber(siblings: list[Node], after: int, inserted: list[Node], delta: int) -> None:
     if not inserted or not inserted[0].label:
         return
     style = _style(inserted[0].label)
+    alphabet = _alphabet(siblings)
     for n in siblings[after:]:
         if n.label and _style(n.label) == style and n.level is inserted[0].level:
-            n.label = _bump(n.label, delta)
+            n.label = _bump(n.label, delta, alphabet)
 
 
 def _blank(n: Node) -> None:
@@ -583,9 +605,14 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
         occ = _occurrences(slots, op.new or "")
         if not occ:
             return Check("fail", f"inserted ibare not in text: {op.new!r}")
-        if op.anchor and not _occurrences(slots, op.anchor):
-            return Check("fail", f"anchor not in text: {op.anchor!r}")
-        sl, s, e = occ[0]
+        if op.position in ("after", "before"):
+            anchors = _occurrences(slots, op.anchor or "")
+            if not anchors:
+                return Check("fail", f"anchor not in text: {op.anchor!r}")
+            occ = [o for o in occ if _next_to(o, anchors, op.position)]
+            if not occ:
+                return Check("fail", f"inserted ibare not next to its anchor: {op.new!r}")
+        sl, s, e = occ[-1] if op.position == "end" else occ[0]
         sl.set(_remove_span(sl.get(), s, e))
         return Check("ok")
     if op.op is OpType.DELETE_PHRASE:
@@ -613,6 +640,21 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
     if op.op is OpType.INSERT_NODE:
         return _unapply_insert(law, op)
     return Check("fail", f"unsupported op {op.op}")
+
+
+def _next_to(o: tuple[TextSlot, int, int], anchors: list[tuple[TextSlot, int, int]],
+             position: str | None) -> bool:
+    """Does the ibare at ``o`` sit right after (or before) one of the anchors?"""
+    sl, s, e = o
+    text = sl.get()
+    for asl, a_s, a_e in anchors:
+        if asl is not sl:
+            continue
+        if position == "after" and a_e <= s and not text[a_e:s].strip():
+            return True
+        if position == "before" and e <= a_s and not text[e:a_s].strip():
+            return True
+    return False
 
 
 def _differs(have: list[Node], want: list[Node], with_title: bool = True) -> str | None:
@@ -691,6 +733,16 @@ def _with_siblings(node: Node, siblings: list[Node]) -> list[tuple[Node, list[No
     return out
 
 
+def _inserted_differs(have: list[Node], want: list[Node]) -> str | None:
+    """Like :func:`_differs`, for nodes an operation inserted. A later operation may have
+    replaced part of them; they are removed anyway, and the replay inserts the act's text
+    again before applying the later operation on it."""
+    try:
+        return _differs(have, want)
+    except Superseded:
+        return None
+
+
 def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
     t = op.target
     k = len(op.new_nodes)
@@ -700,7 +752,7 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
             art = law.article(n.id or "")
             if art is None:
                 return Check("fail", f"inserted article {n.id} not found")
-            diff = _differs([art], [n])
+            diff = _inserted_differs([art], [n])
             if diff and not art.repealed:
                 diffs.append(diff)
         # Removed even when it reads differently (a change we have no act for): the replay
@@ -749,7 +801,7 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
             if i < 0:
                 return Check("fail", "nothing before the anchor")
         got = loc.siblings[i:i + k]
-        diff = _differs(got, op.new_nodes)
+        diff = _inserted_differs(got, op.new_nodes)
         if diff:
             return Check("fail", diff)
         del loc.siblings[i:i + k]
@@ -769,7 +821,7 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
                and c.level in (Level.BENT, Level.ALT_BENT, Level.FIKRA)]
         if len(idx) == k and idx == list(range(idx[0], idx[0] + k)):
             got = container.children[idx[0]:idx[0] + k]
-            diff = _differs(got, op.new_nodes)
+            diff = _inserted_differs(got, op.new_nodes)
             if diff:
                 return Check("fail", diff)
             del container.children[idx[0]:idx[0] + k]
@@ -780,7 +832,7 @@ def _unapply_insert(law: Law, op: AmendmentOp) -> Check:
         return Check("fail", f"{k} inserted node(s) not found in {t}")
     start = same_level[-k]
     got = container.children[start:start + k]
-    diff = _differs(got, op.new_nodes)
+    diff = _inserted_differs(got, op.new_nodes)
     if diff:
         return Check("fail", diff)
     del container.children[start:start + k]

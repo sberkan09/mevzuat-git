@@ -110,7 +110,8 @@ def batches(ops: list[OpResult]) -> list[list[OpResult]]:
         last = out[-1][-1] if out else None
         if last and r.op.op is OpType.REPLACE_PHRASE is last.op.op \
                 and not r.op.paren and not last.op.paren \
-                and (r.act, r.article, r.op.target) == (last.act, last.article, last.op.target):
+                and (r.act, r.article, r.op.target, r.op.source_sentence) \
+                == (last.act, last.article, last.op.target, last.op.source_sentence):
             out[-1].append(r)
         else:
             out.append([r])
@@ -130,13 +131,13 @@ def run(current: Law, opsfile: OpsFile) -> Report:
         if not live:
             continue
         try:
-            apply_batch(replayed, [r.op for r in live])
+            errors = apply_batch(replayed, [r.op for r in live])
         except Superseded:
-            for r in live:
-                r.replay_error = "target inside text replaced later"
+            errors = ["target inside text replaced later"] * len(live)
         except ReplayError as exc:
-            for r in live:
-                r.replay_error = str(exc)
+            errors = [str(exc)] * len(live)
+        for r, err in zip(live, errors, strict=True):
+            r.replay_error = err
 
     by_article: dict[str, list[OpResult]] = {}
     for r in ops:

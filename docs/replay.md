@@ -49,8 +49,8 @@ Bir madde, replay sonucu konsolide metinle normalizasyondan sonra birebir aynıy
 **eşleşir**. Geri getirilemeyen bir metne dayanıyorsa **doğrulanamaz** sayılır ve
 metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 
-GVK için (2026-10): 104 maddeye işlem uygulandı. Bunların 66'sı eşleşiyor, 35'i farklı,
-3'ü doğrulanamıyor. **Oran: %65,3.**
+GVK için (2026-10): 104 maddeye işlem uygulandı. Bunların 65'i eşleşiyor, 36'sı farklı,
+3'ü doğrulanamıyor. **Oran: %64,4.**
 
 ## Farkların başlıca nedenleri
 
