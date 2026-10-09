@@ -286,6 +286,7 @@ def apply_batch(law: Law, ops: list[AmendmentOp]) -> list[str | None]:
         return [None]
     if not all(o.old for o in ops):
         raise ReplayError(f"empty ibare in a batch on {ops[0].target}")
+    ops = [rebase(law, o) for o in ops]
     done = _replace_many(phrase_slots(law, ops[0].target),
                          [(o.old or "", o.new or "", o.all) for o in ops])
     return [None if n else f"ibare not found: {o.old!r} in {o.target}"
@@ -297,6 +298,7 @@ def unapply_batch(law: Law, ops: list[AmendmentOp]) -> list[Check]:
     if len(ops) == 1:
         return [unapply(law, ops[0])]
     try:
+        ops = [rebase(law, o) for o in ops]
         slots = phrase_slots(law, ops[0].target)
     except Superseded:
         return [Check("superseded") for _ in ops]
@@ -424,9 +426,9 @@ def rebase(law: Law, op: AmendmentOp) -> AmendmentOp:
     here = _footnote_path(law, op.footnote)
     if here is None:
         raise Superseded()  # the node carrying the footnote was replaced later
+    # ``footnote_path`` keeps only the parts the target took from the footnote's node.
     then, t = op.footnote_path, op.target
-    update = {f: getattr(here, f) for f in _REBASED
-              if getattr(t, f) is not None and getattr(t, f) == getattr(then, f)}
+    update = {f: getattr(here, f) for f in _REBASED if getattr(then, f) is not None}
     return op.model_copy(update={"target": t.model_copy(update=update)})
 
 

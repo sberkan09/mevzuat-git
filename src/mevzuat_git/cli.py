@@ -85,7 +85,9 @@ def amendments(
     with Fetcher(cache_dir=cache_dir, offline=offline) as f:
         ops = parse_all(f, alist)
         # Acts whose RG text is a scanned PDF: from the consolidated text's footnotes.
-        add_footnote_ops(ops, alist, current_tree(f, law))
+        with_footnotes = {a.number for a in alist.acts if a.footnotes}
+        if any(a.error and a.act in with_footnotes for a in ops.acts):
+            add_footnote_ops(ops, alist, current_tree(f, law))
     out = out_dir / f"{law}_ops.json"
     out.write_text(ops.model_dump_json(indent=1, exclude_defaults=True) + "\n")
     sentences = sum(a.sentences for a in ops.acts)

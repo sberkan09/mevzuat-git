@@ -386,7 +386,8 @@ def parse_address(seg: str, ctx: Path | None) -> Path | None:
         r"\bfıkra(?:ya|nın|sına|da)\b|aynı\s+fıkra", seg
     ):
         path = Path(madde=ctx.madde, fikra=ctx.fikra)
-    elif re.search(r"\bbend(?:e|in|inde)\b|aynı\s+bent", seg) and ctx.bent:
+    elif (bents or re.search(r"\bbend(?:e|in|inde)\b|aynı\s+bent", seg)) and ctx.bent:
+        # "(b) alt bendine": an alt bent of the bent in context.
         path = Path(madde=ctx.madde, fikra=ctx.fikra, bent=ctx.bent)
     elif cum or par:
         path = ctx.model_copy(update={"cumle": None, "paragraf": None, "baslik": False})
@@ -1019,6 +1020,17 @@ def footnote_paths(law: Law) -> dict[int, Path]:
     return out
 
 
+_NODE_PARTS = ("fikra", "bent", "alt_bent", "paragraf")
+
+
+def _stand_in(ctx: Path) -> Path:
+    return ctx.model_copy(update={
+        "fikra": ctx.fikra + 9000 if ctx.fikra else ctx.fikra,
+        "bent": f"§{ctx.bent}" if ctx.bent else ctx.bent,
+        "alt_bent": f"§{ctx.alt_bent}" if ctx.alt_bent else ctx.alt_bent,
+        "paragraf": ctx.paragraf + 9000 if ctx.paragraf else ctx.paragraf})
+
+
 def ops_from_footnotes(act: AmendingAct, law: Law) -> tuple[list[Amendment],
                                                              list[UnparsedSentence]]:
     """Operations of ``act`` as the consolidated text's footnotes describe them: "700
@@ -1042,13 +1054,22 @@ def ops_from_footnotes(act: AmendingAct, law: Law) -> tuple[list[Amendment],
                                     law_ctx=str(law.number), ctx=ctx)
             if not ops:
                 raise Unparsed("no operation")
+            # Parsed again with stand-ins for the node's parts: the parts of a target that
+            # come out as stand-ins are the ones taken from the node ("bu bentte"), as
+            # against those the sentence names ("(8) numaralı bentte").
+            marked = parse_instruction(fn.text[m.end():], [], law.number,
+                                       law_ctx=str(law.number), ctx=_stand_in(ctx))
         except Unparsed as exc:
             unparsed.append(UnparsedSentence(act=act.number, article=article,
                                              sentence=fn.text, reason=str(exc)))
             continue
-        for op in ops:
+        for op, mk in zip(ops, marked, strict=True):
             op.source_sentence = fn.text
-            op.footnote, op.footnote_path = fn.footnote, ctx
+            op.footnote = fn.footnote
+            op.footnote_path = ctx.model_copy(update={
+                f: None for f in _NODE_PARTS
+                if getattr(mk.target, f) is None or getattr(mk.target, f) != getattr(
+                    _stand_in(ctx), f)})
         am = by_article.setdefault(article, Amendment(
             amending_law=act.number, article=article, target_law=law.number,
             rg_date=act.rg.date if act.rg else None,

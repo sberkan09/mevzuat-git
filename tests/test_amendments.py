@@ -377,3 +377,20 @@ def test_footnote_operation_follows_its_node():
     assert unapply(law, op).status == "ok"
     assert law.article("94").children[7].text.startswith("Bakanlar Kurulu, bu maddede")
     assert str(resolve(law, op).target) == "md.94/f8"
+
+
+def test_alt_bent_of_bent_in_context():
+    # 700/45 footnote on md. 9/f1/b6/a: "(b) alt bendinde" names an alt bent of the same bent.
+    assert str(am.parse_address(" (b) alt bendine ",
+                                Addr(madde="9", fikra=1, bent="6", alt_bent="a"))) == "md.9/f1/b6/abb"
+
+
+def test_footnote_path_keeps_only_inherited_parts():
+    # "(9) numaralı bendinde" names the bent itself; only the fıkra-less article comes
+    # from the footnote's node, so a rebase must not move the bent.
+    act = AmendingAct(kind="khk", number="700", footnotes=[
+        FootnoteRef(footnote=n, article=a, law_article="45", text=t) for n, a, t in FOOTNOTES_700])
+    (a,), _ = am.ops_from_footnotes(act, _footnote_law())
+    named, inherited = a.ops[1], a.ops[3]
+    assert named.footnote_path.bent is None
+    assert inherited.footnote_path.fikra == 9
