@@ -64,8 +64,8 @@ metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 98'i eşleşiyor, 6'sı farklı,
 5'i doğrulanamıyor. **Oran: %94,2.**
 
-VUK (213) için (2026-10): 120 maddeye işlem uygulandı. Bunların 100'ü eşleşiyor, 14'ü
-farklı, 6'sı doğrulanamıyor. **Oran: %87,7** (ilk ölçümde %83,3). Kapatılan ucuz farklar:
+VUK (213) için (2026-10): 120 maddeye işlem uygulandı. Bunların 99'u eşleşiyor, 14'ü
+farklı, 7'si doğrulanamıyor. **Oran: %87,6** (ilk ölçümde %83,3). Kapatılan ucuz farklar:
 harfli fıkralar ("(a) fıkrası", 7394/4, 7423/1) bent olarak okunur; kanuna ekli cetveli
 değiştiren cümleler atlanır (7524/10); RG metni PDF olan Anayasa Mahkemesi kararlarının
 iptalleri "(İptal ...)" işaretinden okunur (367); işaretten okunan bir eklemenin metni,
@@ -109,7 +109,7 @@ farklı. **Oran: %83,6** (ilk ölçümde %71,4). Bu turda eklenenler:
   Tarih, `fetch`'in önbelleğe yazdığı `fetched_at` alanından okunur.
 - Bir maddenin tamamını anan ibare değişikliği ("41 inci maddesinde yer alan “yirminci
   günü” ibaresi", 5615/10) maddedeki her geçişe uygulanır.
-- Aynı cümlenin ibare değişiklikleri, aradaki başka fıkralara yapılan değişiklikler
+- Aynı cümlenin ibare değişiklikleri, aradaki başka fıkralara yapılan ibare değişiklikleri
   araya girse de tek geçişte yapılır. 700/90'da “Bakanlar Kurulu”, md. 38'deki
   “Bakanlar Kurulunca”yı yemez.
 - Tırnaksız eski metinlerde yeni metin, her işlemin andığı etiketlere göre bölünür
@@ -123,7 +123,9 @@ farklı. **Oran: %83,6** (ilk ölçümde %71,4). Bu turda eklenenler:
   - kapanış tırnağından sonra gelen başlık ("Yürürlük", 5804/3)
 - Bir Anayasa Mahkemesi kararı bir değişikliğin yalnız bir parçasını iptal edebilir: "“…X…”
   ibaresinin “…Y…” şeklinde değiştirilmesinde bulunan “…Z…” ibaresi". Bu durumda
-  silinen ibare Z'dir. Her geçiş "(…)" ile işaretliyse geri sarmada hepsine geri konur.
+  silinen ibare Z'dir. Cümle aynı ibareyi iki kez anıyorsa, metinde tam o kadar "(…)"
+  işareti varsa ibare geri sarmada bu işaretlerin hepsine geri konur. Başka iptallerin
+  işaretleri doldurulmaz.
 - Ağaçta iki satıra bölünmüş madde başlıkları (md. 13) birleştirilir. Bağlantısız
   dipnot numaraları (`<sup><span class=MsoFootnoteReference>19</span></sup>`) metinden
   ayrılır; bu, GVK ve VUK'ta metne yapışık kalan "(…)134" gibi numaraları da temizler.

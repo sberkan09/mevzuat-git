@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta, timezone
 
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
@@ -64,13 +64,17 @@ def fetch_text_html(fetcher: Fetcher, no: int, tur: int = TUR_KANUN,
     return tertip, decode_html(r.content)
 
 
+_TR = timezone(timedelta(hours=3))  # Türkiye, no daylight saving since 2016
+
+
 def text_fetched_on(fetcher: Fetcher, no: int, tur: int = TUR_KANUN) -> date | None:
     """The day the consolidated text was fetched: what it says holds on that day."""
     tertip = find_tertip(fetcher, no, tur)
     if tertip is None:
         return None
     r = fetcher.get(iframe_url(no, tur, tertip))
-    return r.fetched_at.date() if r.fetched_at else None
+    # The day in Türkiye: a fetch at 23:30 UTC is already the next day there.
+    return r.fetched_at.astimezone(_TR).date() if r.fetched_at else None
 
 
 # -- small text helpers -----------------------------------------------------------------

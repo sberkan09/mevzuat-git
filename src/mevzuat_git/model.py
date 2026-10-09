@@ -116,6 +116,7 @@ class AmendmentOp(BaseModel):
     anchor: str | None = None  # insert_phrase: the ibare the new one goes after/before
     position: Literal["after", "before", "start", "end"] | None = None
     all: bool = False  # "ibareleri": every occurrence in the target
+    occurrences: int | None = None  # "“X” ibaresi ile “X” ibaresi": the first this many
     paren: bool = False  # "parantez içi hükmü": the parenthesised part of the target
     kind: Level | None = None  # node ops: level of the inserted/replaced nodes
     new_nodes: list[Node] = Field(default_factory=list)

@@ -488,6 +488,7 @@ def _join_split_titles(bs: list[Block]) -> list[Block]:
         j = _next_nonblank(out, i + 1)
         if out[i - 1].blank and not first.blank and first.table is None \
                 and second.table is None and second.text[:1].islower() \
+                and not ITEM_RE.match(second.text) \
                 and len(first.text) + len(second.text) < 200 \
                 and not first.text.endswith((".", ";", ",", ":")) \
                 and not ARTICLE_RE.match(first.text) and not ITEM_RE.match(first.text) \

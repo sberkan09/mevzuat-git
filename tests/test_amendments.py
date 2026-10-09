@@ -1146,7 +1146,7 @@ def test_annulled_part_of_a_change():
         "“…veya iade…” ibaresi iptal edilmiştir."))
     assert text == "bu fıkrada yer alan “veya iade” ibaresi ile “veya iade” ibaresi iptal edilmiştir."
     (op,) = am.parse_instruction(text, [], 3065, law_ctx="3065", ctx=Addr(madde="36", fikra=1))
-    assert (op.op, op.old, op.all) == (OpType.DELETE_PHRASE, "veya iade", True)
+    assert (op.op, op.old, op.all, op.occurrences) == (OpType.DELETE_PHRASE, "veya iade", False, 2)
     f1 = Node(level=Level.FIKRA, text="Cumhurbaşkanı indirim (…) hakkını kısmen ... bu şekilde "
               "indirim (…) hakkı kısıtlanan mal veya hizmetleri belirlemeye ...")
     law = Law(number=3065, name="", body=[
@@ -1154,3 +1154,30 @@ def test_annulled_part_of_a_change():
     assert unapply(law, op).status == "ok"
     assert f1.text.startswith("Cumhurbaşkanı indirim veya iade hakkını kısmen")
     assert "indirim veya iade hakkı kısıtlanan" in f1.text
+    # Marks of other deletions are not filled: "ibareleri" says every occurrence, not how
+    # many marks are its own (7394 on KDV md. 13 (f), two marks).
+    f1.text = "Milli Savunma Bakanlığı, (…) Savunma Sanayii Başkanlığı (…) ve Gümrük"
+    other = op.model_copy(update={"old": ", Emniyet Genel Müdürlüğü", "all": True,
+                                  "occurrences": None})
+    assert unapply(law, other).status == "lossy"
+    assert f1.text == "Milli Savunma Bakanlığı, (…) Savunma Sanayii Başkanlığı (…) ve Gümrük"
+    # Forward, the two places and no more.
+    f1.text = "a veya iade b veya iade c veya iade"
+    apply(law, op)
+    assert f1.text == "a b c veya iade"
+
+
+def test_annulment_wording_is_not_a_replacement():
+    ops = _kdv(
+        "3065 sayılı Kanunun 36 ncı maddesinin birinci fıkrasında yer alan “indirim hakkını” "
+        "ibaresinin “indirim veya iade hakkını” şeklinde değiştirilmesinde bulunan “veya "
+        "iade” ibaresi iptal edilmiştir.")
+    assert [(o.op, o.old) for o in ops] == [(OpType.DELETE_PHRASE, "veya iade")]
+
+
+def test_failed_fikra_address_is_not_a_whole_article():
+    # 213 mükerrer 355: "Birinci fıkrasında" (capital B) is not read as a fıkra address.
+    (op,) = am.parse_instruction(
+        "213 sayılı Kanunun mükerrer 355 inci maddesinin Birinci fıkrasında yer alan “x” "
+        "ibaresi “y” şeklinde değiştirilmiştir.", [], 213)
+    assert not op.all

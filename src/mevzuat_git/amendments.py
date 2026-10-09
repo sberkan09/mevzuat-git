@@ -124,6 +124,9 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         Q + r"(?P<old>" + QTEXT + r")" + Q + r"\s*(?:" + PHRASE_NOUN + r"|ibaresinin)"
         r",?\s+(?:sırasıyla\s+|ise\s+)?"
         + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:ibaresi\s+)?(?:(?:şeklinde|olarak)\b"
+        # not "“A” ibaresinin “B” şeklinde değiştirilmesinde bulunan “C” ibaresi" (an
+        # annulment of part of a change)
+        r"(?!\s+değiştirilmes)"
         # in a series the pairs are separated by commas: "X" ibaresi "Y", "Z" ibaresi "W"
         # şeklinde değiştirilmiştir
         r"|,(?=.*(?:şeklinde|olarak)\s+değiştiril)"
@@ -835,7 +838,7 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
                     and ops[-1].op is OpType.DELETE_PHRASE \
                     and (ops[-1].old, ops[-1].target) == (made[0].old, made[0].target):
                 # "“veya iade” ibaresi ile “veya iade” ibaresi" (KDV md. 36): both places.
-                ops[-1].all = True
+                ops[-1].occurrences = (ops[-1].occurrences or 1) + 1
                 continue
             ops.extend(made)
             if o.name == "relabel_node":
@@ -975,8 +978,11 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
     if o.name in ("replace_phrase", "replace_phrase_yerine"):
         plural = bool(re.search(r"ibareleri|cümleleri|rakamları|tarihleri",
                                 text_after(o.m, "old")))
+        # Only when the sentence names nothing below the article: not when a fıkra address
+        # failed to parse ("Birinci fıkrasında") or comes from context ("bu fıkrada").
         whole = path.madde and path.fikra is None and path.bent is None and path.cumle is None \
-            and path.paragraf is None and not path.baslik
+            and path.paragraf is None and not path.baslik \
+            and not re.search(r"fıkra|ben[dt]|cümle|paragraf|başlı", seg, re.IGNORECASE)
         return [AmendmentOp(op=OpType.REPLACE_PHRASE, old=g["old"], new=g["new"],
                             all=plural or bool(whole), **base)]
     if o.name == "replace_phrase_seq":

@@ -129,6 +129,8 @@ def _batch_for(out: list[list[OpResult]], r: OpResult) -> list[OpResult] | None:
         last = b[-1]
         if (last.act, last.article, last.op.source_sentence) != key:
             return None
+        if last.op.op is not OpType.REPLACE_PHRASE and last.op.target.madde == r.op.target.madde:
+            return None  # an insert or repeal in between may move what the address names
         if last.op.target == r.op.target:
             ok = all(x.op.op is OpType.REPLACE_PHRASE and not x.op.paren for x in b)
             return b if ok else None

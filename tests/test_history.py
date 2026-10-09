@@ -341,3 +341,9 @@ def test_ibare_replacements_of_a_sentence_are_one_batch_across_other_parts():
     d = r(1, "x", "y")
     d.op = d.op.model_copy(update={"op": OpType.INSERT_PHRASE})
     assert batches([a, d, c]) == [[a], [d], [c]]
+    # Nor across an insert in the same article: "mevcut ikinci fıkrası" is counted after it.
+    ins = OpResult(act="700", article="90", op=am.AmendmentOp(
+        op=OpType.INSERT_NODE, target=am.Path(madde="38", fikra=2), position="after",
+        source_sentence=s))
+    x, e = r(3, "X", "Y"), r(3, "Z", "W")
+    assert batches([x, ins, e]) == [[x], [ins], [e]]

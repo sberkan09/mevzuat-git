@@ -399,3 +399,6 @@ def test_title_over_two_lines():
     assert a.title == ("Araçlar, kıymetli maden ve petrol aramaları ile ulusal güvenlik "
                        "harcamaları ve yatırımlarda istisna")
     assert [c.text for c in a.children] == ["Aşağıdaki teslim ve hizmetler vergiden müstesnadır."]
+    # A list item under a short line stays an item.
+    law = _gvk("", "Diğer istisnalar", "a) ilk bent", "Madde 13 – Metin.")
+    assert law.article("13").title != "Diğer istisnalar a) ilk bent"
