@@ -13,7 +13,14 @@ import re
 from mevzuat_git.model import Level, Node
 
 _MARKER_ANYWHERE = re.compile(
-    r"\((?:[^()]|\([^()]*\))*?(?:md\b\.?|Kararı\s+ile\.?|[Kk]anunla\.?)\s*\)"
+    # "(... sayılı Kararı ile)", "(... E.2010/93, K.2012/20 sayılı kararıyla)" (geçici 69)
+    r"\((?:[^()]|\([^()]*\))*?(?:md\b\.?|[Kk]ararı(?:\s+ile|yla)\.?|[Kk]anunla\.?)\s*\)"
+)
+# "(Ek cümleler: 23/7/2010-6009/5 md.; İptal birinci cümle: Anayasa Mahkemesinin 9/2/2012
+# tarihli ve E.2010/93, K.2012/20 sayılı kararıyla) Kalan kazanç ...": the annulled
+# sentence was the first of those the marker introduces, so it stood right after it.
+_ANNULLED_FIRST = re.compile(
+    r"\((?:[^()]|\([^()]*\))*?;\s*İptal\s+birinci\s+cümle\s*:(?:[^()]|\([^()]*\))*?\)"
 )
 _ELLIPSIS = re.compile(r"\(\s*(?:…|\.\s*\.\s*\.)\s*\)\d*")
 # Amounts that mevzuat.gov.tr adds after an amount for its current value: "600 milyon
@@ -42,6 +49,13 @@ def strip_editorial(text: str) -> str:
     t = _EDITORIAL_AMOUNT.sub("", t)
     t = _FOOTNOTE.sub("", t)
     return t.lstrip(" ") if t != text else text
+
+
+def mark_annulled(text: str) -> str:
+    """``text`` with a marker that records the annulment of the first sentence it
+    introduces replaced by ``(…)``, the mark mevzuat.gov.tr otherwise leaves where words
+    were removed. For the unwind, which puts an annulled ibare back at such a mark."""
+    return _ANNULLED_FIRST.sub("(…)", text)
 
 
 def norm(text: str) -> str:

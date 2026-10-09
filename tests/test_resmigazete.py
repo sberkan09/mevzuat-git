@@ -81,3 +81,16 @@ def test_single_item_mukerrer_without_index():
                           rg.index_url(d, 1), d, mukerrer=1)
     assert page.issue == "25334"
     assert page.declared_laws == ["5035"]
+
+
+def test_decision_matches():
+    # Index lines of 26/7/2013 (RG 28719).
+    entry = rg.IndexEntry(href="https://x/20130726-32.htm",
+                          text="— Anayasa Mahkemesinin E. 2010/93, K: 2012/20 Sayılı Kararı")
+    other = rg.IndexEntry(href="https://x/20130726-33.htm",
+                          text="— Anayasa Mahkemesinin E. 2012/20, K: 2012/132 Sayılı Kararı")
+    assert rg.decision_matches(entry, "2010/93", "2012/20")
+    assert not rg.decision_matches(other, "2010/93", "2012/20")
+    assert rg.decision_matches(rg.IndexEntry(href="u", text=(
+        "–– Anayasa Mahkemesinin 12/2/2026 Tarihli ve E: 2025/219, K: 2026/43 Sayılı Kararı")),
+        "2025/219", "2026/43")

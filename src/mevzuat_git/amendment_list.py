@@ -272,9 +272,32 @@ def enrich_from_mevzuat(fetcher: Fetcher, act: AmendingAct) -> None:
         act.rg = RGRef(date=h.rg_date, number=h.rg_number, source="mevzuat.gov.tr")
 
 
+def enrich_decision_from_rg(fetcher: Fetcher, act: AmendingAct, max_days: int = 180) -> None:
+    """Locate an Anayasa Mahkemesi decision in the Resmî Gazete daily index. An annulment
+    takes effect on the decision's publication (Anayasa md. 153) unless the decision sets
+    a later date, so the yürürlük table's date is tried first: "Anayasa Mahkemesinin
+    12/2/2026 tarihli ve E.: 2025/219, K.: 2026/43 sayılı Kararı" -> 3/6/2026. Otherwise
+    the days after the decision are scanned (E.2006/95, K.2009/144 of 15/10/2009 is in the
+    RG of 8/1/2010)."""
+    m = re.fullmatch(r"E\.(\d{4}/\d+), K\.(\d{4}/\d+)", act.number)
+    if m is None or act.kabul_date is None:
+        return
+    days = sorted({e.effective_date for e in act.effective
+                   if e.effective_date and e.effective_date >= act.kabul_date})
+    days += [act.kabul_date + timedelta(days=i) for i in range(max_days + 1)]
+    found = rg.locate_decision(fetcher, m.group(1), m.group(2), list(dict.fromkeys(days)))
+    if found is None:
+        act.notes.append("not found in Resmî Gazete index")
+        return
+    act.rg = RGRef(date=found.page.date, number=found.issue, index_url=found.page.url,
+                   text_url=found.text_url, anchor=found.anchor, source="resmigazete.gov.tr")
+    act.title = act.title or re.sub(r"^[—–-]*\s*", "", found.entry.text) or None
+
+
 def enrich_from_rg(fetcher: Fetcher, act: AmendingAct, max_days: int = 45) -> None:
     """Locate the act in the Resmî Gazete daily index; fills URLs (and date if unknown)."""
     if act.kind == "aym":
+        enrich_decision_from_rg(fetcher, act)
         return
     # Scan from the kabul date; for acts only the yürürlük table names, or whose kabul
     # date in the consolidated text is off (4710: kabul 10/11/2001 > effective 24/10/2001),

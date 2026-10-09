@@ -20,10 +20,11 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
+from datetime import date
 
 from mevzuat_git import mevzuat_gov as mg
 from mevzuat_git.amendments import OpsFile, UnparsedSentence
-from mevzuat_git.compare import node_lines, strip_editorial
+from mevzuat_git.compare import mark_annulled, node_lines, strip_editorial
 from mevzuat_git.fetch import Fetcher, NotFound
 from mevzuat_git.model import AmendmentOp, Law, Level, OpType
 from mevzuat_git.replay import (
@@ -46,6 +47,7 @@ class OpResult:
     check: str = ""  # unwind check: ok / fail / superseded / lossy
     check_message: str = ""
     replay_error: str | None = None
+    effective: date | None = None  # Amendment.effective_date (Anayasa Mahkemesi decisions)
 
 
 @dataclass
@@ -132,7 +134,7 @@ def unwind(current: Law, groups: list[list[OpResult]]) -> Law:
     for top in state.body:
         for n in top.walk():
             if n.text:
-                n.text = strip_editorial(n.text)
+                n.text = strip_editorial(mark_annulled(n.text))
     for b in reversed(groups):
         for r in b:
             # Footnote ops: their address, as it is at this point of the unwind.
@@ -183,7 +185,16 @@ def replay_batch(law: Law, batch: list[OpResult]) -> None:
 
 
 def op_results(opsfile: OpsFile) -> list[OpResult]:
-    return [OpResult(act=a.act, article=am.article, op=op) for a, am, op in opsfile.ops()]
+    return [OpResult(act=a.act, article=am.article, op=op, effective=am.effective_date)
+            for a, am, op in opsfile.ops()]
+
+
+def _redone(r: OpResult) -> bool:
+    """A deleted ibare whose place the unwind could not find ("lossy") is still checked
+    when the replay deleted it again: an earlier act's text brought it back. 5479/3 added
+    geçici 69 with "... sadece 2006, 2007 ve 2008 yıllarına ait kazançlarından ...", which
+    E.2006/95, K.2009/144 annulled; the consolidated text keeps no mark of it."""
+    return r.op.op is OpType.DELETE_PHRASE and r.replay_error is None
 
 
 def run(current: Law, opsfile: OpsFile) -> Report:
@@ -208,12 +219,16 @@ def run(current: Law, opsfile: OpsFile) -> Report:
             res.status, res.detail = "mismatch", "article not in the consolidated text"
         elif rep is None:
             res.status, res.detail = "mismatch", "article missing after replay"
-        elif _has_unknown(replayed, art_id) or any(r.check == "lossy" for r in rs):
+        elif _has_unknown(replayed, art_id) or any(r.check == "lossy" and not _redone(r)
+                                                   for r in rs):
             res.status = "unverified"
             res.detail = "depends on wording that could not be recovered"
         else:
             a, b = node_lines(rep), node_lines(cur)
-            if a != b:
+            if a != b and any(r.check == "lossy" for r in rs):
+                res.status = "unverified"
+                res.detail = "depends on wording that could not be recovered"
+            elif a != b:
                 res.status, res.detail = "mismatch", _first_diff(a, b)
         errors = [r for r in rs if r.replay_error and r.check != "superseded"]
         failed = [r for r in rs if _not_undone(r)]
@@ -277,17 +292,24 @@ def render_report(rep: Report, law: int) -> str:
         for r in a.ops:
             flag = r.check if r.check != "ok" else ""
             msg = r.check_message or r.replay_error or ""
-            lines.append(f"- {r.act} md. {r.article}: `{r.op.op.value}` {r.op.target} "
+            lines.append(f"- {act_label(r.act, r.article)}: `{r.op.op.value}` {r.op.target} "
                          f"{flag} {msg}".rstrip())
         lines.append("")
     lines += ["## Ayrıştırılamayan cümleler", ""]
     for u in rep.unparsed:
-        lines.append(f"- {u.act} md. {u.article} ({u.reason}): {u.sentence[:300]}")
+        lines.append(f"- {act_label(u.act, u.article)} ({u.reason}): {u.sentence[:300]}")
     lines += ["", "## Doğrulanamayan maddeler", ""]
     for a in rep.articles:
         if a.status == "unverified":
             lines.append(f"- {a.id}")
     return "\n".join(lines) + "\n"
+
+
+def act_label(act: str, article: str) -> str:
+    """"5479 md. 3"; for a decision "AYM E.2006/95, K.2009/144 hüküm B/2"."""
+    if act.startswith("E."):
+        return f"AYM {act}" + (f" hüküm {article}" if article != "?" else "")
+    return f"{act} md. {article}"
 
 
 def _pct(a: int, b: int) -> str:

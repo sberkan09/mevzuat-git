@@ -61,8 +61,16 @@ Bir madde, replay sonucu konsolide metinle normalizasyondan sonra birebir aynıy
 **eşleşir**. Geri getirilemeyen bir metne dayanıyorsa **doğrulanamaz** sayılır ve
 metriğe girmez. Oran = eşleşen / (eşleşen + farklı).
 
-GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 94'ü eşleşiyor, 9'u farklı,
-6'sı doğrulanamıyor. **Oran: %91,3.**
+GVK için (2026-10): 109 maddeye işlem uygulandı. Bunların 97'si eşleşiyor, 7'si farklı,
+5'i doğrulanamıyor. **Oran: %93,3.**
+
+Yeri işaretlenmemiş bir ibare çıkarma geri sarmada `lossy` olur, ama ileri oynatmada
+ibare yeniden bulunup çıkarıldıysa (onu daha eski bir kanunun metni geri getirmişse)
+madde yine karşılaştırılır (`verify._redone`). 5479/3 geçici 69'u "... sadece 2006, 2007
+ve 2008 yıllarına ait kazançlarından ..." diye ekler; Anayasa Mahkemesinin iptal ettiği bu
+ibarenin konsolide metinde izi yoktur. 7420/3'ün geçici 82'den çıkardığı "Bilim," da
+böyle doğrulanır (6327'nin eklediği metinde vardır). Karşılaştırma tutmazsa madde
+doğrulanamaz sayılmaya devam eder.
 
 ## RG metni taranmış PDF olan değişiklikler
 
@@ -88,6 +96,45 @@ Dipnotu olmayan bir ekleme yalnızca değişiklik işaretinden de okunur
 bendi, kendinden önceki bentten sonra eklenmiş sayılır. Metni bugünkü metindir; bent
 sonradan yürürlükten kaldırılmışsa o dönemdeki metni bilinmez.
 
+## Anayasa Mahkemesi iptal kararları
+
+İptal kararları da birer değiştiren işlem olarak okunur (`amendment_list` içinde
+`kind: "aym"`). Karar Resmî Gazete'nin günlük fihristinde aranır
+(`resmigazete.locate_decision`): önce yürürlük tablosunun verdiği tarihte, sonra karar
+tarihinden itibaren. E.2010/93, K.2012/20 (9/2/2012) 26/7/2013'te yayımlanmıştır.
+
+- **RG metni HTML ise** kararın hüküm kısmı okunur (`amendments.parse_decision`). "VIII-
+  SONUÇ"tan sonraki maddeler, üstlerindeki ";" ile biten başlıklarla birleştirilip
+  değişiklik cümlesine çevrilir: "... geçici 69. maddesinin birinci fıkrasına eklenen “Şu
+  kadar ki, ...” biçimindeki cümlenin, Anayasa’ya aykırı olduğuna ve İPTALİNE" → "...
+  “Şu kadar ki, ...” cümlesi iptal edilmiştir." (`delete_phrase`). Kararın bir cümleden
+  kesilen ibareyi gösteren noktaları (“... sadece 2006, 2007 ve 2008 yıllarına ait ...”)
+  ibareye dahil değildir. REDDİNE ve "“ücret gelirleri” yönünden" gibi kısmi iptaller
+  metinden bir şey çıkarmaz, atlanır.
+- **RG metni PDF ise** işlem konsolide metnin dipnotundan okunur
+  (`ops_from_footnotes`): "Anayasa Mahkemesinin 12/2/2026 tarihli ve E.: 2025/219, K.:
+  2026/43 sayılı Kararı ile bu fıkranın üçüncü cümlesinde yer alan “...” ibaresi iptal
+  edilmiştir." Kararın adı nerede geçerse çıkarılır, kalan cümle Faz 2 ayrıştırıcısıyla
+  okunur ("iptal edilmiştir" bir ibare için `delete_phrase`, düğüm için `repeal_node`).
+
+İptal hükmü kararın yayımlandığı gün yürürlüğe girer (Anayasa md. 153), karar daha geç
+bir tarih belirlemediyse: "İPTAL HÜKMÜNÜN, KARARIN RESMÎ GAZETE’DE YAYIMLANMASINDAN
+BAŞLAYARAK DOKUZ AY SONRA YÜRÜRLÜĞE GİRMESİNE" (E.2006/119, K.2009/145). Bu tarih
+`Amendment.effective_date`'tir; işlemler yine yayım sırasıyla uygulanır.
+
+mevzuat.gov.tr iptal edilen ibarenin yerine `(…)` koyar (geçici 72: "gelir vergisinden,
+(…) bu Kanuna göre"); geri sarma ibareyi oraya geri yazar. Bir dizi eklenen cümlenin
+ilki iptal edildiyse yer işareti değişiklik notunun kendisidir: "(Ek cümleler:
+23/7/2010-6009/5 md.; İptal birinci cümle: ... kararıyla) Kalan kazanç ...". Geri sarmada
+bu not `(…)` sayılır (`compare.mark_annulled`). GVK'da 4 karar 4 işlem verir (geçici 67,
+69 (iki karar), 72); geçici 69 ve 72 artık eşleşiyor.
+
+Kapsam dışı: RG fihristinde bulunamayan E.2001/36, K.2003/3 (geçici 58, "gelir"
+ibaresi); yalnız "yönünden" iptal edilen geçici 73; başka kanunların yürürlük
+hükümlerini iptal eden kararlar (5479/15, 6009/62). E.2006/119, K.2009/145'in ertelenmiş
+iptali, 6009/4 aynı cümleyi daha önce yeniden düzenlediği için metinde bulunamaz
+(geçici 67 zaten farklı).
+
 ## Farkların başlıca nedenleri
 
 - **Konsolide metnin kendi yazımı.** Örneğin mükerrer 123'te "9/10,19" virgülden sonra
@@ -95,6 +142,5 @@ sonradan yürürlükten kaldırılmışsa o dönemdeki metni bilinmez.
 - **Geri sarmada izi bulunamayan işlemler.** İşlemin etkisi bugünkü metinde yok: ya
   ayrıştırma yanlış, ya da RG metni olmayan (2000 öncesi ya da dipnotsuz) bir değişiklik
   aynı yeri sonradan değiştirmiş.
-- **Henüz desteklenmeyen işlemler.** Anayasa Mahkemesi iptal kararları (geçici 72),
-  kısım/bölüm başlığı değişiklikleri ve tek tek işlem gerektiren bazı eski
-  yazılışlar bunlar arasında.
+- **Henüz desteklenmeyen işlemler.** Kısım/bölüm başlığı değişiklikleri ve tek tek işlem
+  gerektiren bazı eski yazılışlar bunlar arasında.

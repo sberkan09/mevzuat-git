@@ -241,6 +241,12 @@ def op_date(r: OpResult, act: AmendingAct | None, rg_date: date) -> Dated:
         rows = [row for row, sc in zip(rows, scores, strict=True) if sc == best]
         if len({e.effective for e, _ in rows}) > 1:
             note = " (birden çok satıra uyuyor; ilki alındı)"
+    if not rows and r.effective is not None:
+        # An Anayasa Mahkemesi annulment: on publication (Anayasa md. 153), or on the
+        # later date the decision sets ("... yayımlanmasından başlayarak dokuz ay sonra").
+        return Dated(r.effective, "satır yok; iptal hükmü kararın yayımıyla yürürlüğe girer "
+                     "(Anayasa md. 153)" if r.effective == rg_date
+                     else "satır yok; iptal hükmünün yürürlüğe gireceği tarih kararda belirlenmiş")
     if not rows:
         return Dated(rg_date, "yürürlük tablosunda yok; yayım tarihi alındı", assumed=True)
     e, _ = rows[0]
@@ -336,7 +342,7 @@ class Step:
     rg_number: str | None
     text_url: str
     source: str  # ActOps.source: "rg" or "footnotes"
-    kind: str  # AmendingAct.kind: kanun, khk, cbk
+    kind: str  # AmendingAct.kind: kanun, khk, cbk, aym
     date: date
     sources: list[Dated]  # one per distinct table row or fallback note
     batches: list[list[OpResult]]
@@ -452,20 +458,33 @@ def _step_commit(s: Step) -> Commit:
     arts = s.articles
     acts_articles = sorted({r.article for b in s.batches for r in b},
                            key=lambda a: (len(a), a))
+    from_footnotes = s.source == "footnotes"
+    if s.kind == "aym":
+        # A decision has items in its operative part, not articles; a footnote names none.
+        items = [a for a in acts_articles if a != "?"]
+        by = [f"Hüküm fıkrası: {', '.join(items)}"] if items else []
+        source = f"Kaynak: {s.text_url}" + (" (PDF; işlemler mevzuat.gov.tr konsolide metninin "
+                                            "dipnotlarından okundu)" if from_footnotes else "")
+    else:
+        by = [f"Değiştiren maddeler: {', '.join(f'{s.act}/{a}' for a in acts_articles)}"]
+        source = f"Kaynak: {s.text_url}" + (" (taranmış PDF; işlemler mevzuat.gov.tr konsolide "
+                                            "metninin dipnotlarından okundu)"
+                                            if from_footnotes else "")
     body = [
         f"Resmî Gazete: {_fmt(s.rg_date)}" + (f", sayı {s.rg_number}" if s.rg_number else ""),
         f"Yürürlük: {_fmt(s.date)}"
         + (" (varsayılan)" if all(d.assumed for d in s.sources) else ""),
         *(f"Yürürlük tablosu: {d.source}" for d in s.sources),
-        f"Değiştiren maddeler: {', '.join(f'{s.act}/{a}' for a in acts_articles)}",
-        f"Kaynak: {s.text_url}" + (" (taranmış PDF; işlemler mevzuat.gov.tr konsolide "
-                                   "metninin dipnotlarından okundu)"
-                                   if s.source == "footnotes" else ""),
+        *by,
+        source,
     ]
     errors = [r for b in s.batches for r in b if r.replay_error]
     if errors:
         body += ["", "Uygulanamayan işlemler:"]
         body += [f"- {r.act}/{r.article} {r.op.op.value} {r.op.target}: {r.replay_error}"
                  for r in errors]
+    if s.kind == "aym":
+        # "AYM E.2025/219 K.2026/43: md. geçici 72"
+        return Commit(s.date, f"AYM {s.act.replace(',', '')}: md. {_art_list(arts)}", body)
     name = {"khk": "KHK", "cbk": "Cumhurbaşkanlığı Kararnamesi"}.get(s.kind, "Kanun")
     return Commit(s.date, f"{s.act} sayılı {name}: md. {_art_list(arts)}", body)

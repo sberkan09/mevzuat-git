@@ -128,9 +128,17 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         r"(?P<pos>sonuna|başına)\s+" + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*"
         r"(?:" + PHRASE_NOUN + r"\s+)?eklen"
     )),
+    # “X” ibaresinden sonra gelmek üzere ... ve bu ibareden sonra gelmek üzere “Y”
+    # cümleleri eklenmiştir (6009/5): after the ibare the sentence has just written.
+    ("insert_phrase_bu", re.compile(
+        r"\bbu\s+ibare(?:den|lerden)\s+(?P<pos>sonra|önce)\s+gelmek\s+üzere\s*,?\s*"
+        + Q + r"(?P<new>" + QTEXT + r")" + Q + r"\s*(?:" + PHRASE_NOUN + r"\s+)?eklen"
+    )),
     ("delete_phrase", re.compile(
         Q + r"(?P<old>" + QTEXT + r")" + Q + r"\s*" + PHRASE_NOUN
+        # "... ibaresi iptal edilmiştir": an Anayasa Mahkemesi annulment.
         + r"\s+(?:(?:madde|fıkra|bent)\s+)?(?:met(?:in|n)\w*\s+çıkarıl|yürürlükten\s+kaldırıl"
+        r"|iptal\s+edilmiş"
         # “X” ibaresi ile 6964 sayılı Kanunun ek 2 nci maddesi yürürlükten kaldırılmıştır
         r"|ile\b(?=[^“”\"]*(?:yürürlükten\s+kaldırıl|çıkarıl)))"
     )),
@@ -160,7 +168,7 @@ OP_PATTERNS: list[tuple[str, re.Pattern]] = [
         r"|cümle(?:ler)?|paragraf(?:lar)?"
         r"|parantez\s+içi\s+hüküm(?:ler)?)\w*\s*(?:eklen|(?:ile|ve)\b(?=.*eklen)|,(?=.*eklen))"
     )),
-    ("repeal_node", re.compile(r"yürürlükten\s+kaldırılmış(?!\s+olan)")),
+    ("repeal_node", re.compile(r"(?:yürürlükten\s+kaldırılmış|iptal\s+edilmiş)(?!\s+olan)")),
 ]
 
 
@@ -719,7 +727,14 @@ def parse_instruction(text: str, payload: list[str], target_law: int,
         else:
             parts = [raw] * n
         for (t, sub), part in zip(targets, parts, strict=True):
-            ops.extend(_make_ops(o, _after_inserts(t, sub, ops), sub, _strip_quotes(part), text))
+            made = _make_ops(o, _after_inserts(t, sub, ops), sub, _strip_quotes(part), text)
+            if o.name == "insert_phrase_bu":
+                # "bu ibareden sonra": the new ibare of the operation before.
+                if not (ops and ops[-1].op is OpType.REPLACE_PHRASE and ops[-1].new):
+                    raise Unparsed("'bu ibare' without an ibare before it")
+                for op in made:
+                    op.anchor, op.target = ops[-1].new, ops[-1].target
+            ops.extend(made)
     return ops
 
 
@@ -823,8 +838,8 @@ def _make_ops(o: OpMatch, path: Path, seg: str, new_text: list[str],
             raise Unparsed("ibare counts differ in a 'sırasıyla' list")
         return [AmendmentOp(op=OpType.REPLACE_PHRASE, old=a, new=b, all=True, **base)
                 for a, b in zip(olds, news, strict=True)]
-    if o.name == "insert_phrase":
-        return [AmendmentOp(op=OpType.INSERT_PHRASE, anchor=g["anchor"], new=g["new"],
+    if o.name in ("insert_phrase", "insert_phrase_bu"):
+        return [AmendmentOp(op=OpType.INSERT_PHRASE, anchor=g.get("anchor"), new=g["new"],
                             position="after" if g["pos"] == "sonra" else "before", **base)]
     if o.name == "insert_phrase_cumle":
         return [AmendmentOp(op=OpType.INSERT_PHRASE, new=g["new"],
@@ -996,6 +1011,162 @@ def parse_act(html: str, act_no: str, target_law: int, inline: bool = False) -> 
     return ParseResult(amendments, unparsed, sentences)
 
 
+# -- Anayasa Mahkemesi decisions ---------------------------------------------------------
+
+# The operative part of a decision is a list after "VIII- SONUÇ" (older: "HÜKÜM"):
+#   23.7.2010 günlü, 6009 sayılı ... Kanun’un:
+#   2- 5. maddesiyle 193 sayılı Kanun’un geçici 69. maddesinin birinci fıkrasına eklenen
+#      “Şu kadar ki, ...” biçimindeki cümlenin, Anayasa’ya aykırı olduğuna ve İPTALİNE, ...
+# Items ending in ";" or ":" head the items below them.
+_RESULT_HEAD_RE = re.compile(r"^(?:[IVX]+\s*[-–.]\s*)?(?:SONUÇ|HÜKÜM)\s*:?$")
+_RESULT_ITEM_RE = re.compile(r"^(?P<label>[A-ZÇĞİÖŞÜ]|\d{1,2}|[a-zçğıöşü])\s*[-–.)]\s+(?P<text>.*)$")
+_IPTAL_RE = re.compile(r",?\s*Anayasa[’']ya\s+aykırı\s+olduğuna\s+ve\s+İPTALİNE\b.*$")
+# "... İPTAL HÜKMÜNÜN, KARARIN RESMÎ GAZETE’DE YAYIMLANMASINDAN BAŞLAYARAK DOKUZ AY SONRA
+# YÜRÜRLÜĞE GİRMESİNE" (E.2006/119, K.2009/145).
+_DEFER_RE = re.compile(r"YAYIMLANMASINDAN\s+BAŞLAYARAK\s+(?P<n>[A-ZÇĞİÖŞÜ ]+?)\s+(?P<unit>AY|YIL)\s+"
+                       r"SONRA\s+YÜRÜRLÜĞE\s+GİRMESİNE")
+_COUNTS = {"BİR": 1, "İKİ": 2, "ÜÇ": 3, "DÖRT": 4, "BEŞ": 5, "ALTI": 6, "YEDİ": 7, "SEKİZ": 8,
+           "DOKUZ": 9, "ON": 10, "ON BİR": 11, "ON İKİ": 12}
+# The decision's wording, as the amendment parser reads it: "geçici 69. maddenin" ->
+# "geçici 69 inci maddenin", "193 sayılı Yasa’ya" -> "193 sayılı Kanun’ya".
+_DECISION_WORDING = [
+    (re.compile(r"(\d)\.\s+(madde)"), r"\1 inci \2"),
+    (re.compile(r"\bYasa(?=[’'\s,])"), "Kanun"),
+]
+# The annulled thing, last in the item, from the genitive to the subject: "“X” ibaresinin"
+# -> "“X” ibaresi", "“X” biçimindeki cümlenin" -> "“X” cümlesi", "bölümünün" (a quoted
+# part of a text) -> "ibaresi".
+_NOUN_RE = re.compile(r"(?:\s+biçimindeki)?\s+(?P<noun>ibare|cümle|bölüm|rakam|ben[dt]|fıkra"
+                      r"|paragraf|madde)(?:si|sı|i|ı|ü)?n[iıü]n$")
+_NOUN = {"ibare": "ibaresi", "cümle": "cümlesi", "bölüm": "ibaresi", "rakam": "rakamı",
+         "bent": "bendi", "bend": "bendi", "fıkra": "fıkrası", "paragraf": "paragrafı",
+         "madde": "maddesi"}
+
+
+def add_months(d: date, n: int) -> date:
+    m = d.month - 1 + n
+    y, m = d.year + m // 12, m % 12 + 1
+    last = (date(y + m // 12, m % 12 + 1, 1) - date(y, m, 1)).days
+    return date(y, m, min(d.day, last))
+
+
+@dataclass
+class Annulment:
+    label: str  # the item's place in the operative part, e.g. "B/2"
+    text: str  # the item with the heads above it, as written
+    deferred: str | None = None  # the deferral item, if any
+
+
+def decision_paragraphs(paras: list[str], esas: str, karar: str) -> list[str]:
+    """The paragraphs of decision E.``esas``, K.``karar`` on a page that may hold several
+    (before ~2005 a day's acts and decisions are one page)."""
+    def is_start(i: int) -> bool:
+        return bool(re.search(r"Esas\s+Sayısı\s*:\s*" + re.escape(esas) + r"\b", paras[i])
+                    and any(re.search(r"Karar\s+Sayısı\s*:\s*" + re.escape(karar) + r"\b", p)
+                            for p in paras[i:i + 3]))
+    start = next((i for i in range(len(paras)) if is_start(i)), None)
+    if start is None:
+        return paras
+    end = next((j for j in range(start + 1, len(paras))
+                if re.match(r"Esas\s+Sayısı\s*:", paras[j])), len(paras))
+    return paras[start:end]
+
+
+def annulments(paras: list[str]) -> list[Annulment]:
+    """Items of the operative part that annul ("İPTALİNE").
+
+    Partial annulments ("“ücret gelirleri” yönünden ... İPTALİNE", E.2006/95, K.2009/144)
+    change no words of the law and are not returned. A deferral item applies to the
+    annulment whose quoted ibare it repeats, or to all when it names none."""
+    start = max((i for i, p in enumerate(paras) if _RESULT_HEAD_RE.match(p)), default=None)
+    if start is None:
+        return []
+    heads: list[tuple[str, str, str]] = []  # (style, label, text) of the open heads
+    preface = ""
+    found: list[Annulment] = []
+    defer: list[str] = []
+    for p in paras[start + 1:]:
+        if re.search(r"gününde\b.*karar\s+veril", p):
+            break
+        m = _RESULT_ITEM_RE.match(p)
+        if m is None:
+            if not heads and not found:
+                preface = p.rstrip(":;").rstrip()  # "... sayılı Kanun’un:"
+            continue
+        label, text = m.group("label"), m.group("text").strip()
+        style = "A" if label.isupper() else "1" if label.isdigit() else "a"
+        while heads and style in [h[0] for h in heads]:
+            heads.pop()
+        if text.endswith((";", ":")):
+            heads.append((style, label, text.rstrip(";:").rstrip()))
+            continue
+        path = "/".join([h[1] for h in heads] + [label])
+        full = " ".join(x for x in [preface] + [h[2] for h in heads] + [text] if x)
+        if _DEFER_RE.search(full):
+            defer.append(full)
+        elif "İPTALİNE" in text and "yönünden" not in text:
+            found.append(Annulment(path, full))
+    for d in defer:
+        quoted = re.findall(Q + "(" + QTEXT + ")" + Q, d)
+        for a in found:
+            if not quoted or any(q in a.text for q in quoted):
+                a.deferred = a.deferred or d
+    return found
+
+
+def annulment_instruction(text: str) -> str:
+    """An annulment item as an amendment sentence: "... eklenen “X” biçimindeki cümlenin,
+    Anayasa’ya aykırı olduğuna ve İPTALİNE, OYBİRLİĞİYLE," -> "... eklenen “X” cümlesi
+    iptal edilmiştir.". The decision marks an ibare cut out of a sentence with dots
+    ("“... sadece 2006, 2007 ve 2008 yıllarına ait ...”"); they are not part of it."""
+    t = _IPTAL_RE.sub("", text).rstrip(" ,")
+    for rx, repl in _DECISION_WORDING:
+        t = rx.sub(repl, t)
+    t = _NOUN_RE.sub(lambda m: " " + _NOUN[m.group("noun")], t)
+    t = re.sub(r"([“\"])\s*(?:\.\.\.|…)\s*", r"\1", t)
+    t = re.sub(r"\s*(?:\.\.\.|…)\s*([”\"])", r"\1", t)
+    return t + " iptal edilmiştir."
+
+
+def parse_decision(html: str, number: str, target_law: int,
+                   rg_date: date | None) -> ParseResult:
+    """Operations of an Anayasa Mahkemesi decision on ``target_law``. ``number`` is the
+    decision as the amendment list names it: "E.2006/95, K.2009/144"."""
+    m = re.fullmatch(r"E\.(\d{4}/\d+), K\.(\d{4}/\d+)", number)
+    paras = paragraphs(html)
+    if m:
+        paras = decision_paragraphs(paras, m.group(1), m.group(2))
+    found = annulments(paras)
+    amendments: list[Amendment] = []
+    unparsed: list[tuple[str, str, str]] = []
+    sentences = 0
+    for a in found:
+        instruction = annulment_instruction(a.text)
+        if not mentions(instruction, target_law):
+            continue
+        sentences += 1
+        try:
+            ops = parse_instruction(instruction, [], target_law)
+        except (Unparsed, KeyError, ValueError) as exc:
+            unparsed.append((a.label, a.text, str(exc)))
+            continue
+        if not ops:
+            unparsed.append((a.label, a.text, "no operation recognised"))
+            continue
+        for op in ops:
+            op.source_sentence = a.text
+        effective = rg_date
+        if a.deferred and rg_date and (d := _DEFER_RE.search(a.deferred)):
+            n = _COUNTS.get(" ".join(d.group("n").split()))
+            if n is None:
+                unparsed.append((a.label, a.text, f"deferral not read: {a.deferred!r}"))
+                continue
+            effective = add_months(rg_date, n * (12 if d.group("unit") == "YIL" else 1))
+        amendments.append(Amendment(amending_law=number, article=a.label,
+                                    target_law=target_law, effective_date=effective, ops=ops))
+    return ParseResult(amendments, unparsed, sentences)
+
+
 # -- all acts of a law ------------------------------------------------------------------
 
 class UnparsedSentence(BaseModel):
@@ -1042,7 +1213,7 @@ def parse_all(fetcher: Fetcher, alist: AmendmentList) -> OpsFile:
     acts: list[ActOps] = []
     for act in sorted(alist.acts, key=lambda a: (a.rg.date if a.rg else date.max,
                                                   int(a.number) if a.number.isdigit() else 0)):
-        if not (act.rg and act.rg.text_url) or act.kind == "aym":
+        if not (act.rg and act.rg.text_url):
             continue
         rec = ActOps(act=act.number, rg_date=act.rg.date, rg_number=act.rg.number,
                      text_url=act.rg.text_url, sentences=0)
@@ -1056,7 +1227,10 @@ def parse_all(fetcher: Fetcher, alist: AmendmentList) -> OpsFile:
             rec.error = f"RG text not available: {exc}"
             continue
         inline = bool(act.rg.anchor) or not act.rg.text_url.rsplit("/", 1)[-1].count("-")
-        res = parse_act(html, act.number, alist.target_law, inline=inline)
+        if act.kind == "aym":
+            res = parse_decision(html, act.number, alist.target_law, act.rg.date)
+        else:
+            res = parse_act(html, act.number, alist.target_law, inline=inline)
         rec.sentences = res.sentences
         for am in res.amendments:
             am.rg_date, am.rg_number = act.rg.date, act.rg.number
@@ -1070,6 +1244,26 @@ def parse_all(fetcher: Fetcher, alist: AmendmentList) -> OpsFile:
 
 # "2/7/2018 tarihli ve 700 sayılı KHK’nin 45 inci maddesiyle, bu bentte yer alan ..."
 _FOOTNOTE_ACT = re.compile(r"^.*?\b\d+\s+sayılı\s+\S+\s+\d+\s*\S*\s+maddes[iı]yle,\s*")
+# "Anayasa Mahkemesinin 12/2/2026 tarihli ve E.: 2025/219, K.: 2026/43 sayılı Kararı ile",
+# at the start of the footnote or after the ibare ("Bu arada yer alan “gelir” ibaresi,
+# Anayasa Mahkemesinin 16/1/2003 tarihli ve E.:2001/36, K.:2003/3 sayılı Kararı ile iptal
+# edilmiştir.").
+_FOOTNOTE_AYM = re.compile(
+    r",?\s*Anayasa\s+Mahkemesi\S*\s+" + mg.DATE_RE + r"\s+tarihli\s+ve\s+E\s*\.?\s*:?\s*\d{4}/\d+"
+    r"\s*,\s*K\s*\.?\s*:?\s*\d{4}/\d+\s+sayılı\s+[Kk]ararı\s+ile\s*,?\s*"
+)
+
+
+def footnote_instruction(act: AmendingAct, text: str) -> str | None:
+    """The amendment sentence in a footnote, without the act that made it: "700 sayılı
+    KHK’nin 45 inci maddesiyle, bu bentte yer alan ..." -> "bu bentte yer alan ...". For a
+    decision of the Anayasa Mahkemesi the decision's name goes wherever it stands."""
+    if act.kind == "aym":
+        if not _FOOTNOTE_AYM.search(text):
+            return None
+        return " ".join(_FOOTNOTE_AYM.sub(" ", text).split())
+    m = _FOOTNOTE_ACT.match(text)
+    return text[m.end():] if m else None
 
 
 def node_paths(law: Law) -> list[tuple[Node, Path, list[Node]]]:
@@ -1137,22 +1331,26 @@ def ops_from_footnotes(act: AmendingAct, law: Law) -> tuple[list[Amendment],
     unparsed: list[UnparsedSentence] = []
     for fn in act.footnotes:
         article = fn.law_article or "?"
-        m = _FOOTNOTE_ACT.match(fn.text)
+        instruction = footnote_instruction(act, fn.text)
         ctx = paths.get(fn.footnote)
-        if not m or ctx is None:
-            reason = "not an amendment sentence" if not m else "footnote not in the text"
+        reason = ("not an amendment sentence" if instruction is None
+                  else "footnote not in the text" if ctx is None
+                  # "... mükellefler yönünden iptal edilmiştir" (geçici 73): the words stay.
+                  else "annulled only in part (yönünden): the text is unchanged"
+                  if act.kind == "aym" and re.search(r"\byönünden\b", instruction) else None)
+        if reason:
             unparsed.append(UnparsedSentence(act=act.number, article=article,
                                              sentence=fn.text, reason=reason))
             continue
         try:
-            ops = parse_instruction(fn.text[m.end():], [], law.number,
+            ops = parse_instruction(instruction, [], law.number,
                                     law_ctx=str(law.number), ctx=ctx)
             if not ops:
                 raise Unparsed("no operation")
             # Parsed again with stand-ins for the node's parts: the parts of a target that
             # come out as stand-ins are the ones taken from the node ("bu bentte"), as
             # against those the sentence names ("(8) numaralı bentte").
-            marked = parse_instruction(fn.text[m.end():], [], law.number,
+            marked = parse_instruction(instruction, [], law.number,
                                        law_ctx=str(law.number), ctx=_stand_in(ctx))
         except Unparsed as exc:
             unparsed.append(UnparsedSentence(act=act.number, article=article,
@@ -1168,7 +1366,10 @@ def ops_from_footnotes(act: AmendingAct, law: Law) -> tuple[list[Amendment],
         am = by_article.setdefault(article, Amendment(
             amending_law=act.number, article=article, target_law=law.number,
             rg_date=act.rg.date if act.rg else None,
-            rg_number=act.rg.number if act.rg else None, ops=[]))
+            rg_number=act.rg.number if act.rg else None,
+            # An annulment takes effect on publication unless the decision says otherwise,
+            # which a footnote does not tell: the yürürlük table may (see ``history``).
+            effective_date=act.rg.date if act.rg and act.kind == "aym" else None, ops=[]))
         am.ops.extend(ops)
     return list(by_article.values()), unparsed
 

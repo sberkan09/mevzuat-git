@@ -360,5 +360,10 @@
   "source": "https://www.resmigazete.gov.tr/eskiler/2017/12/20171205-12.htm",
   "instruction": "31/12/1960 tarihli ve 193 sayılı Gelir Vergisi Kanununun 74 üncü maddesinin üçüncü fıkrasında yer alan “%25’ini” ibaresi “%15’ini” şeklinde değiştirilmiştir.",
   "payload": []
+ },
+ "6009/5": {
+  "source": "https://www.resmigazete.gov.tr/eskiler/2010/08/20100801-1.htm",
+  "instruction": "193 sayılı Kanunun geçici 69 uncu maddesinin birinci fıkrasında yer alan “yine bu tarihteki mevzuat hükümleri (vergi oranına ilişkin hükümler dâhil) çerçevesinde kazançlarından indirebilirler.” ibaresi “yine bu tarihteki mevzuat hükümleri (bu Kanunun geçici 61 inci maddesinin ikinci fıkrasında yer alan vergi oranına ilişkin hüküm dâhil) çerçevesinde kazançlarından indirebilirler.” şeklinde değiştirilmiş ve bu ibareden sonra gelmek üzere “Şu kadar ki, vergi matrahlarının tespitinde yatırım indirimi istisnası olarak indirim konusu yapılacak tutar, ilgili kazancın % 25’ini aşamaz. Kalan kazanç üzerinden yürürlükteki vergi oranına göre vergi hesaplanır.” cümleleri eklenmiştir.",
+  "payload": []
  }
 }

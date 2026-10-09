@@ -69,7 +69,15 @@ mevzuat.gov.tr yazımıyla.
 
 ## GVK (2026-10)
 
-97 commit üretiliyor: başlangıç metni, değiştiren kanunlar için 95 commit (2001-07-03 ..
-2026-07-01) ve eşitleme commit'i. Eşitleme commit'inde 10 maddenin içeriği ayrılıyor
-(bkz. `docs/replay.md`). RG metni taranmış PDF olan KHK 700, 6663 ve 6676'nın commit
-mesajları, işlemlerin konsolide metnin dipnotlarından okunduğunu belirtir.
+101 commit üretiliyor: başlangıç metni, değiştiren kanunlar için 95 ve Anayasa
+Mahkemesi iptal kararları için 4 commit (2001-07-03 .. 2026-07-01) ve eşitleme commit'i.
+Eşitleme commit'inde 8 maddenin içeriği ayrılıyor (bkz. `docs/replay.md`). RG metni
+taranmış PDF olan KHK 700, 6663 ve 6676'nın commit mesajları, işlemlerin konsolide
+metnin dipnotlarından okunduğunu belirtir.
+
+İptal kararlarının commit'leri "AYM E.2025/219 K.2026/43: md. geçici 72" diye başlar ve
+kararın yayım sırasına girer. Mesajda değiştiren maddeler yerine hüküm fıkrasının
+maddeleri ("Hüküm fıkrası: B/2") yazar. Tarih, yürürlük tablosunda kararın satırı varsa
+oradan, yoksa iptal hükmünün yürürlük tarihidir: kararın yayım günü (Anayasa md. 153) ya
+da kararın belirlediği daha geç tarih (E.2006/119, K.2009/145: yayımdan dokuz ay sonra,
+8/10/2010).

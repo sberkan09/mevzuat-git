@@ -174,3 +174,26 @@ def locate(fetcher: Fetcher, number: str, rg_date: date | None = None,
             if found := locate_on(fetcher, d, number, probe):
                 return found
     return None
+
+
+# "— Anayasa Mahkemesinin E: 2025/219, K: 2026/43 Sayılı Kararı", "E. 2010/93, K: 2012/20"
+_DECISION_RE = re.compile(r"\bE\s*[.:]*\s*(\d{4}/\d+)\s*[,;]?\s*K\s*[.:]*\s*(\d{4}/\d+)")
+
+
+def decision_matches(entry: IndexEntry, esas: str, karar: str) -> bool:
+    """Does an index line announce the Anayasa Mahkemesi decision E.``esas``, K.``karar``?"""
+    m = _DECISION_RE.search(entry.text)
+    return bool(m and "Anayasa" in entry.text and m.groups() == (esas, karar))
+
+
+def locate_decision(fetcher: Fetcher, esas: str, karar: str,
+                    days: list[date]) -> Located | None:
+    """Find an Anayasa Mahkemesi decision in the indexes of ``days``, in that order. A
+    decision is published months after it is made (E.2010/93, K.2012/20 of 9/2/2012 in
+    the RG of 26/7/2013)."""
+    for d in days:
+        for page in fetch_issue(fetcher, d):
+            for e in page.entries:
+                if decision_matches(e, esas, karar):
+                    return Located(page, e)
+    return None
