@@ -136,6 +136,7 @@ def history(
     from mevzuat_git.history import build_many
     from mevzuat_git.verify import current_tree
 
+    laws = sorted(set(laws))  # same repository whatever the order given
     inputs = []
     with Fetcher(cache_dir=cache_dir, offline=offline) as f:
         for law in laws:

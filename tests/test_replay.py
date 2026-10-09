@@ -727,3 +727,8 @@ def test_mukerrer_article_goes_after_its_number():
                            source_sentence=""))
     assert [a.id for a in law.articles()] == [
         "266", "mukerrer-266", "267", "290", "290/A", "mukerrer-290", "291"]
+    # Without an article of its own number: after the one before it (GVK mükerrer 116).
+    apply(law, AmendmentOp(op=OpType.INSERT_NODE, kind=Level.MADDE, position="end",
+                           target=Addr(madde=""), new_nodes=[art("mukerrer-268")],
+                           source_sentence=""))
+    assert [a.id for a in law.articles()][:4] == ["266", "mukerrer-266", "267", "mukerrer-268"]

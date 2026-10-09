@@ -435,8 +435,7 @@ def build_many(laws: list[tuple[Law, OpsFile, AmendmentList]], out: Path) -> lis
             break
         first, _ = min(heads, key=lambda x: (x[0].rg_date, x[0].date, x[1]))
         together = [i for s, i in heads
-                    if (s.act, s.kind, s.rg_date, s.date) == (first.act, first.kind,
-                                                               first.rg_date, first.date)]
+                    if (s.act, s.rg_date, s.date) == (first.act, first.rg_date, first.date)]
         for i in together:
             if pos[i] == 0:
                 c = _start_commit(hs[i])
