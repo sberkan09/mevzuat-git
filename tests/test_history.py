@@ -17,13 +17,14 @@ from mevzuat_git.history import (
     build,
     build_many,
     clause_dates,
+    mark_pending,
     op_date,
     render,
     table_articles,
     yururluk_date,
 )
 from mevzuat_git.model import Amendment, Law, Level, Node, OpType
-from mevzuat_git.verify import OpResult
+from mevzuat_git.verify import OpResult, op_results
 
 FIX = Path(__file__).parent / "fixtures"
 ARTICLES = json.loads((FIX / "rg_amendment_articles.json").read_text(encoding="utf-8"))
@@ -303,3 +304,46 @@ def test_marker_of_an_annulled_first_sentence_marks_its_place():
     # Other markers stay for ``strip_editorial``.
     plain = "tutarlar (Ek ibare: 25/7/2024-7524/1 md.) hariç"
     assert mark_annulled(plain) == plain
+
+
+def test_operations_in_force_later_are_pending():
+    # 7524 (RG 2/8/2024) adds KDV md. 30 (f) and md. 58's fıkras from 1/1/2030; the
+    # consolidated text fetched before then does not have them.
+    act = _act("7524", date(2024, 8, 2), [("13, 36", "1/9/2024"), ("30, 58", "1/1/2030")])
+    r30, r36 = _r(am.Path(madde="30", fikra=1), OpType.INSERT_NODE), _r(am.Path(madde="36"))
+    assert op_date(r30, act, date(2024, 8, 2), as_of=date(2026, 10, 9)).date \
+        == date(2030, 1, 1)
+    ops = am.OpsFile(target_law=3065, acts=[am.ActOps(
+        act="7524", rg_date=date(2024, 8, 2), rg_number="32620", text_url="", sentences=2,
+        amendments=[Amendment(amending_law="7524", article=a, target_law=3065, ops=[r.op])
+                    for a, r in (("20", r30), ("21", r36))])])
+    alist = AmendmentList(target_law=3065, target_title="", target_tertip=5,
+                          source_url="", source_sha256="", acts=[act])
+    assert mark_pending(ops, alist, date(2026, 10, 9)) == 1
+    assert r30.op.pending == date(2030, 1, 1) and r36.op.pending is None
+    assert [r.op for r in op_results(ops)] == [r36.op]
+
+
+def test_ibare_replacements_of_a_sentence_are_one_batch_across_other_parts():
+    # 700/90 on KDV md. 38: “Bakanlar Kurulu” in the first and fourth fıkras, then
+    # “Bakanlar Kurulunca” in the first; one by one, the first would eat the second.
+    from mevzuat_git.verify import batches
+    s = "bu maddenin birinci ve dördüncü fıkralarında ..."
+
+    def r(fikra, old, new):
+        return OpResult(act="700", article="90", op=am.AmendmentOp(
+            op=OpType.REPLACE_PHRASE, target=am.Path(madde="38", fikra=fikra), old=old,
+            new=new, source_sentence=s))
+    a, b, c = (r(1, "Bakanlar Kurulu", "Cumhurbaşkanı"), r(4, "Bakanlar Kurulu", "Cumhurbaşkanı"),
+               r(1, "Bakanlar Kurulunca", "Cumhurbaşkanınca"))
+    assert batches([a, b, c]) == [[a, c], [b]]
+    # Not across a change to the same fıkra.
+    d = r(1, "x", "y")
+    d.op = d.op.model_copy(update={"op": OpType.INSERT_PHRASE})
+    assert batches([a, d, c]) == [[a], [d], [c]]
+    # Nor across an insert in the same article: "mevcut ikinci fıkrası" is counted after it.
+    ins = OpResult(act="700", article="90", op=am.AmendmentOp(
+        op=OpType.INSERT_NODE, target=am.Path(madde="38", fikra=2), position="after",
+        source_sentence=s))
+    x, e = r(3, "X", "Y"), r(3, "Z", "W")
+    assert batches([x, ins, e]) == [[x], [ins], [e]]

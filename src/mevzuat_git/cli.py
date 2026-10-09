@@ -78,7 +78,9 @@ def amendments(
     offline: bool = typer.Option(True, help="Use only the cache (run `fetch` first)"),
 ) -> None:
     """Parse the amending acts' RG texts into operations (Faz 2)."""
+    from mevzuat_git import mevzuat_gov as mg
     from mevzuat_git.amendments import add_footnote_ops, load_list, parse_all
+    from mevzuat_git.history import mark_pending
     from mevzuat_git.verify import current_tree
 
     alist = load_list(out_dir / f"{law}_amendments.json")
@@ -88,6 +90,8 @@ def amendments(
         # and change markers.
         if any(a.error for a in ops.acts):
             add_footnote_ops(ops, alist, current_tree(f, law))
+        as_of = mg.text_fetched_on(f, law)
+    pending = mark_pending(ops, alist, as_of) if as_of else 0
     out = out_dir / f"{law}_ops.json"
     out.write_text(ops.model_dump_json(indent=1, exclude_defaults=True) + "\n")
     sentences = sum(a.sentences for a in ops.acts)
@@ -95,6 +99,9 @@ def amendments(
     n_ops = len(ops.ops())
     typer.echo(f"{out}: {len(ops.acts)} acts, {sentences} sentences naming law {law}, "
                f"{sentences - unparsed} parsed into {n_ops} operations")
+    if pending:
+        typer.echo(f"  {pending} operations take effect after {as_of}, the consolidated "
+                   "text's date: left out of replay and history")
     for a in ops.acts:
         if a.error:
             how = f"; {len(a.ops())} operations from footnotes" if a.source == "footnotes" else ""

@@ -548,7 +548,8 @@ def apply(law: Law, op: AmendmentOp) -> None:
         occ = _occurrences(slots, op.old or "")
         if not occ:
             raise ReplayError(f"ibare not found: {op.old!r} in {t}")
-        for sl, s, e in sorted(occ if op.all else occ[:1], key=lambda x: -x[1]):
+        n = len(occ) if op.all else op.occurrences or 1
+        for sl, s, e in sorted(occ[:n], key=lambda x: -x[1]):
             sl.set(_remove_span(sl.get(), s, e))
         return
     if op.op is OpType.INSERT_PHRASE:
@@ -826,14 +827,16 @@ def _unapply(law: Law, op: AmendmentOp) -> Check:
         marks = [(sl, m.start(), m.end()) for sl in slots
                  # A footnote number may stick to the mark: "bu (…)134 kazanç" (md. 106).
                  for m in re.finditer(r"\(\s*(?:…|\.\.\.)\s*\)\d*", sl.get()[sl.lo:sl.hi])]
-        if len(marks) == 1:
-            sl, s, e = marks[0]
-            txt = sl.get()
-            left, old = txt[:sl.lo + s], op.old or ""
-            if old[:1] in ",.;:)":
-                # "akşamına kadar (…) tam" with “, gelirin ... kadar,” put back (7338/6).
-                left = left.rstrip(" ")
-            sl.set(left + old + txt[sl.lo + e:])
+        if len(marks) == (op.occurrences or 1):
+            # One mark for each place the ibare was taken from (KDV md. 36, "indirim (…)
+            # hakkını" and "indirim (…) hakkı"); right to left, so the offsets hold.
+            for sl, s, e in reversed(marks):
+                txt = sl.get()
+                left, old = txt[:sl.lo + s], op.old or ""
+                if old[:1] in ",.;:)":
+                    # "akşamına kadar (…) tam" with “, gelirin ... kadar,” put back (7338/6).
+                    left = left.rstrip(" ")
+                sl.set(left + old + txt[sl.lo + e:])
             return Check("ok")
         return Check("lossy", "deleted ibare: its place in the text is not marked")
     if op.op is OpType.REPEAL_NODE:

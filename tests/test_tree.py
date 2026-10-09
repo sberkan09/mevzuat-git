@@ -375,3 +375,30 @@ def test_line_that_goes_on_with_the_list_is_a_fikra():
     f1, f2, f3 = law.article("54").children
     assert shape(f1) == [("bent", "a)"), ("bent", "b)")]
     assert f2.text.startswith("2 nci grup") and f3.text.startswith("3 üncü grup")
+
+
+def test_footnote_reference_without_its_link():
+    # KDV md. 13/f1 (l): the reference to footnote 19 has no <a href="#_ftn19">.
+    law = _gvk(
+        "", "Diğer istisnalar:", "Madde 13 – Aşağıda belirtilen teslim ve hizmetler vergiden müstesnadır:",
+        ('l) ... birlikte sağlanan diğer teslim ve hizmetler istisnanın kapsamına dahil '
+         'değildir.),</span><sup><span class=MsoFootnoteReference>19</span></sup><span>'))
+    (f,) = law.article("13").children
+    (bl,) = f.children
+    assert bl.text.endswith("dahil değildir.),") and bl.footnotes == [19]
+
+
+def test_title_over_two_lines():
+    # KDV md. 13
+    law = _gvk(
+        "", "Araçlar, kıymetli maden ve petrol aramaları ile ulusal güvenlik",
+        "harcamaları ve yatırımlarda istisna",
+        "Madde 13 – (Değişik : 26/3/1985 - 3174/1 md.)",
+        "Aşağıdaki teslim ve hizmetler vergiden müstesnadır.")
+    a = law.article("13")
+    assert a.title == ("Araçlar, kıymetli maden ve petrol aramaları ile ulusal güvenlik "
+                       "harcamaları ve yatırımlarda istisna")
+    assert [c.text for c in a.children] == ["Aşağıdaki teslim ve hizmetler vergiden müstesnadır."]
+    # A list item under a short line stays an item.
+    law = _gvk("", "Diğer istisnalar", "a) ilk bent", "Madde 13 – Metin.")
+    assert law.article("13").title != "Diğer istisnalar a) ilk bent"

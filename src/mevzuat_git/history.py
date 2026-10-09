@@ -235,8 +235,10 @@ def _score(row: dict[str, set[str]], op: dict[str, set[str]]) -> int:
     return score
 
 
-def op_date(r: OpResult, act: AmendingAct | None, rg_date: date) -> Dated:
-    """The yürürlük date of one operation, from the act's yürürlük table rows."""
+def op_date(r: OpResult, act: AmendingAct | None, rg_date: date,
+            as_of: date | None = None) -> Dated:
+    """The yürürlük date of one operation, from the act's yürürlük table rows. A date
+    after ``as_of`` (the consolidated text's day) is taken as it is, however far."""
     arts = articles_of(r.op)
     rows: list[tuple[EffectiveEntry, str]] = []
     for e in act.effective if act else []:
@@ -269,7 +271,7 @@ def op_date(r: OpResult, act: AmendingAct | None, rg_date: date) -> Dated:
     if d is None:
         return Dated(rg_date, f"{e.articles}: {e.effective} (tek tarih okunamadı; yayım "
                               "tarihi alındı)", assumed=True)
-    if (d - rg_date).days > 3 * 365:
+    if (d - rg_date).days > 3 * 365 and not (as_of and d > as_of):
         # 4761 (RG 22/6/2002): "22/6/2012" in the table.
         return Dated(rg_date, f"{e.articles}: {e.effective} (yayımdan çok sonra; yayım "
                               "tarihi alındı)", assumed=True)
@@ -368,6 +370,21 @@ class Step:
                     if a and a not in out:
                         out.append(a)
         return out
+
+
+def mark_pending(opsfile: OpsFile, alist: AmendmentList, as_of: date) -> int:
+    """Mark the operations whose yürürlük date comes after ``as_of``, the day the
+    consolidated text was fetched; returns how many."""
+    acts = {a.number: a for a in alist.acts}
+    n = 0
+    for rec, amd, op in opsfile.ops():
+        if rec.rg_date is None:
+            continue
+        r = OpResult(act=rec.act, article=amd.article, op=op, effective=amd.effective_date)
+        d = op_date(r, acts.get(rec.act), rec.rg_date, as_of).date
+        op.pending = d if d > as_of else None
+        n += op.pending is not None
+    return n
 
 
 def plan(groups: list[list[OpResult]], opsfile: OpsFile, alist: AmendmentList) -> list[Step]:

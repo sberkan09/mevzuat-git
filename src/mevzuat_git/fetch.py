@@ -38,6 +38,7 @@ class Response:
     content: bytes
     content_type: str | None
     from_cache: bool
+    fetched_at: datetime | None = None
 
 
 def cache_path(url: str, cache_dir: Path = DEFAULT_CACHE_DIR) -> Path:
@@ -109,6 +110,7 @@ class Fetcher:
             content=body_path.read_bytes(),
             content_type=meta.get("content_type"),
             from_cache=True,
+            fetched_at=datetime.fromisoformat(meta["fetched_at"]) if "fetched_at" in meta else None,
         )
 
     def _write_cache(self, url: str, status: int, content: bytes, content_type: str | None,
@@ -169,7 +171,8 @@ class Fetcher:
                     r.raise_for_status()
                     ctype = r.headers.get("content-type")
                     self._write_cache(url, r.status_code, r.content, ctype, str(r.url))
-                    return Response(url, r.status_code, r.content, ctype, from_cache=False)
+                    return Response(url, r.status_code, r.content, ctype, from_cache=False,
+                                    fetched_at=datetime.now(UTC))
                 last_exc = httpx.HTTPStatusError(
                     f"{r.status_code} for {url}", request=r.request, response=r
                 )

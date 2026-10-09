@@ -30,10 +30,13 @@ def test_second_get_comes_from_cache(tmp_path):
 
     f = make_fetcher(tmp_path, handler)
     url = "https://www.resmigazete.gov.tr/eskiler/2024/08/20240802.htm"
-    assert f.get(url).from_cache is False
+    first = f.get(url)
+    assert first.from_cache is False
     r = f.get(url)
     assert r.from_cache is True and r.content == b"<html>ok</html>"
     assert len(calls) == 1
+    # The day of the fetch comes back with the cached copy: what the text holds on.
+    assert r.fetched_at is not None and r.fetched_at.date() == first.fetched_at.date()
 
 
 def test_user_agent_is_sent(tmp_path):
