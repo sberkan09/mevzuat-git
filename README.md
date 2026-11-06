@@ -8,6 +8,11 @@ git blame kanunlar/4857-is-kanunu.md                 # hangi fıkra hangi kanunl
 git show $(git rev-list -1 --before=2019-03-15 main):kanunlar/193-gelir-vergisi-kanunu.md
 ```
 
+Üretilen tarihçe ayrı bir depoda:
+[mevzuat-tarihce](https://github.com/sberkan09/mevzuat-tarihce). Tarayıcıda gezmek için
+`site/` altındaki statik görüntüleyici kullanılır: bir tarihteki metin, madde geçmişi ve iki
+tarih arası fark (bkz. [docs/site.md](docs/site.md)).
+
 ## Neden
 
 - Avukatlar olay tarihindeki metni uygular, ama o metne ulaşmak zahmetli.
@@ -35,4 +40,9 @@ Ayrıntılar [docs/ROADMAP.md](docs/ROADMAP.md) dosyasında.
 ```bash
 uv sync            # veya: pip install -e ".[dev]"
 pytest
+
+# görüntüleyici (Faz 6)
+mevzuat-git site --repo ../mevzuat-tarihce --out site/data
+python -m http.server -d site 8000
+npm install && npm run test:unit && npm run test:e2e
 ```
