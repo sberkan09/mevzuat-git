@@ -168,6 +168,24 @@ def history(
 
 
 @app.command()
+def site(
+    repo: Path = typer.Option(..., help="History repository (`history` output, or a clone of "
+                                        "mevzuat-tarihce)"),
+    out: Path = typer.Option(Path("site/data"), help="Where the viewer's JSON goes"),
+    repo_url: str = typer.Option(None, help="Web address of the history repository, for "
+                                            "commit links [default: its origin remote]"),
+) -> None:
+    """Write the static viewer's data (Faz 6): index.json and <law>.json."""
+    from mevzuat_git.site import build
+
+    index = build(repo, out, repo_url)
+    for law in index["laws"]:
+        typer.echo(f"{law['number']}: {law['commits']} commits, {law['articles']} articles, "
+                   f"{law['unverified']} unverified")
+    typer.echo(f"{out}: {len(index['laws'])} laws")
+
+
+@app.command()
 def pipeline(
     laws: list[int] = typer.Argument(..., help="Kanun numaraları, ör. 193 213 3065"),
     fetch_first: bool = typer.Option(False, "--fetch", help="Run `fetch` for each law first"),

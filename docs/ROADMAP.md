@@ -47,6 +47,8 @@
 - [ ] 2000 öncesi (PDF/tarama) RG arşivi
 
 ## Faz 6: Ürün
-- [ ] Madde bazında zaman çizelgesi görüntüleyici
+- [x] Madde bazında zaman çizelgesi görüntüleyici: statik site (`site/`, veri:
+  `mevzuat-git site`), tarih seçici, madde geçmişi, iki tarih arası fark, kalıcı
+  bağlantılar, doğrulanmamış madde işaretleri (bkz. `docs/site.md`)
 - [ ] "Şu tarihte metin" API'si
 - [ ] Madde değişiklik bildirimi
