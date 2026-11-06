@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mevzuat Tarihçesi</title>
+  <meta name="description" content="Türk vergi kanunlarının Resmî Gazete değişiklikleriyle geçirdiği hâller: tarihe göre metin, madde geçmişi ve farklar.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Before the first paint, so a saved theme does not flash.
+    try {
+      const t = localStorage.getItem("tema");
+      if (t === "koyu" || t === "acik") document.documentElement.dataset.theme = t === "koyu" ? "dark" : "light";
+    } catch (e) { /* storage unavailable */ }
+  </script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">İçeriğe geç</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="#/">Mevzuat Tarihçesi</a>
+      <button id="theme" type="button" class="secondary">Koyu tema</button>
+    </div>
+    <div class="disclaimer" role="note" data-testid="disclaimer">
+      <div class="wrap">
+        <strong>Resmî metin değildir;</strong> bağlayıcı metin için Resmî Gazete ve
+        <a href="https://www.mevzuat.gov.tr" target="_blank" rel="noopener">mevzuat.gov.tr</a> esas alınır.
+      </div>
+    </div>
+  </header>
+  <main id="main" class="wrap" tabindex="-1">
+    <p class="loading">Yükleniyor…</p>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>
+        <span id="source"></span>
+        Metinler, değişiklik kanunlarının Resmî Gazete metinlerinden
+        <a href="https://github.com/sberkan09/mevzuat-git" target="_blank" rel="noopener">mevzuat-git</a>
+        ile kendiliğinden üretilmiştir ve hata içerebilir. "Doğrulanmadı" işaretli maddelerin geçmiş
+        metinlerine güvenmeyin.
+      </p>
+      <p><strong>Resmî metin değildir;</strong> bağlayıcı metin için Resmî Gazete ve mevzuat.gov.tr esas alınır.</p>
+    </div>
+  </footer>
+  <noscript><p class="wrap">Bu site JavaScript gerektirir.</p></noscript>
+</body>
+</html>

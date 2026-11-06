@@ -12,3 +12,9 @@ data/history/
 # Small derived data that is worth versioning (see docs/sources.md)
 !data/processed/*_amendments.json
 .env
+# Faz 6 viewer: generated data, test builds, node
+site/data/
+build/
+node_modules/
+test-results/
+playwright-report/
